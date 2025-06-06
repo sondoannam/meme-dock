@@ -12,8 +12,7 @@ interface ConfirmDeleteDialogProps {
   deleteLoading: boolean;
   confirmText?: string;
 }
-
-const ConfirmDeleteDialog = ({
+export const ConfirmDeleteDialog = ({
   title = 'Confirm Delete',
   header,
   openDeleteDialog,
@@ -44,5 +43,3 @@ const ConfirmDeleteDialog = ({
     </Modal>
   );
 };
-
-export default ConfirmDeleteDialog;

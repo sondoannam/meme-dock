@@ -26,14 +26,14 @@ interface BasicSelectProps {
 
 export const BasicSelect = ({
   defaultValue,
-  placeholder = 'Chọn',
+  placeholder = 'Select ...',
   options,
   onValueChange,
   className,
 }: BasicSelectProps) => {
   return (
     <Select defaultValue={defaultValue} onValueChange={onValueChange}>
-      <SelectTrigger className={cn('max-w-[200px] h-10', className)}>
+      <SelectTrigger className={cn('h-10', className)}>
         <SelectValue placeholder={placeholder} />
       </SelectTrigger>
       <SelectContent>

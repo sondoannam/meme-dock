@@ -14,7 +14,7 @@ import { cn } from '@/lib/utils';
 
 type BaseProps<TFieldValues extends FieldValues> = {
   className?: string;
-  control?: Control<TFieldValues>;
+  control: Control<TFieldValues>;
   name: FieldPath<TFieldValues>;
   label: string;
   isLoading?: boolean;
@@ -23,9 +23,10 @@ type BaseProps<TFieldValues extends FieldValues> = {
 };
 
 type InputTextProps<TFieldValues extends FieldValues> = BaseProps<TFieldValues> &
-  (BaseProps<TFieldValues>['isTextArea'] extends true
-    ? Omit<TextareaHTMLAttributes<HTMLTextAreaElement>, 'form'>
-    : Omit<InputHTMLAttributes<HTMLInputElement>, 'form'>);
+  (
+    | (Omit<InputHTMLAttributes<HTMLInputElement>, 'form'> & { isTextArea?: false })
+    | (Omit<TextareaHTMLAttributes<HTMLTextAreaElement>, 'form'> & { isTextArea: true })
+  );
 
 export function InputText<TFieldValues extends FieldValues>({
   className,
@@ -52,6 +53,10 @@ export function InputText<TFieldValues extends FieldValues>({
                 {...field}
                 disabled={isLoading || disabled}
                 className={cn(error && 'border-destructive')}
+                onChange={(e) => {
+                  field.onChange(e);
+                  onChange?.(e as any);
+                }}
                 {...(props as TextareaHTMLAttributes<HTMLTextAreaElement>)}
               />
             ) : (

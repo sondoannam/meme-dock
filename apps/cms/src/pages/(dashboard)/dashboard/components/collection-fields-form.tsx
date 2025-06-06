@@ -7,7 +7,6 @@ import { fieldTypes, type CollectionFieldType } from '@/validators/collection-sc
 import { Card, CardContent } from '@/components/ui/card';
 import { FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form';
 import { Switch } from '@/components/ui/switch';
-import { SelectOption } from '@/components/custom/basic-select';
 
 export const CollectionFieldsForm = () => {
   const { control, watch } = useFormContext();
@@ -18,12 +17,15 @@ export const CollectionFieldsForm = () => {
 
   // Function to add a new field
   const addField = () => {
-    append({
+    const newField: CollectionFieldType = {
       name: '',
       type: 'string',
       required: false,
       isArray: false,
-    } as CollectionFieldType);
+      description: '',
+      defaultValue: '',
+    };
+    append(newField);
   };
 
   return (
@@ -77,7 +79,7 @@ export const CollectionFieldsForm = () => {
                     control={control}
                     name={`fields.${index}.type`}
                     label="Field Type"
-                    options={fieldTypes as unknown as SelectOption[]}
+                    options={fieldTypes}
                   />
 
                   <div className="flex items-center space-x-4">

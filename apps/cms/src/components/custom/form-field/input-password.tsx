@@ -48,12 +48,12 @@ export const InputPassword = <TFieldValues extends FieldValues>({
         <FormItem className={className}>
           <FormLabel>{label}</FormLabel>
           <FormControl>
-            <div className='relative'>
+            <div className="relative">
               <Input
                 {...field}
                 type={showPassword ? 'text' : 'password'}
                 disabled={isLoading || disabled}
-                className={cn(error && 'border-destructive')}
+                className={cn(error && 'border-destructive', 'pr-12')}
                 onChange={(e) => {
                   field.onChange(e);
                   onChange?.(e);
@@ -61,19 +61,19 @@ export const InputPassword = <TFieldValues extends FieldValues>({
                 {...props}
               />
               <Button
-                type='button'
-                variant='ghost'
-                size='sm'
-                className='absolute right-0 top-1/2 -translate-y-1/2 h-full px-3 py-2'
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="absolute right-0 top-1/2 -translate-y-1/2 h-full px-3 py-2"
                 onClick={() => setShowPassword((prev) => !prev)}
                 disabled={disablePasswordEye || disabled}
               >
                 {showPassword && !disablePasswordEye ? (
-                  <Eye className='h-5 w-5' />
+                  <EyeOff className="h-5 w-5" />
                 ) : (
-                  <EyeOff className='h-5 w-5' />
+                  <Eye className="h-5 w-5" />
                 )}
-                <span className='sr-only'>{showPassword ? 'Hide password' : 'Show password'}</span>
+                <span className="sr-only">{showPassword ? 'Hide password' : 'Show password'}</span>
               </Button>
             </div>
           </FormControl>

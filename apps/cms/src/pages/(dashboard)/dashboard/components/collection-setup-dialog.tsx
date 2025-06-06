@@ -82,7 +82,6 @@ export const CollectionSetupDialog = ({ dialog, onSuccess }: CollectionSetupDial
                 label="Collection Name"
                 placeholder="e.g. Users, Posts, Comments"
                 onChange={(e) => {
-                  form.setValue('name', e.target.value);
                   handleNameChange(e);
                 }}
                 className="mb-auto"

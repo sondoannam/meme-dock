@@ -49,7 +49,7 @@ export function InputSimpleSelect<TFieldValues extends FieldValues>({
       render={({ field }) => (
         <FormItem className={className}>
           <FormLabel>{label}</FormLabel>
-          <Select onValueChange={field.onChange} defaultValue={field.value}>
+          <Select onValueChange={field.onChange} value={field.value}>
             <FormControl>
               <SelectTrigger
                 className={cn('w-full', triggerClassName)}

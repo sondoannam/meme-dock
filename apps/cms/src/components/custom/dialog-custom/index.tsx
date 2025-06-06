@@ -1,6 +1,6 @@
 import { Modal } from '@/components/ui/modal';
 import { DialogInstance, useDialog } from './use-dialog';
-import ConfirmDeleteDialog from '../confirm-delete-dialog';
+import { ConfirmDeleteDialog } from '../confirm-delete-dialog';
 
 interface DialogComponent
   extends React.FC<{
@@ -32,7 +32,7 @@ export const DialogCustom: DialogComponent = ({
   if (isConfirmDelete) {
     return (
       <ConfirmDeleteDialog
-        title={header ?? 'Xác nhận xóa'}
+        title={header ?? 'Confirm Delete'}
         openDeleteDialog={dialogInstance.isOpen}
         closeDelete={() => {
           onCloseDelete?.();
@@ -57,7 +57,7 @@ export const DialogCustom: DialogComponent = ({
       header={header}
       className={className}
     >
-      <div>{children}</div>
+      {children}
     </Modal>
   );
 };

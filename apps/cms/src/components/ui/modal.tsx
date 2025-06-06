@@ -50,7 +50,7 @@ export const Modal = ({
         {children}
         {(footer || description) && (
           <DialogFooter>
-            <DialogDescription>{description}</DialogDescription>
+            {description && <DialogDescription>{description}</DialogDescription>}
             {footer}
           </DialogFooter>
         )}

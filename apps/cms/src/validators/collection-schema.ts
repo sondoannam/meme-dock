@@ -1,14 +1,15 @@
+import { SelectOption } from '@/components/custom/basic-select';
 import { z } from 'zod';
 
 // Field types for dropdown
-export const fieldTypes = [
+export const fieldTypes: SelectOption[] = [
   { id: 'string', value: 'string', label: 'String' },
   { id: 'number', value: 'number', label: 'Number' },
   { id: 'boolean', value: 'boolean', label: 'Boolean' },
   { id: 'array', value: 'array', label: 'Array' },
   { id: 'datetime', value: 'datetime', label: 'DateTime' },
   { id: 'relation', value: 'relation', label: 'Relation' },
-] as const;
+];
 
 export type FieldType = (typeof fieldTypes)[number]['value'];
 

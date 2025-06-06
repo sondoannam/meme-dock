@@ -54,7 +54,8 @@ export function InputNumber<TFieldValues extends FieldValues>({
               disabled={isLoading || disabled}
               className={cn('appearance-none', error && 'border-destructive')}
               onChange={(e) => {
-                const value = e.target.value ? parseFloat(e.target.value) : null;
+                const parsed = parseFloat(e.target.value);
+                const value = e.target.value && !isNaN(parsed) ? parsed : null;
                 field.onChange(value);
                 onChange?.(e);
               }}
