@@ -1,11 +1,13 @@
 import { StrictMode } from 'react';
 import * as ReactDOM from 'react-dom/client';
-import App from './app/app';
+import App from './App';
+import './styles.css';
+import { ThemeProvider } from './components/theme-provider';
 
 const root = ReactDOM.createRoot(document.getElementById('root') as HTMLElement);
 
 root.render(
-    <StrictMode>
+    <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
         <App />
-    </StrictMode>,
+    </ThemeProvider>,
 );
