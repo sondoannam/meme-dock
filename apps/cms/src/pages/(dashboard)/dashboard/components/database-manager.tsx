@@ -5,6 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { DatabaseZap, Activity, Loader2 } from 'lucide-react';
 import { StatusMessage } from './status-message';
+import { CollectionSetupDialog } from './collection-setup-dialog';
+import { DialogCustom } from '@/components/custom/dialog-custom';
 
 export const DatabaseManager = () => {
   const [healthStatus, setHealthStatus] = useState<'idle' | 'loading' | 'success' | 'error'>(
@@ -13,6 +15,8 @@ export const DatabaseManager = () => {
   const [setupStatus, setSetupStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [healthMessage, setHealthMessage] = useState<string | null>(null);
   const [setupMessage, setSetupMessage] = useState<string | null>(null);
+
+  const databaseDialog = DialogCustom.useDialog();
 
   // Function to check database health
   async function checkDatabaseHealth() {
@@ -29,30 +33,12 @@ export const DatabaseManager = () => {
       );
     }
   }
-
-  // Function to setup database collections
-  async function setupDatabaseCollections() {
-    setSetupStatus('loading');
-    setSetupMessage(null);
-    try {
-      // Here you would implement the actual collection setup
-      // This is just a placeholder for demonstration
-      await new Promise((resolve) => setTimeout(resolve, 1500)); // Simulate async operation
-
-      setSetupStatus('success');
-      setSetupMessage('Database collections successfully created!');
-
-      // In a real implementation, you would do something like:
-      // await databases.createCollection('memes', { ... });
-      // await databases.createCollection('tags', { ... });
-      // etc.
-    } catch (err) {
-      setSetupStatus('error');
-      setSetupMessage(
-        err instanceof AppwriteException ? err.message : 'Failed to setup database collections',
-      );
-    }
-  }
+  // Handler for collection setup success
+  const handleCollectionSetupSuccess = () => {
+    setSetupStatus('success');
+    setSetupMessage('Database collections successfully created!');
+    databaseDialog.close();
+  };
 
   return (
     <Card>
@@ -77,10 +63,9 @@ export const DatabaseManager = () => {
               <Activity className="h-4 w-4" />
             )}
             Check Database Health
-          </Button>
-
+          </Button>{' '}
           <Button
-            onClick={setupDatabaseCollections}
+            onClick={() => databaseDialog.open()}
             disabled={setupStatus === 'loading'}
             className="flex items-center gap-2"
           >
@@ -91,11 +76,12 @@ export const DatabaseManager = () => {
             )}
             Setup Database Collections
           </Button>
-        </div>
-
+        </div>{' '}
         {/* Status messages */}
         <StatusMessage status={healthStatus} message={healthMessage} />
         <StatusMessage status={setupStatus} message={setupMessage} />
+        {/* Collection Setup Dialog */}
+        <CollectionSetupDialog dialog={databaseDialog} onSuccess={handleCollectionSetupSuccess} />
       </CardContent>
     </Card>
   );

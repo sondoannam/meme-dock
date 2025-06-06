@@ -1,9 +1,14 @@
 import { RouterProvider, createBrowserRouter } from 'react-router-dom';
+import { ThemeProvider } from './components/theme-provider';
 
 import routes from '~pages';
 
 function App() {
-    return <RouterProvider router={createBrowserRouter(routes)} />;
+  return (
+    <ThemeProvider>
+      <RouterProvider router={createBrowserRouter(routes)} />
+    </ThemeProvider>
+  );
 }
 
 export default App;

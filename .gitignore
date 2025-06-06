@@ -49,3 +49,4 @@ vitest.config.*.timestamp*
 # Next.js
 .next
 out
+/apps/cms/.env
