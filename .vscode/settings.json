@@ -1,3 +1,4 @@
 {
-    "conventionalCommits.scopes": ["app"]
+  "conventionalCommits.scopes": ["app", "app/cms", "app/client", "cms/auth"],
+  "nxConsole.generateAiAgentRules": true
 }

@@ -49,3 +49,7 @@ vitest.config.*.timestamp*
 # Next.js
 .next
 out
+
+# Environment variables
+**/.env
+**/apps/cms/.env
