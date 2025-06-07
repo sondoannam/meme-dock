@@ -53,3 +53,4 @@ out
 # Environment variables
 **/.env
 **/apps/cms/.env
+/INTEGRATION.md

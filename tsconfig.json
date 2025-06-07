@@ -1,13 +1,16 @@
 {
-    "extends": "./tsconfig.base.json",
-    "compileOnSave": false,
-    "files": [],
-    "references": [
-        {
-            "path": "./apps/cms"
-        },
-        {
-            "path": "./apps/client"
-        }
-    ]
+  "extends": "./tsconfig.base.json",
+  "compileOnSave": false,
+  "files": [],
+  "references": [
+    {
+      "path": "./apps/cms"
+    },
+    {
+      "path": "./apps/client"
+    },
+    {
+      "path": "./apps/api"
+    }
+  ]
 }

@@ -1,0 +1,2 @@
+# Appwrite API project specific ignores
+.env
