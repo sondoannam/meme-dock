@@ -72,7 +72,11 @@ export function InputText<TFieldValues extends FieldValues>({
               />
             )}
           </FormControl>
-          {description && <FormDescription>{description}</FormDescription>}
+          {description && (
+            <FormDescription className="text-muted-foreground italic !text-sm">
+              {description}
+            </FormDescription>
+          )}
           <FormMessage />
         </FormItem>
       )}

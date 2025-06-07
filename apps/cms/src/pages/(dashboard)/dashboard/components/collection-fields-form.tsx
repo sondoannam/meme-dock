@@ -68,12 +68,13 @@ export const CollectionFieldsForm = () => {
                   </Button>
                 </div>
 
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 my-4">
                   <InputText
                     control={control}
                     name={`fields.${index}.name`}
                     label="Field Name"
                     placeholder="e.g. title, description, is_active"
+                    className="sm:col-span-2 [&>input]:!border shadow-sm"
                   />
                   <InputSimpleSelect
                     control={control}
@@ -81,13 +82,15 @@ export const CollectionFieldsForm = () => {
                     label="Field Type"
                     options={fieldTypes}
                   />
+                </div>
 
-                  <div className="flex items-center space-x-4">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <div className="flex items-center space-x-4 w-full">
                     <FormField
                       control={control}
                       name={`fields.${index}.required`}
                       render={({ field }) => (
-                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                        <FormItem className="w-full flex flex-row items-center justify-between rounded-md border p-2.5 shadow-sm">
                           <div className="space-y-0.5">
                             <FormLabel>Required</FormLabel>
                           </div>
@@ -99,12 +102,12 @@ export const CollectionFieldsForm = () => {
                     />
                   </div>
 
-                  <div className="flex items-center space-x-4">
+                  <div className="flex items-center space-x-4 w-full">
                     <FormField
                       control={control}
                       name={`fields.${index}.isArray`}
                       render={({ field }) => (
-                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                        <FormItem className="w-full flex flex-row items-center justify-between rounded-md border p-2.5 shadow-sm">
                           <div className="space-y-0.5">
                             <FormLabel>Is Array</FormLabel>
                           </div>
@@ -115,29 +118,30 @@ export const CollectionFieldsForm = () => {
                       )}
                     />
                   </div>
+                </div>
+                <div className='grid grid-cols-1 gap-4 my-4'>
+                <InputText
+                  control={control}
+                  name={`fields.${index}.description`}
+                  label="Description"
+                  placeholder="Field description (optional)"
+                />
 
+                <InputText
+                  control={control}
+                  name={`fields.${index}.defaultValue`}
+                  label="Default Value"
+                  placeholder="Default value (optional)"
+                />
+
+                {fieldType === 'relation' && (
                   <InputText
                     control={control}
-                    name={`fields.${index}.description`}
-                    label="Description"
-                    placeholder="Field description (optional)"
+                    name={`fields.${index}.relationCollection`}
+                    label="Related Collection"
+                    placeholder="e.g. users, tags, categories"
                   />
-
-                  <InputText
-                    control={control}
-                    name={`fields.${index}.defaultValue`}
-                    label="Default Value"
-                    placeholder="Default value (optional)"
-                  />
-
-                  {fieldType === 'relation' && (
-                    <InputText
-                      control={control}
-                      name={`fields.${index}.relationCollection`}
-                      label="Related Collection"
-                      placeholder="e.g. users, tags, categories"
-                    />
-                  )}
+                )}
                 </div>
               </CardContent>
             </Card>
