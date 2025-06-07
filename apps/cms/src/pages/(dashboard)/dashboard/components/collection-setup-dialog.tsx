@@ -11,7 +11,7 @@ import {
   CollectionSchemaType,
   collectionSchema,
 } from '@/validators/collection-schema';
-import { CollectionService } from '@/lib/collection-service';
+import { CollectionApi } from '@/services/database';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Form } from '@/components/ui/form';
 import { DialogInstance } from '@/components/custom/dialog-custom/use-dialog';
@@ -41,7 +41,7 @@ export const CollectionSetupDialog = ({ dialog, onSuccess }: CollectionSetupDial
     setError(null);
 
     try {
-      await CollectionService.createCollection(data);
+      await CollectionApi.createCollection(data);
       form.reset();
       dialog.close();
       onSuccess?.([data]);
@@ -68,7 +68,7 @@ export const CollectionSetupDialog = ({ dialog, onSuccess }: CollectionSetupDial
     <DialogCustom dialog={dialog} header="Setup Database Collections" className="max-w-4xl">
       <ScrollArea className="h-[80vh]">
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 py-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 py-4 mr-2.5">
             {error && (
               <Alert variant="destructive">
                 <AlertDescription>{error}</AlertDescription>
