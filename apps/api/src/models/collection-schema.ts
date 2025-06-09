@@ -8,6 +8,7 @@ export interface CollectionFieldType {
   description?: string;
   defaultValue?: string;
   relationCollection?: string;
+  enumValues?: string[];
 }
 
 export interface CollectionSchemaType {

@@ -9,6 +9,7 @@ export const fieldTypes: SelectOption[] = [
   { id: 'array', value: 'array', label: 'Array' },
   { id: 'datetime', value: 'datetime', label: 'DateTime' },
   { id: 'relation', value: 'relation', label: 'Relation' },
+  { id: 'enum', value: 'enum', label: 'Enum' },
 ];
 
 export type FieldType = (typeof fieldTypes)[number]['value'];
@@ -23,7 +24,7 @@ export const collectionFieldSchema = z
         /^[a-zA-Z]\w*$/,
         'Field name must start with a letter and contain only letters, numbers and underscores',
       ),
-    type: z.enum(['string', 'number', 'boolean', 'array', 'datetime', 'relation'], {
+    type: z.enum(['string', 'number', 'boolean', 'array', 'datetime', 'relation', 'enum'], {
       required_error: 'Field type is required',
     }),
     required: z.boolean().default(false),
@@ -31,6 +32,7 @@ export const collectionFieldSchema = z
     description: z.string().optional(),
     defaultValue: z.string().optional(),
     relationCollection: z.string().optional(),
+    enumValues: z.array(z.string()).optional(),
   })
   .refine(
     (data) => {
@@ -43,6 +45,19 @@ export const collectionFieldSchema = z
     {
       message: 'Relation collection is required when field type is relation',
       path: ['relationCollection'], // Path to the field that has the error
+    },
+  )
+  .refine(
+    (data) => {
+      // If type is enum, enumValues must be provided and not empty
+      if (data.type === 'enum') {
+        return !!data.enumValues && data.enumValues.length > 0;
+      }
+      return true;
+    },
+    {
+      message: 'Enum values are required when field type is enum',
+      path: ['enumValues'], // Path to the field that has the error
     },
   );
 
@@ -58,10 +73,7 @@ export const collectionSchema = z.object({
   slug: z
     .string()
     .min(1, 'Collection slug is required')
-    .regex(
-      /^[a-z][a-z0-9_-]*$/,
-      'Slug must start with a lowercase letter and contain only lowercase letters, numbers, dashes and underscores',
-    ),
+    .regex(/^[a-z0-9]+$/, 'Slug must contain only lowercase letters and numbers'),
   description: z.string().optional(),
   fields: z.array(collectionFieldSchema).min(1, 'Collection must have at least one field'),
 });

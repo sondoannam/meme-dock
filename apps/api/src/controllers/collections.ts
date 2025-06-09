@@ -42,6 +42,45 @@ export const createCollection = async (req: Request, res: Response): Promise<voi
 };
 
 /**
+ * Update an existing collection
+ */
+export const updateCollection = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const collectionData = req.body as CollectionSchemaType;
+
+    if (!id) {
+      res.status(400).json({ message: 'Collection ID is required' });
+      return;
+    }
+
+    if (!collectionData || !collectionData.name || !collectionData.slug || !collectionData.fields) {
+      res.status(400).json({ message: 'Invalid collection data' });
+      return;
+    }
+
+    try {
+      // Update the collection
+      const updatedCollection = await CollectionService.updateCollection(id, collectionData);
+      res.status(200).json(updatedCollection);
+    } catch (error) {
+      console.error(`Error updating collection with ID ${id}:`, error);
+      if (error instanceof Error && error.message.includes('not found')) {
+        res.status(404).json({ message: `Collection with ID ${id} not found` });
+      } else {
+        throw error; // Re-throw to be caught by the outer try/catch
+      }
+    }
+  } catch (error) {
+    console.error('Error updating collection:', error);
+    res.status(500).json({
+      message: 'Failed to update collection',
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
+  }
+};
+
+/**
  * Create multiple collections (batch)
  */
 export const createCollections = async (req: Request, res: Response): Promise<void> => {

@@ -5,7 +5,15 @@ import { DocumentData, DocumentResponse, ListDocumentsResponse } from '../models
 
 // Helper to map our field schema to Appwrite attributes
 const mapFieldToAttribute = async (field: CollectionFieldType, collectionId: string) => {
-  const { name, type, required = false, isArray = false, defaultValue, relationCollection } = field;
+  const {
+    name,
+    type,
+    required = false,
+    isArray = false,
+    defaultValue,
+    relationCollection,
+    enumValues,
+  } = field;
 
   switch (type) {
     case 'string':
@@ -20,7 +28,7 @@ const mapFieldToAttribute = async (field: CollectionFieldType, collectionId: str
       );
     case 'number': {
       // Determine if number is integer or float based on the default value
-      const isInteger = !defaultValue || !defaultValue.includes('.');
+      const isInteger = !defaultValue || !defaultValue?.includes('.');
       if (isInteger) {
         return await databases.createIntegerAttribute(
           DATABASE_ID,
@@ -60,7 +68,20 @@ const mapFieldToAttribute = async (field: CollectionFieldType, collectionId: str
         collectionId,
         name,
         required,
-        defaultValue || '',
+        defaultValue ?? '',
+        isArray,
+      );
+    case 'enum':
+      if (!enumValues || enumValues.length === 0) {
+        throw new Error(`Enum values are required for field: ${name}`);
+      }
+      return await databases.createEnumAttribute(
+        DATABASE_ID,
+        collectionId,
+        name,
+        enumValues,
+        required,
+        defaultValue ?? undefined,
         isArray,
       );
     case 'relation':
@@ -229,6 +250,11 @@ export class CollectionService {
               field.relationCollection = attribute.relatedCollection;
             }
 
+            // Add enum values if it's an enum attribute
+            if (attribute.type === 'enum' && 'elements' in attribute) {
+              field.enumValues = attribute.elements;
+            }
+
             return field;
           });
 
@@ -257,6 +283,7 @@ export class CollectionService {
       boolean: 'boolean',
       datetime: 'datetime',
       relationship: 'relation',
+      enum: 'enum',
       // Add more mappings as needed
     };
 
@@ -291,6 +318,56 @@ export class CollectionService {
       };
     } catch (error) {
       console.error('Error creating collection:', error);
+      throw error;
+    }
+  }
+
+  // Update an existing collection
+  static async updateCollection(
+    collectionId: string,
+    collection: CollectionSchemaType,
+  ): Promise<CollectionSchemaType> {
+    try {
+      // First, get the existing collection to check if it exists
+      try {
+        await databases.getCollection(DATABASE_ID, collectionId);
+      } catch (e: any) {
+        console.error(`Failed to get collection: ${e.message}`);
+        throw new Error(`Collection with ID ${collectionId} not found: ${e.message}`);
+      }
+
+      // Update collection metadata
+      await databases.updateCollection(DATABASE_ID, collectionId, collection.name);
+
+      // Get existing attributes
+      const attributesResponse = await databases.listAttributes(DATABASE_ID, collectionId);
+      const existingAttributes = attributesResponse.attributes;
+
+      // Create a map of existing attributes by key
+      const existingAttributesMap = new Map();
+      existingAttributes.forEach((attr) => {
+        existingAttributesMap.set(attr.key, attr);
+      });
+
+      // Process each field in the updated collection
+      for (const field of collection.fields) {
+        if (existingAttributesMap.has(field.name)) {
+          // Field already exists, but we can't modify the field type in most cases
+          // We would need to delete and recreate it, which can cause data loss
+          console.log(`Field ${field.name} already exists, skipping modification`);
+        } else {
+          // New field, create it
+          await mapFieldToAttribute(field, collectionId);
+        }
+      }
+
+      // Return the updated collection
+      return {
+        ...collection,
+        slug: collectionId,
+      };
+    } catch (error) {
+      console.error('Error updating collection:', error);
       throw error;
     }
   }

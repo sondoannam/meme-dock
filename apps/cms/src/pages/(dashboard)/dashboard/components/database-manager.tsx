@@ -7,6 +7,9 @@ import { DatabaseZap, Activity, Loader2 } from 'lucide-react';
 import { StatusMessage } from './status-message';
 import { CollectionSetupDialog } from './collection-setup-dialog';
 import { DialogCustom } from '@/components/custom/dialog-custom';
+import { useRequest } from 'ahooks';
+import { collectionApi } from '@/services/database';
+import { CollectionSchemaType } from '@/validators/collection-schema';
 
 export const DatabaseManager = () => {
   const [healthStatus, setHealthStatus] = useState<'idle' | 'loading' | 'success' | 'error'>(
@@ -17,6 +20,15 @@ export const DatabaseManager = () => {
   const [setupMessage, setSetupMessage] = useState<string | null>(null);
 
   const databaseDialog = DialogCustom.useDialog();
+  // Fetch collections
+  const { data: collections = [], refresh } = useRequest(collectionApi.getCollections, {
+    onSuccess: (data) => {
+      // If collections exist, we can assume setup was successful
+      if (data && data.length > 0) {
+        setSetupStatus('success');
+      }
+    },
+  });
 
   // Function to check database health
   async function checkDatabaseHealth() {
@@ -32,11 +44,12 @@ export const DatabaseManager = () => {
         err instanceof AppwriteException ? err.message : 'Failed to connect to the database',
       );
     }
-  }
-  // Handler for collection setup success
-  const handleCollectionSetupSuccess = () => {
+  } // Handler for collection setup success
+  const handleCollectionSetupSuccess = (newCollections: CollectionSchemaType[]) => {
     setSetupStatus('success');
-    setSetupMessage('Database collections successfully created!');
+    // We don't rely on ID comparison here since we're not sure about the ID structure
+    setSetupMessage('Database collections successfully updated!');
+    refresh(); // Refresh collections data
     databaseDialog.close();
   };
 
@@ -81,7 +94,12 @@ export const DatabaseManager = () => {
         <StatusMessage status={healthStatus} message={healthMessage} />
         <StatusMessage status={setupStatus} message={setupMessage} />
         {/* Collection Setup Dialog */}
-        <CollectionSetupDialog dialog={databaseDialog} onSuccess={handleCollectionSetupSuccess} />
+        <CollectionSetupDialog
+          dialog={databaseDialog}
+          collections={collections}
+          loadingCollections={!collections && refresh !== undefined}
+          onSuccess={handleCollectionSetupSuccess}
+        />
       </CardContent>
     </Card>
   );

@@ -38,6 +38,7 @@ export function InputText<TFieldValues extends FieldValues>({
   isTextArea,
   onChange,
   disabled,
+  readOnly,
   ...props
 }: InputTextProps<TFieldValues>) {
   return (
@@ -52,10 +53,15 @@ export function InputText<TFieldValues extends FieldValues>({
               <Textarea
                 {...field}
                 disabled={isLoading || disabled}
-                className={cn(error && 'border-destructive')}
+                readOnly={readOnly}
+                className={cn(
+                  error && 'border-destructive',
+                  readOnly && 'cursor-not-allowed opacity-70',
+                )}
                 onChange={(e) => {
                   field.onChange(e);
-                  onChange?.(e as any);
+                  // Using type assertion with the correct TextareaHTMLAttributes type
+                  onChange?.(e as React.ChangeEvent<HTMLTextAreaElement>);
                 }}
                 {...(props as TextareaHTMLAttributes<HTMLTextAreaElement>)}
               />
@@ -63,7 +69,11 @@ export function InputText<TFieldValues extends FieldValues>({
               <Input
                 {...field}
                 disabled={isLoading || disabled}
-                className={cn(error && 'border-destructive')}
+                readOnly={readOnly}
+                className={cn(
+                  error && 'border-destructive',
+                  readOnly && 'cursor-not-allowed opacity-70',
+                )}
                 onChange={(e) => {
                   field.onChange(e);
                   onChange?.(e);

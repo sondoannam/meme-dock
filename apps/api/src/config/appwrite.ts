@@ -1,5 +1,5 @@
 import dotenv from 'dotenv';
-import { Client, Databases, ID, Permission, Role, Teams, RelationshipType } from 'node-appwrite';
+import { Client, Databases, ID, Permission, Role, Teams } from 'node-appwrite';
 
 // Load environment variables
 dotenv.config();
@@ -22,6 +22,6 @@ const client = new Client()
 
 // Initialize Appwrite services
 const databases = new Databases(client);
-const DATABASE_ID = APPWRITE_DATABASE_ID || 'default';
+const DATABASE_ID = APPWRITE_DATABASE_ID ?? 'default';
 
 export { client, databases, DATABASE_ID, ID, Permission, Role, Teams };

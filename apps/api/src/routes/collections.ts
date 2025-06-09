@@ -9,6 +9,9 @@ router.get('/', CollectionController.getCollections);
 // POST /api/collections - Create a new collection
 router.post('/', CollectionController.createCollection);
 
+// PUT /api/collections/:id - Update a collection
+router.put('/:id', CollectionController.updateCollection);
+
 // POST /api/collections/batch - Create multiple collections
 router.post('/batch', CollectionController.createCollections);
 
