@@ -75,7 +75,12 @@ src/
 │   ├── forms/ // Custom form compositions
 │   └── layout/ // Custom layout components
 ├── pages/
-│   ├── Home.tsx
+│   ├── (dashboard)
+│   │   ├── dashboard
+│   │   │   └── page.tsx
+│   │   ├── settings
+│   │   │   └── page.tsx
+│   │   └── layout.tsx
 │   ├── About.tsx
 │   └── ...
 ├── lib/
