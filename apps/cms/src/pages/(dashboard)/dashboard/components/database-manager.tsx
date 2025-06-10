@@ -21,7 +21,7 @@ export const DatabaseManager = () => {
 
   const databaseDialog = DialogCustom.useDialog();
   // Fetch collections
-  const { data: collections = [], refresh } = useRequest(collectionApi.getCollections, {
+  const { data: collections = [], refresh, loading } = useRequest(collectionApi.getCollections, {
     onSuccess: (data) => {
       // If collections exist, we can assume setup was successful
       if (data && data.length > 0) {
@@ -97,7 +97,7 @@ export const DatabaseManager = () => {
         <CollectionSetupDialog
           dialog={databaseDialog}
           collections={collections}
-          loadingCollections={!collections && refresh !== undefined}
+          loadingCollections={loading}
           onSuccess={handleCollectionSetupSuccess}
         />
       </CardContent>

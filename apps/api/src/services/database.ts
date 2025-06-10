@@ -28,7 +28,7 @@ const mapFieldToAttribute = async (field: CollectionFieldType, collectionId: str
       );
     case 'number': {
       // Determine if number is integer or float based on the default value
-      const isInteger = !defaultValue || !defaultValue?.includes('.');
+      const isInteger = (defaultValue && !isNaN(Number(defaultValue)) && Number.isInteger(Number(defaultValue)));
       if (isInteger) {
         return await databases.createIntegerAttribute(
           DATABASE_ID,

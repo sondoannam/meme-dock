@@ -64,7 +64,8 @@ export const CollectionFieldsForm = () => {
     };
 
     // Add both timestamp fields
-    append([createdAtField, updatedAtField]);
+    append(createdAtField);
+    append(updatedAtField);
   };
 
   return (
