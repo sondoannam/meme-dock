@@ -13,6 +13,7 @@ interface DialogComponent
     onConfirmDelete?: () => void;
     deleteLoading?: boolean;
     onCloseDelete?: () => void;
+    isDisableClickOutside?: boolean;
   }> {
   useDialog: typeof useDialog;
 }
@@ -26,6 +27,7 @@ export const DialogCustom: DialogComponent = ({
   onConfirmDelete,
   deleteLoading = false,
   onCloseDelete,
+  isDisableClickOutside = false,
 }) => {
   const dialogInstance = useDialog(dialog);
 
@@ -56,6 +58,7 @@ export const DialogCustom: DialogComponent = ({
       }}
       header={header}
       className={className}
+      disableClickOutside={isDisableClickOutside}
     >
       {children}
     </Modal>

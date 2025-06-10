@@ -20,6 +20,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { SmallLoading } from '@/components/custom/small-loading';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 
 interface CollectionSetupDialogProps {
   dialog: DialogInstance;
@@ -42,7 +43,7 @@ export const CollectionSetupDialog = ({
 
   const [selectedCollection, setSelectedCollection] = useState<CollectionWithId | null>(null);
   const [mode, setMode] = useState<'create' | 'update'>('create');
-
+  console.log(collections);
   const form = useForm<CollectionSchemaType>({
     resolver: zodResolver(collectionSchema) as any,
     defaultValues: {
@@ -102,53 +103,51 @@ export const CollectionSetupDialog = ({
     });
   };
 
+  const handleFieldDefaultValue = (field: CollectionFieldType) => {
+    if (field.required || field.type === 'enum' || field.type === 'datetime') {
+      return undefined;
+    }
+
+    return field.defaultValue;
+  };
+
   const onSubmit = async (data: CollectionSchemaType) => {
-    console.log('Submitting collection data:', data);
     setIsSubmitting(true);
     setError(null);
 
     try {
       if (mode === 'create') {
-        console.log('Creating new collection');
         await collectionApi.createCollection(data);
       } else if (mode === 'update' && selectedCollection) {
-        // Get the ID from the selected collection
         const collectionId =
           selectedCollection.$id || selectedCollection.id || selectedCollection.slug;
 
+        const { fields, ...restData } = data;
         const updateData: CollectionSchemaType = {
-          ...selectedCollection,
-          fields: data.fields.map((field) => ({
+          ...restData,
+          fields: fields.map((field) => ({
             ...field,
-            defaultValue: field.defaultValue !== '' ? 'null' : field.defaultValue,
+            defaultValue: handleFieldDefaultValue(field),
           })),
         };
-        console.log(data);
-        console.log('Update data:', updateData);
 
-        try {
-          // Check if updateCollection method exists
-          if (typeof collectionApi.updateCollection === 'function') {
-            console.log('Using updateCollection API method');
-            const result = await collectionApi.updateCollection(collectionId, updateData);
-            console.log('Update result:', result);
-          } else {
-            // Fallback - may need server-side implementation
-            console.warn('updateCollection method not found, using createCollection as fallback');
-            await collectionApi.createCollection(data);
-          }
-        } catch (apiError) {
-          console.error('Error calling API:', apiError);
-          throw apiError;
-        }
+        await collectionApi.updateCollection(collectionId, updateData);
       }
 
       form.reset();
       dialog.close();
       onSuccess?.([data]);
+
+      toast.success(`Collection ${mode === 'create' ? 'created' : 'updated'} successfully!`);
     } catch (err) {
       const action = mode === 'create' ? 'create' : 'update';
-      setError(err instanceof Error ? err.message : `Failed to ${action} collection`);
+      const errMsg = `Failed to ${action} collection: ${
+        err instanceof Error ? err.message : 'Unknown error'
+      }`;
+      setError(errMsg);
+      console.error('Error calling API:', err);
+      toast.error(errMsg);
+      throw err;
     } finally {
       setIsSubmitting(false);
     }
@@ -174,7 +173,12 @@ export const CollectionSetupDialog = ({
   }
 
   return (
-    <DialogCustom dialog={dialog} header="Database Collections" className="max-w-5xl">
+    <DialogCustom
+      dialog={dialog}
+      header="Database Collections"
+      className="max-w-5xl"
+      isDisableClickOutside
+    >
       <ScrollArea className="h-[80vh] pr-2.5">
         <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
           <TabsList className="grid w-full grid-cols-2">
@@ -227,7 +231,7 @@ export const CollectionSetupDialog = ({
                           {collection.description ?? 'No description provided'}
                         </p>
                         <p className="!text-sm mt-2">
-                          <span className="font-medium">{collection.fields?.length || 0}</span>{' '}
+                          <span className="font-medium">{collection.fields?.length || 0}</span>
                           attributes
                         </p>
                       </CardContent>
@@ -235,7 +239,7 @@ export const CollectionSetupDialog = ({
                   );
                 })}
               </div>
-            )}{' '}
+            )}
             {selectedCollection && (
               <Form {...form}>
                 <form
@@ -296,7 +300,7 @@ export const CollectionSetupDialog = ({
                       disabled={isSubmitting}
                     >
                       Cancel
-                    </Button>{' '}
+                    </Button>
                     <Button
                       type="submit"
                       disabled={isSubmitting}

@@ -68,7 +68,7 @@ const mapFieldToAttribute = async (field: CollectionFieldType, collectionId: str
         collectionId,
         name,
         required,
-        defaultValue ?? '',
+        defaultValue ?? undefined,
         isArray,
       );
     case 'enum':
@@ -230,6 +230,7 @@ export class CollectionService {
         response.collections.map(async (collection) => {
           // Get attributes for this collection
           const attributesResponse = await databases.listAttributes(DATABASE_ID, collection.$id);
+
           // Map attributes to our field format
           const fields = attributesResponse.attributes.map((attribute) => {
             const field: CollectionFieldType = {
@@ -251,8 +252,9 @@ export class CollectionService {
             }
 
             // Add enum values if it's an enum attribute
-            if (attribute.type === 'enum' && 'elements' in attribute) {
+            if ('format' in attribute && attribute.format === 'enum' && 'elements' in attribute) {
               field.enumValues = attribute.elements;
+              field.type = 'enum';
             }
 
             return field;
