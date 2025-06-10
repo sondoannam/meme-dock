@@ -12,7 +12,8 @@ export default defineConfig(({ mode }) => {
   // Load env file based on `mode` in the current directory
   const env = loadEnv(mode, process.cwd(), '');
 
-  // List of problematic environment variables
+  // Remove environment variables that cause build issues on Windows systems
+  // These variables contain special characters that interfere with Vite's environment processing
   const problematicEnvVars = [
     'CommonProgramFiles(x86)',
     'ProgramFiles(x86)',
@@ -36,11 +37,7 @@ export default defineConfig(({ mode }) => {
       port: 4300,
       host: 'localhost',
     },
-    plugins: [
-      react(),
-      pages('./src/pages'),
-      tailwindcss(),
-    ],
+    plugins: [react(), pages('./src/pages'), tailwindcss()],
     resolve: {
       alias: {
         '@': path.resolve(__dirname, './src'),
@@ -78,14 +75,9 @@ export default defineConfig(({ mode }) => {
     },
     define: {
       // Define process and process.env
-      'process.env': Object.entries(env).reduce((prev, [key, val]) => {
-        return {
-          ...prev,
-          [key]: val,
-        };
-      }, {}),
-      'process.env.VITE_APPWRITE_PROJECT_ID': JSON.stringify(env.VITE_APPWRITE_PROJECT_ID),
-      'process.env.VITE_APPWRITE_ENDPOINT': JSON.stringify(env.VITE_APPWRITE_ENDPOINT),
+      'process.env': Object.fromEntries(Object.entries(env)),
+      //   'process.env.VITE_APPWRITE_PROJECT_ID': JSON.stringify(env.VITE_APPWRITE_PROJECT_ID),
+      //   'process.env.VITE_APPWRITE_ENDPOINT': JSON.stringify(env.VITE_APPWRITE_ENDPOINT),
     },
     // Uncomment this if you are using workers.
     // worker: {
