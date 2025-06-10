@@ -1,6 +1,17 @@
 import { SelectOption } from '@/components/custom/basic-select';
 import { z } from 'zod';
 
+// Login form validation schema
+export const loginSchema = z.object({
+  email: z.string().min(1, 'Email is required').email('Please enter a valid email address'),
+  password: z
+    .string()
+    .min(1, 'Password is required')
+    .min(6, 'Password must be at least 6 characters'),
+});
+
+export type LoginFormData = z.infer<typeof loginSchema>;
+
 // Field types for dropdown
 export const fieldTypes: SelectOption[] = [
   { id: 'string', value: 'string', label: 'String' },

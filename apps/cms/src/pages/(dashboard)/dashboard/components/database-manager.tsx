@@ -9,7 +9,7 @@ import { CollectionSetupDialog } from './collection-setup-dialog';
 import { DialogCustom } from '@/components/custom/dialog-custom';
 import { useRequest } from 'ahooks';
 import { collectionApi } from '@/services/database';
-import { CollectionSchemaType } from '@/validators/collection-schema';
+import { CollectionSchemaType } from '@/validators';
 
 export const DatabaseManager = () => {
   const [healthStatus, setHealthStatus] = useState<'idle' | 'loading' | 'success' | 'error'>(
@@ -21,7 +21,11 @@ export const DatabaseManager = () => {
 
   const databaseDialog = DialogCustom.useDialog();
   // Fetch collections
-  const { data: collections = [], refresh, loading } = useRequest(collectionApi.getCollections, {
+  const {
+    data: collections = [],
+    refresh,
+    loading,
+  } = useRequest(collectionApi.getCollections, {
     onSuccess: (data) => {
       // If collections exist, we can assume setup was successful
       if (data && data.length > 0) {

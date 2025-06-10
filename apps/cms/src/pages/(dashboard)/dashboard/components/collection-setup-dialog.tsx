@@ -6,11 +6,7 @@ import { DialogCustom } from '@/components/custom/dialog-custom';
 import { Loader2, Plus, Save } from 'lucide-react';
 import { InputText } from '@/components/custom/form-field/input-text';
 import { CollectionFieldsForm } from './collection-fields-form';
-import {
-  CollectionFieldType,
-  CollectionSchemaType,
-  collectionSchema,
-} from '@/validators/collection-schema';
+import { CollectionFieldType, CollectionSchemaType, collectionSchema } from '@/validators';
 import { collectionApi } from '@/services/database';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Form } from '@/components/ui/form';

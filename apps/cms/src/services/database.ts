@@ -1,4 +1,4 @@
-import { CollectionSchemaType } from '@/validators/collection-schema';
+import { CollectionSchemaType } from '@/validators';
 import apiClient from '../api/api-client';
 
 // Collection API service

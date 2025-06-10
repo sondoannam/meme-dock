@@ -1,13 +1,22 @@
 import { Button } from '@/components/ui/button';
 import { useUser } from '@/lib/context/UserContext';
-import { AlertTriangleIcon, HelpCircleIcon, HomeIcon, LogOutIcon } from 'lucide-react';
+import { AlertTriangleIcon, HelpCircleIcon, HomeIcon, LogOutIcon, TimerIcon } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useEffect } from 'react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { useCountdown } from '@/hooks/use-countdown';
 
 export function Component() {
   const navigate = useNavigate();
   const location = useLocation();
   const { logout, user, checkAdminAccess } = useUser();
+  // Setup auto-logout countdown (5 seconds)
+  const { seconds } = useCountdown({
+    startSeconds: 5,
+    onComplete: () => {
+      void handleLogout();
+    },
+  });
 
   // Try to check admin access again when the component mounts
   // This allows for handling cases where permissions might have changed
@@ -25,10 +34,9 @@ export function Component() {
 
   const handleLogout = async () => {
     await logout();
-    navigate('/login');
+    navigate('/login', { state: { autoLogout: true } });
   }; // Attempt to get information about the page they were trying to access
   const attemptedPath = (location.state as { from?: string })?.from;
-
   return (
     <div className="flex flex-col items-center justify-center min-h-screen p-4 bg-background">
       <div className="w-full max-w-md p-8 space-y-6 bg-card rounded-lg shadow-lg">
@@ -38,6 +46,14 @@ export function Component() {
           </div>
 
           <h1 className="text-2xl font-bold text-foreground">Access Denied</h1>
+
+          <Alert variant="destructive" className="mb-4">
+            <TimerIcon className="h-4 w-4" />
+            <AlertTitle>Automatic Logout</AlertTitle>
+            <AlertDescription>
+              You will be logged out in {seconds} {seconds === 1 ? 'second' : 'seconds'}.
+            </AlertDescription>
+          </Alert>
 
           <div className="space-y-2">
             <p className="text-muted-foreground">

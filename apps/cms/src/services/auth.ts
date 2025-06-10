@@ -84,7 +84,9 @@ export const AuthService = {
       console.error('Failed to check team membership:', error);
       return false;
     }
-  }, // Get JWT token for API authorization with admin status
+  }, 
+  
+  // Get JWT token for API authorization with admin status
   async getJWT(): Promise<string> {
     try {
       // Check if we already have a valid token in storage
@@ -115,7 +117,9 @@ export const AuthService = {
       console.error('Failed to create JWT:', error);
       throw error;
     }
-  }, // Logout current user
+  }, 
+  
+  // Logout current user
   async logout(): Promise<void> {
     try {
       try {

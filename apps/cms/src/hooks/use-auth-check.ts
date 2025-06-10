@@ -15,8 +15,8 @@ interface UseAuthCheckOptions {
  * Hook for performing common authentication checks in components and layouts
  */
 export function useAuthCheck({
-  requireAuth = false,
-  requireAdmin = false,
+  requireAuth = true,
+  requireAdmin = true,
   redirectTo = '/login',
   redirectIfAuthenticated = false,
   redirectIfAuthenticated_To = '/dashboard',
