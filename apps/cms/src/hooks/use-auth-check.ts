@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useUser } from '@/lib/context/UserContext';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { ROUTE_PATH } from '@/constants/routes';
 
 interface UseAuthCheckOptions {
   requireAuth?: boolean;
@@ -17,9 +18,9 @@ interface UseAuthCheckOptions {
 export function useAuthCheck({
   requireAuth = true,
   requireAdmin = true,
-  redirectTo = '/login',
+  redirectTo = ROUTE_PATH.LOGIN,
   redirectIfAuthenticated = false,
-  redirectIfAuthenticated_To = '/dashboard',
+  redirectIfAuthenticated_To = ROUTE_PATH.DASHBOARD,
   storeRedirectPath = true,
 }: UseAuthCheckOptions = {}) {
   const { isAuthenticated, isAdmin, isLoading } = useUser();

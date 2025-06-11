@@ -1,4 +1,4 @@
-import apiClient from '../api/api-client';
+import apiClient from './api-client';
 
 // Auth API service for checking authentication status
 export const authApi = {

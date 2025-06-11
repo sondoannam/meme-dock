@@ -1,3 +1,4 @@
+import { ROUTE_PATH } from '@/constants/routes';
 import { RouteObject } from 'react-router-dom';
 
 /**
@@ -25,18 +26,19 @@ interface RoutePatternConfig {
 
 // Route protection configuration reference
 // These are now handled by their respective layout components
+
 export const routeProtectionConfig: RoutePatternConfig[] = [
   // Public routes - no authentication required
-  { pattern: '/login', requireAuth: false, requireAdmin: false },
-  { pattern: '/unauthorized', requireAuth: false, requireAdmin: false },
+  { pattern: ROUTE_PATH.LOGIN, requireAuth: false, requireAdmin: false },
+  { pattern: ROUTE_PATH.UNAUTHORIZED, requireAuth: false, requireAdmin: false },
   { pattern: '/reset-password', requireAuth: false, requireAdmin: false },
   { pattern: '/register', requireAuth: false, requireAdmin: false },
 
   // Dashboard and admin routes - require authentication and admin role
-  { pattern: '/dashboard', requireAuth: true, requireAdmin: true },
-  { pattern: '/media', requireAuth: true, requireAdmin: true },
-  { pattern: '/users', requireAuth: true, requireAdmin: true },
-  { pattern: '/settings', requireAuth: true, requireAdmin: true },
+  { pattern: ROUTE_PATH.DASHBOARD, requireAuth: true, requireAdmin: true },
+  { pattern: ROUTE_PATH.MEDIA, requireAuth: true, requireAdmin: true },
+  { pattern: ROUTE_PATH.USERS, requireAuth: true, requireAdmin: true },
+  { pattern: ROUTE_PATH.SETTINGS, requireAuth: true, requireAdmin: true },
   { pattern: '/collections', requireAuth: true, requireAdmin: true },
 
   // Non-admin authenticated routes

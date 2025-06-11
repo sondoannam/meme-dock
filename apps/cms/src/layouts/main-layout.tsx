@@ -1,11 +1,9 @@
 import { ModeToggle } from '@/components/mode-toggle';
 import { Separator } from '@/components/ui/separator';
-import { SidebarInset, SidebarTrigger, useSidebar } from '@/components/ui/sidebar';
+import { SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 import { Outlet } from 'react-router-dom';
 
 const MainLayout = () => {
-  const { open } = useSidebar();
-
   return (
     <SidebarInset>
       <section className="w-full">

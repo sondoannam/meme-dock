@@ -3,8 +3,9 @@ import { AppwriteException } from 'appwrite';
 import { client } from '@/lib/appwrite';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { DatabaseZap, Activity, Loader2 } from 'lucide-react';
+import { DatabaseZap, Activity } from 'lucide-react';
 import { StatusMessage } from './status-message';
+import { InlineLoading } from '@/components/custom/loading';
 import { CollectionSetupDialog } from './collection-setup-dialog';
 import { DialogCustom } from '@/components/custom/dialog-custom';
 import { useRequest } from 'ahooks';
@@ -75,25 +76,25 @@ export const DatabaseManager = () => {
             variant="outline"
           >
             {healthStatus === 'loading' ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
+              <InlineLoading size="sm" />
             ) : (
               <Activity className="h-4 w-4" />
             )}
             Check Database Health
-          </Button>{' '}
+          </Button>
           <Button
             onClick={() => databaseDialog.open()}
             disabled={setupStatus === 'loading'}
             className="flex items-center gap-2"
           >
             {setupStatus === 'loading' ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
+              <InlineLoading size="sm" />
             ) : (
               <DatabaseZap className="h-4 w-4" />
             )}
             Setup Database Collections
           </Button>
-        </div>{' '}
+        </div>
         {/* Status messages */}
         <StatusMessage status={healthStatus} message={healthMessage} />
         <StatusMessage status={setupStatus} message={setupMessage} />

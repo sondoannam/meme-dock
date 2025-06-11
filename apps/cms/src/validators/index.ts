@@ -7,7 +7,11 @@ export const loginSchema = z.object({
   password: z
     .string()
     .min(1, 'Password is required')
-    .min(6, 'Password must be at least 6 characters'),
+    .min(8, 'Password must be at least 8 characters')
+    .regex(
+      /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[^\da-zA-Z]).+$/,
+      'Password must contain at least one number, lowercase letter, uppercase letter, and special character',
+    ),
 });
 
 export type LoginFormData = z.infer<typeof loginSchema>;

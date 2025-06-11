@@ -5,12 +5,13 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useEffect } from 'react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useCountdown } from '@/hooks/use-countdown';
+import { ROUTE_PATH } from '@/constants/routes';
 
 export function Component() {
   const navigate = useNavigate();
   const location = useLocation();
   const { logout, user, checkAdminAccess } = useUser();
-  // Setup auto-logout countdown (5 seconds)
+
   const { seconds } = useCountdown({
     startSeconds: 5,
     onComplete: () => {
@@ -18,14 +19,12 @@ export function Component() {
     },
   });
 
-  // Try to check admin access again when the component mounts
-  // This allows for handling cases where permissions might have changed
   useEffect(() => {
     const verifyAccess = async () => {
       const hasAccess = await checkAdminAccess();
       // If they now have access, navigate to dashboard
       if (hasAccess) {
-        navigate('/dashboard');
+        navigate(ROUTE_PATH.DASHBOARD);
       }
     };
 
@@ -33,10 +32,18 @@ export function Component() {
   }, [checkAdminAccess, navigate]);
 
   const handleLogout = async () => {
-    await logout();
-    navigate('/login', { state: { autoLogout: true } });
-  }; // Attempt to get information about the page they were trying to access
+    try {
+      await logout();
+    } catch (error) {
+      console.error('Logout failed:', error);
+      // Navigate anyway as a fallback
+    } finally {
+      navigate('/login', { state: { autoLogout: true } });
+    }
+  };
+
   const attemptedPath = (location.state as { from?: string })?.from;
+
   return (
     <div className="flex flex-col items-center justify-center min-h-screen p-4 bg-background">
       <div className="w-full max-w-md p-8 space-y-6 bg-card rounded-lg shadow-lg">
@@ -77,7 +84,7 @@ export function Component() {
 
         <div className="flex flex-col space-y-3">
           <Button
-            onClick={() => navigate('/')}
+            onClick={() => navigate(ROUTE_PATH.HOME)}
             variant="outline"
             className="w-full flex items-center justify-center gap-2"
           >

@@ -27,13 +27,13 @@ export const AuthService = {
   async login(email: string, password: string): Promise<User | null> {
     try {
       // Create email session (log in)
-      await account.createSession(email, password);
+      await account.createEmailPasswordSession(email, password);
 
       // Get account information
       const accountInfo = await account.get();
 
       // Check if user is in admin team
-      const isAdmin = await this.checkAdminTeamMembership();
+      const isAdmin = await this.checkAdminTeamMembership(accountInfo.$id);
 
       return {
         $id: accountInfo.$id,
@@ -51,7 +51,7 @@ export const AuthService = {
   async getCurrentUser(): Promise<User | null> {
     try {
       const accountInfo = await account.get();
-      const isAdmin = await this.checkAdminTeamMembership();
+      const isAdmin = await this.checkAdminTeamMembership(accountInfo.$id);
 
       return {
         $id: accountInfo.$id,
@@ -66,19 +66,16 @@ export const AuthService = {
   },
 
   // Check if current user is in admin team
-  async checkAdminTeamMembership(): Promise<boolean> {
+  async checkAdminTeamMembership(userId: string): Promise<boolean> {
     if (!ADMIN_TEAM_ID) return false;
 
     try {
       const teams = new Teams(client);
       const membershipsList = await teams.listMemberships(ADMIN_TEAM_ID);
 
-      // Get current account details to compare with team memberships
-      const currentUser = await account.get();
-
       // Check if user ID exists in admin team memberships
       return membershipsList.memberships.some(
-        (membership) => membership.userId === currentUser.$id,
+        (membership) => membership.userId === userId,
       );
     } catch (error) {
       console.error('Failed to check team membership:', error);
@@ -135,11 +132,15 @@ export const AuthService = {
       TokenService.clearToken();
 
       // Clear any cookies that might store authentication data
-      document.cookie.split(';').forEach((cookie) => {
-        const [name] = cookie.trim().split('=');
-        if (name && (name.includes('auth') || name.includes('token') || name.includes('session'))) {
-          document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/;`;
-        }
+      // Clear specific known authentication cookies
+      const authCookieNames = [
+        'a_session_console', // Appwrite session cookie
+        'a_session_console_legacy',
+        // Add other specific cookie names as needed
+      ];
+
+      authCookieNames.forEach((cookieName) => {
+        document.cookie = `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=${window.location.hostname}`;
       });
 
       console.log('User logged out successfully');

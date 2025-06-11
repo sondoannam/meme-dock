@@ -1,6 +1,8 @@
-import React, { ReactNode, useEffect } from 'react';
+import { ReactNode, useEffect } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useUser } from '../../lib/context/UserContext';
+import { ROUTE_PATH } from '@/constants/routes';
+import { PageLoading } from '@/components/custom/loading';
 
 interface ProtectedRouteProps {
   children: ReactNode;
@@ -24,27 +26,18 @@ export function ProtectedRoute({ children, requireAdmin = false }: ProtectedRout
       });
     }
   }, [isAuthenticated, requireAdmin, checkAdminAccess, location.pathname]);
-
   // Show loading indicator while checking authentication
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="text-center">
-          <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Verifying authentication...</p>
-        </div>
-      </div>
-    );
+    return <PageLoading message="Verifying authentication..." />;
   }
-
   // Check if user is authenticated
   if (!isAuthenticated) {
     // Redirect to login page, but remember where they were trying to go
-    return <Navigate to="/login" state={{ from: location.pathname }} replace />;
+    return <Navigate to={ROUTE_PATH.LOGIN} state={{ from: location.pathname }} replace />;
   }
   // If admin access is required, check for admin role
   if (requireAdmin && !isAdmin) {
-    return <Navigate to="/unauthorized" state={{ from: location.pathname }} replace />;
+    return <Navigate to={ROUTE_PATH.UNAUTHORIZED} state={{ from: location.pathname }} replace />;
   }
   // If all checks pass, render the child routes
   return children;

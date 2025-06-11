@@ -24,4 +24,8 @@ const client = new Client()
 const databases = new Databases(client);
 const DATABASE_ID = APPWRITE_DATABASE_ID ?? 'default';
 
-export { client, databases, DATABASE_ID, ID, Permission, Role, Teams };
+const clientBase = new Client()
+    .setEndpoint(APPWRITE_ENDPOINT)
+    .setProject(APPWRITE_PROJECT_ID);
+
+export { client, databases, DATABASE_ID, ID, Permission, Role, Teams, clientBase };

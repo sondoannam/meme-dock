@@ -1,8 +1,10 @@
 import { Suspense, useEffect } from 'react';
-import { Outlet, useLocation } from 'react-router-dom';
+import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useUser } from '@/lib/context/UserContext';
 import { TokenService } from '@/services/token';
 import { TokenRefreshService } from '@/services/token-refresh';
+import { ROUTE_PATH } from '@/constants/routes';
+import { PageLoading } from '@/components/custom/loading';
 
 /**
  * Root layout component that wraps all routes
@@ -11,6 +13,7 @@ import { TokenRefreshService } from '@/services/token-refresh';
 export function Component() {
   const { isAuthenticated, isLoading } = useUser();
   const location = useLocation();
+  const navigate = useNavigate();
 
   // Initialize token refresh service when user is authenticated
   useEffect(() => {
@@ -30,7 +33,10 @@ export function Component() {
 
   // Effect to check token validity on location changes
   useEffect(() => {
-    // If the user is authenticated, validate token on each route change
+    if (!isAuthenticated && !isLoading) {
+      navigate(ROUTE_PATH.LOGIN);
+    }
+
     if (isAuthenticated && !isLoading) {
       // If token is expired or invalid, TokenService will handle token refresh
       if (TokenService.isTokenExpired()) {
@@ -38,19 +44,11 @@ export function Component() {
         TokenRefreshService.checkAndRefreshToken();
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.pathname, isAuthenticated, isLoading]);
 
   return (
-    <Suspense
-      fallback={
-        <div className="flex items-center justify-center h-screen">
-          <div className="text-center">
-            <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
-            <p className="text-muted-foreground">Loading application...</p>
-          </div>
-        </div>
-      }
-    >
+    <Suspense fallback={<PageLoading message="Loading application..." />}>
       <Outlet />
     </Suspense>
   );

@@ -5,6 +5,7 @@ import { TokenService } from '../services/token';
 // import { toast } from '@/components/ui/use-toast';
 
 const API_URL = process.env.VITE_API_URL ?? 'http://localhost:3001/api';
+console.log(`API URL: ${API_URL}`);
 
 // Create axios instance with default config
 const apiClient = axios.create({
@@ -14,6 +15,7 @@ const apiClient = axios.create({
   },
 });
 
+let tokenRefreshPromise: Promise<string> | null = null;
 // Add request interceptor to include JWT token
 apiClient.interceptors.request.use(
   async (config) => {
@@ -23,7 +25,11 @@ apiClient.interceptors.request.use(
 
       // If token is expired or not found, request a new one
       if (!token || TokenService.isTokenExpired()) {
-        token = await AuthService.getJWT();
+        if (!tokenRefreshPromise) {
+          tokenRefreshPromise = AuthService.getJWT();
+        }
+        token = await tokenRefreshPromise;
+        tokenRefreshPromise = null;
       }
 
       if (token) {
@@ -31,6 +37,7 @@ apiClient.interceptors.request.use(
       }
     } catch (error) {
       console.error('Error adding JWT to request:', error);
+      tokenRefreshPromise = null;
       // If we can't get a token, continue with the request anyway
       // The API will reject it if authentication is required
     }
@@ -54,11 +61,14 @@ apiClient.interceptors.response.use(
 
     // Handle authentication errors
     if (statusCode === 401 || statusCode === 403) {
-      // Clear token if it's invalid or expired
+      // Clear token for all auth errors, or check specific error codes
+      const errorCode = response?.data?.code;
       if (
-        message.includes('invalid token') ||
-        message.includes('expired') ||
-        message.includes('Authentication required')
+        statusCode === 401 ||
+        errorCode === 'INVALID_TOKEN' ||
+        errorCode === 'TOKEN_EXPIRED' ||
+        message.toLowerCase().includes('token') ||
+        message.toLowerCase().includes('authentication')
       ) {
         TokenService.clearToken();
 

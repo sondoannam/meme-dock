@@ -3,6 +3,8 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useUser } from '@/lib/context/UserContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { ROUTE_PATH } from '@/constants/routes';
+import { InlineLoading } from '@/components/custom/loading';
 import {
   Card,
   CardContent,
@@ -13,15 +15,10 @@ import {
 } from '@/components/ui/card';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
+import { Form } from '@/components/ui/form';
 import { LoginFormData, loginSchema } from '@/validators';
+import { InputText } from '@/components/custom/form-field/input-text';
+import { InputPassword } from '@/components/custom/form-field/input-password';
 
 interface LocationState {
   from?: string;
@@ -30,10 +27,9 @@ interface LocationState {
 export function Component() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { login, isLoading, isAuthenticated } = useUser();
-  // Get the redirect path and other state from location
+  const { login, isAuthenticated } = useUser(); // Get the redirect path and other state from location
   const locationState = location.state as LocationState & { autoLogout?: boolean };
-  const from = locationState?.from ?? '/dashboard';
+  const from = locationState?.from ?? ROUTE_PATH.DASHBOARD;
   const wasAutoLogout = locationState?.autoLogout;
 
   // Initialize form with react-hook-form and zod validation
@@ -85,7 +81,7 @@ export function Component() {
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)}>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-4 mb-5">
               {wasAutoLogout && (
                 <div className="p-3 bg-yellow-500/10 rounded-md text-center text-sm text-yellow-700 border border-yellow-200">
                   You've been automatically logged out due to insufficient permissions.
@@ -98,44 +94,28 @@ export function Component() {
                 </div>
               )}
 
-              <FormField
+              <InputText
                 control={form.control}
                 name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Email</FormLabel>
-                    <FormControl>
-                      <Input placeholder="name@example.com" type="email" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
+                label="Email"
+                placeholder="name@example.com"
+                type="email"
+                autoComplete="email"
               />
 
-              <FormField
+              <InputPassword
                 control={form.control}
                 name="password"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Password</FormLabel>
-                    <FormControl>
-                      <Input type="password" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
+                label="Password"
+                placeholder="Enter your password"
               />
             </CardContent>
 
             <CardFooter>
-              <Button
-                type="submit"
-                className="w-full"
-                disabled={isLoading || form.formState.isSubmitting}
-              >
-                {isLoading ? (
+              <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
+                {form.formState.isSubmitting ? (
                   <div className="flex items-center justify-center">
-                    <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-background border-t-transparent"></div>
+                    <InlineLoading size="sm" className="mr-2" />
                     <span>Signing in...</span>
                   </div>
                 ) : (
