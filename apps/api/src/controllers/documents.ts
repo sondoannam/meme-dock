@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { DocumentService } from '../services/document.service';
+import { DocumentService } from '../services';
 import { DocumentIncreaseTimePeriod } from '../models/document-analytics';
 
 /**

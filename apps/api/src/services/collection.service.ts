@@ -1,11 +1,11 @@
-import { databases, DATABASE_ID, ID, Permission, Role } from '../config/appwrite';
+import { databases, DATABASE_ID, ID } from '../config/appwrite';
 import { RelationshipType } from 'node-appwrite';
 import { CollectionSchemaType, CollectionFieldType } from '../models/collection-schema';
 
 /**
  * Helper to map our field schema to Appwrite attributes
  */
-const mapFieldToAttribute = async (field: CollectionFieldType, collectionId: string) => {
+export const mapFieldToAttribute = async (field: CollectionFieldType, collectionId: string) => {
   const {
     name,
     type,
@@ -70,12 +70,12 @@ const mapFieldToAttribute = async (field: CollectionFieldType, collectionId: str
         collectionId,
         name,
         required,
-        defaultValue ?? undefined,
+        defaultValue,
         isArray,
       );
     case 'enum':
-      if (!enumValues || enumValues.length === 0) {
-        throw new Error(`Enum values are required for field: ${name}`);
+      if (!enumValues?.length) {
+        throw new Error('Enum values are required for enum fields');
       }
       return await databases.createEnumAttribute(
         DATABASE_ID,
@@ -83,19 +83,18 @@ const mapFieldToAttribute = async (field: CollectionFieldType, collectionId: str
         name,
         enumValues,
         required,
-        defaultValue ?? undefined,
+        defaultValue,
         isArray,
       );
     case 'relation':
       if (!relationCollection) {
-        throw new Error(`Relation collection is required for field: ${name}`);
-      } // Using node-appwrite v17.0.0
-      // Let's simplify by removing optional parameters that are causing issues
+        throw new Error('Relation collection is required for relation fields');
+      }
       return await databases.createRelationshipAttribute(
         DATABASE_ID,
         collectionId,
-        name,
-        relationCollection as RelationshipType,
+        relationCollection,
+        RelationshipType.ManyToOne, // Default to many-to-one
       );
     default:
       throw new Error(`Unsupported field type: ${type}`);
@@ -103,215 +102,203 @@ const mapFieldToAttribute = async (field: CollectionFieldType, collectionId: str
 };
 
 /**
- * Service for managing Appwrite database collections
+ * Map Appwrite attribute types to our field types
+ * @param appwriteType Appwrite attribute type
+ * @returns Mapped field type
  */
-export class CollectionService {
-  /**
-   * Get all collections in the database
-   * @returns Array of collection schemas
-   */
-  static async getCollections(): Promise<CollectionSchemaType[]> {
-    try {
-      // Fetch collections from Appwrite
-      const response = await databases.listCollections(DATABASE_ID);
+export function mapAppwriteTypeToFieldType(appwriteType: string): string {
+  const typeMap: Record<string, string> = {
+    string: 'string',
+    integer: 'number',
+    double: 'number',
+    boolean: 'boolean',
+    datetime: 'datetime',
+    relationship: 'relation',
+    enum: 'enum',
+    // Add more mappings as needed
+  };
 
-      // Map Appwrite collections to our schema format
-      const collections: CollectionSchemaType[] = await Promise.all(
-        response.collections.map(async (collection) => {
-          // Get attributes for this collection
-          const attributesResponse = await databases.listAttributes(DATABASE_ID, collection.$id);
+  return typeMap[appwriteType] || 'string';
+}
 
-          // Map attributes to our field format
-          const fields = attributesResponse.attributes.map((attribute) => {
-            const field: CollectionFieldType = {
-              name: attribute.key,
-              type: this.mapAppwriteTypeToFieldType(attribute.type),
-              required: attribute.required,
-              isArray: attribute.array || false,
-              description: '',
-            };
+/**
+ * Get all collections in the database
+ * @returns Array of collection schemas
+ */
+export async function getCollections(): Promise<CollectionSchemaType[]> {
+  try {
+    // Fetch collections from Appwrite
+    const response = await databases.listCollections(DATABASE_ID);
 
-            // Add default value if it exists (not all attribute types have default values)
-            if ('default' in attribute && attribute.default !== undefined) {
-              field.defaultValue = String(attribute.default);
+    // Map API response to our schema format
+    const collections = await Promise.all(
+      response.collections.map(async (collection) => {
+        // Fetch attributes (fields) for this collection
+        const attributesResponse = await databases.listAttributes(DATABASE_ID, collection.$id);
+
+        // Map attributes to our field format
+        const fields = attributesResponse.attributes.map((attr) => {
+          const field: CollectionFieldType = {
+            name: attr.key,
+            type: mapAppwriteTypeToFieldType(attr.type),
+            required: attr.required,
+            isArray: attr.array || false,
+          }; // Handle special attributes
+          if (attr.type === 'enum') {
+            const enumAttr = attr as any; // Type cast to access enum-specific properties
+            if (enumAttr.elements) {
+              field.enumValues = enumAttr.elements;
             }
+          }
 
-            // Add relation collection if it's a relationship attribute
-            if (attribute.type === 'relationship' && 'relatedCollection' in attribute) {
-              field.relationCollection = attribute.relatedCollection;
+          if (attr.type === 'relationship') {
+            const relationAttr = attr as any; // Type cast to access relationship-specific properties
+            if (relationAttr.relatedCollection) {
+              field.relationCollection = relationAttr.relatedCollection;
             }
+          }
 
-            // Add enum values if it's an enum attribute
-            if ('format' in attribute && attribute.format === 'enum' && 'elements' in attribute) {
-              field.enumValues = attribute.elements;
-              field.type = 'enum';
-            }
+          return field;
+        });
 
-            return field;
-          });
+        return {
+          name: collection.name,
+          slug: collection.$id,
+          description: collection.name, // Appwrite doesn't have a built-in description field
+          fields: fields,
+        };
+      }),
+    );
 
-          return {
-            name: collection.name,
-            slug: collection.$id,
-            description: collection.name, // Appwrite doesn't have a built-in description field
-            fields: fields,
-          };
-        }),
-      );
-
-      return collections;
-    } catch (error) {
-      console.error('Error fetching collections:', error);
-      throw error;
-    }
+    return collections;
+  } catch (error) {
+    console.error('Error fetching collections:', error);
+    throw error;
   }
+}
 
-  /**
-   * Map Appwrite attribute types to our field types
-   * @param appwriteType Appwrite attribute type
-   * @returns Mapped field type
-   */
-  private static mapAppwriteTypeToFieldType(appwriteType: string): string {
-    const typeMap: Record<string, string> = {
-      string: 'string',
-      integer: 'number',
-      double: 'number',
-      boolean: 'boolean',
-      datetime: 'datetime',
-      relationship: 'relation',
-      enum: 'enum',
-      // Add more mappings as needed
-    };
+/**
+ * Create a new collection
+ * @param collection Collection schema to create
+ * @returns Created collection schema
+ */
+export async function createCollection(
+  collection: CollectionSchemaType,
+): Promise<CollectionSchemaType> {
+  try {
+    // Create collection in Appwrite
+    const createdCollection = await databases.createCollection(
+      DATABASE_ID,
+      ID.unique(),
+      collection.name,
+    );
 
-    return typeMap[appwriteType] || 'string';
-  }
-
-  /**
-   * Create a new collection
-   * @param collection Collection schema to create
-   * @returns Created collection schema
-   */
-  static async createCollection(collection: CollectionSchemaType): Promise<CollectionSchemaType> {
-    try {
-      // Create the collection in Appwrite
-      const collectionId = ID.unique();
-      const createdCollection = await databases.createCollection(
-        DATABASE_ID,
-        collectionId,
-        collection.name,
-        [
-          Permission.read(Role.any()), // Public read access
-          Permission.write(Role.team('admin')), // Admin team write access
-        ],
-        false, // documentSecurity (false = collection-level permissions)
-      );
-
-      // Create attributes for each field
+    // Add fields as attributes
+    if (collection.fields && collection.fields.length > 0) {
       for (const field of collection.fields) {
         await mapFieldToAttribute(field, createdCollection.$id);
       }
-
-      // Return the created collection with our schema format
-      return {
-        ...collection,
-        slug: createdCollection.$id,
-      };
-    } catch (error) {
-      console.error('Error creating collection:', error);
-      throw error;
     }
+
+    // Return the created collection with the assigned ID
+    return {
+      ...collection,
+      slug: createdCollection.$id,
+    };
+  } catch (error) {
+    console.error(`Error creating collection ${collection.name}:`, error);
+    throw error;
   }
+}
 
-  /**
-   * Update an existing collection
-   * @param collectionId ID of the collection to update
-   * @param collection Updated collection schema
-   * @returns Updated collection schema
-   */
-  static async updateCollection(
-    collectionId: string,
-    collection: CollectionSchemaType,
-  ): Promise<CollectionSchemaType> {
+/**
+ * Update an existing collection
+ * @param collectionId ID of the collection to update
+ * @param collection Updated collection schema
+ * @returns Updated collection schema
+ */
+export async function updateCollection(
+  collectionId: string,
+  collection: CollectionSchemaType,
+): Promise<CollectionSchemaType> {
+  try {
+    // Verify collection exists
     try {
-      // First, get the existing collection to check if it exists
-      try {
-        await databases.getCollection(DATABASE_ID, collectionId);
-      } catch (e) {
-        console.error(`Failed to get collection:`, e);
-        throw new Error(
-          `Collection with ID ${collectionId} not found: ${
-            e instanceof Error ? e.message : String(e)
-          }`,
-        );
-      }
+      await databases.getCollection(DATABASE_ID, collectionId);
+    } catch (e) {
+      throw new Error(`Collection with ID ${collectionId} not found: ${(e as Error).message}`);
+    }
 
-      // Update collection metadata
+    // Update collection name
+    if (collection.name) {
       await databases.updateCollection(DATABASE_ID, collectionId, collection.name);
+    }
 
-      // Get existing attributes
-      const attributesResponse = await databases.listAttributes(DATABASE_ID, collectionId);
-      const existingAttributes = attributesResponse.attributes;
+    // Get existing attributes
+    const attributesResponse = await databases.listAttributes(DATABASE_ID, collectionId);
+    const existingAttributes = attributesResponse.attributes;
+    const existingAttributesMap = new Map();
 
-      // Create a map of existing attributes by key
-      const existingAttributesMap = new Map();
-      existingAttributes.forEach((attr) => {
-        existingAttributesMap.set(attr.key, attr);
-      });
+    existingAttributes.forEach((attr) => {
+      existingAttributesMap.set(attr.key, attr);
+    });
 
-      // Process each field in the updated collection
+    // Process fields
+    if (collection.fields && collection.fields.length > 0) {
       for (const field of collection.fields) {
+        // If field already exists, skip it
         if (existingAttributesMap.has(field.name)) {
-          // Field already exists, but we can't modify the field type in most cases
-          // We would need to delete and recreate it, which can cause data loss
           console.log(`Field ${field.name} already exists, skipping modification`);
         } else {
-          // New field, create it
+          // Add new field
           await mapFieldToAttribute(field, collectionId);
         }
       }
-
-      // Return the updated collection
-      return {
-        ...collection,
-        slug: collectionId,
-      };
-    } catch (error) {
-      console.error('Error updating collection:', error);
-      throw error;
     }
+
+    // Return updated collection
+    return {
+      ...collection,
+      slug: collectionId,
+    };
+  } catch (error) {
+    console.error(`Error updating collection ${collectionId}:`, error);
+    throw error;
   }
+}
 
-  /**
-   * Create multiple collections (for batch setup)
-   * @param collections Array of collection schemas
-   * @returns Array of created collection schemas
-   */
-  static async createCollections(
-    collections: CollectionSchemaType[],
-  ): Promise<CollectionSchemaType[]> {
-    try {
-      const createdCollections = [];
-      for (const collection of collections) {
-        const created = await this.createCollection(collection);
-        createdCollections.push(created);
-      }
-      return createdCollections;
-    } catch (error) {
-      console.error('Error creating multiple collections:', error);
-      throw error;
+/**
+ * Create multiple collections in batch
+ * @param collections Array of collection schemas to create
+ * @returns Array of created collection schemas
+ */
+export async function createCollections(
+  collections: CollectionSchemaType[],
+): Promise<CollectionSchemaType[]> {
+  try {
+    const createdCollections = [];
+
+    for (const collection of collections) {
+      const created = await createCollection(collection);
+      createdCollections.push(created);
     }
+
+    return createdCollections;
+  } catch (error) {
+    console.error('Error creating multiple collections:', error);
+    throw error;
   }
+}
 
-  /**
-   * Delete a collection
-   * @param collectionId ID of the collection to delete
-   */
-  static async deleteCollection(collectionId: string): Promise<void> {
-    try {
-      await databases.deleteCollection(DATABASE_ID, collectionId);
-    } catch (error) {
-      console.error('Error deleting collection:', error);
-      throw error;
-    }
+/**
+ * Delete a collection
+ * @param collectionId ID of the collection to delete
+ */
+export async function deleteCollection(collectionId: string): Promise<void> {
+  try {
+    await databases.deleteCollection(DATABASE_ID, collectionId);
+  } catch (error) {
+    console.error(`Error deleting collection ${collectionId}:`, error);
+    throw error;
   }
 }

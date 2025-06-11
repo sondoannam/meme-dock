@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { CollectionService } from '../services/collection.service';
+import { CollectionService } from '../services';
 import { CollectionSchemaType } from '../models/collection-schema';
 
 /**
