@@ -1,6 +1,6 @@
 // filepath: d:\work\sondoannam\hobbies\meme-dock\apps\api\src\middleware\auth.middleware.ts
 import { Request, Response, NextFunction } from 'express';
-import { client, clientBase, Teams } from '../config/appwrite';
+import { client, createBaseClient, Teams } from '../config/appwrite';
 import { Account } from 'node-appwrite';
 
 // Environment variables
@@ -46,7 +46,7 @@ export async function adminAuth(req: Request, res: Response, next: NextFunction)
 
     try {
       // Create a client-side instance of Appwrite
-      const clientJWT = clientBase.setJWT(token);
+      const clientJWT = createBaseClient().setJWT(token);
 
       const account = new Account(clientJWT);
 

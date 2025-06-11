@@ -88,7 +88,7 @@ export const collectionSchema = z.object({
   slug: z
     .string()
     .min(1, 'Collection slug is required')
-    .regex(/^[a-z0-9]+$/, 'Slug must contain only lowercase letters and numbers'),
+    .regex(/^[a-z0-9]+(-[a-z0-9]+)*$/, 'Slug may contain lowercase letters, numbers and hyphens'),
   description: z.string().optional(),
   fields: z.array(collectionFieldSchema).min(1, 'Collection must have at least one field'),
 });

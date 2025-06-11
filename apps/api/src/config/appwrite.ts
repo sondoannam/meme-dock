@@ -24,8 +24,8 @@ const client = new Client()
 const databases = new Databases(client);
 const DATABASE_ID = APPWRITE_DATABASE_ID ?? 'default';
 
-const clientBase = new Client()
-    .setEndpoint(APPWRITE_ENDPOINT)
-    .setProject(APPWRITE_PROJECT_ID);
+// Only export a factory so every consumer gets an isolated client
+const createBaseClient = () =>
+  new Client().setEndpoint(APPWRITE_ENDPOINT).setProject(APPWRITE_PROJECT_ID);
 
-export { client, databases, DATABASE_ID, ID, Permission, Role, Teams, clientBase };
+export { client, databases, DATABASE_ID, ID, Permission, Role, Teams, createBaseClient };
