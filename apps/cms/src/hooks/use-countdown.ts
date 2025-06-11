@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 
 interface UseCountdownOptions {
   startSeconds: number;
@@ -11,6 +11,9 @@ export const useCountdown = ({
   onComplete,
   autoStart = true,
 }: UseCountdownOptions) => {
+  const onCompleteRef = useRef(onComplete);
+  onCompleteRef.current = onComplete;
+
   const [seconds, setSeconds] = useState(startSeconds);
   const [isActive, setIsActive] = useState(autoStart);
 
@@ -35,7 +38,7 @@ export const useCountdown = ({
         setSeconds((prevSeconds) => {
           if (prevSeconds <= 1) {
             clearInterval(intervalId as NodeJS.Timeout);
-            onComplete?.();
+            onCompleteRef.current?.();
             return 0;
           }
           return prevSeconds - 1;
@@ -48,7 +51,7 @@ export const useCountdown = ({
     return () => {
       if (intervalId) clearInterval(intervalId);
     };
-  }, [isActive, onComplete]);
+  }, [isActive]);
 
   return {
     seconds,
