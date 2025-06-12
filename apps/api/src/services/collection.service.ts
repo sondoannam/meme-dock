@@ -37,9 +37,9 @@ export const mapFieldToAttribute = async (field: CollectionFieldType, collection
           collectionId,
           name,
           required,
-          defaultValue ? parseInt(defaultValue) : undefined,
           undefined, // min
           undefined, // max
+          defaultValue ? parseInt(defaultValue) : undefined,
           isArray,
         );
       } else {
@@ -48,9 +48,9 @@ export const mapFieldToAttribute = async (field: CollectionFieldType, collection
           collectionId,
           name,
           required,
-          defaultValue ? parseFloat(defaultValue) : undefined,
           undefined, // min
           undefined, // max
+          defaultValue ? parseFloat(defaultValue) : undefined,
           isArray,
         );
       }
@@ -95,6 +95,7 @@ export const mapFieldToAttribute = async (field: CollectionFieldType, collection
         collectionId,
         relationCollection,
         RelationshipType.ManyToOne, // Default to many-to-one
+        false,
       );
     default:
       throw new Error(`Unsupported field type: ${type}`);
@@ -109,8 +110,10 @@ export const mapFieldToAttribute = async (field: CollectionFieldType, collection
 export function mapAppwriteTypeToFieldType(appwriteType: string): string {
   const typeMap: Record<string, string> = {
     string: 'string',
+    email: 'string',
+    ip: 'string',
     integer: 'number',
-    double: 'number',
+    float: 'number',
     boolean: 'boolean',
     datetime: 'datetime',
     relationship: 'relation',
