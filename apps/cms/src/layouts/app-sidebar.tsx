@@ -15,12 +15,13 @@ import {
 import { Button } from '@/components/ui/button';
 import { LayoutDashboardIcon, ImageIcon, UsersIcon, SettingsIcon, LogOutIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { ROUTE_PATH } from '@/constants/routes';
 
 const sidebarItems = [
-  { name: 'Dashboard', icon: LayoutDashboardIcon, path: '/dashboard' },
-  { name: 'Media', icon: ImageIcon, path: '/media' },
-  { name: 'Users', icon: UsersIcon, path: '/users' },
-  { name: 'Settings', icon: SettingsIcon, path: '/settings' },
+  { name: 'Dashboard', icon: LayoutDashboardIcon, path: ROUTE_PATH.DASHBOARD },
+  { name: 'Media', icon: ImageIcon, path: ROUTE_PATH.MEDIA },
+  { name: 'Users', icon: UsersIcon, path: ROUTE_PATH.USERS },
+  { name: 'Settings', icon: SettingsIcon, path: ROUTE_PATH.SETTINGS },
 ];
 
 export function AppSidebar() {
@@ -35,7 +36,6 @@ export function AppSidebar() {
         </div>
       </SidebarHeader>
       <SidebarContent>
-        {' '}
         <SidebarGroup>
           <SidebarGroupLabel>Navigation</SidebarGroupLabel>
           <SidebarGroupContent>
@@ -63,9 +63,9 @@ export function AppSidebar() {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
-      </SidebarContent>{' '}
+      </SidebarContent>
       <SidebarFooter>
-        <SidebarSeparator />{' '}
+        <SidebarSeparator />
         <Button
           variant="outline"
           className="w-full justify-start z-10 relative hover:!bg-destructive transition-colors dark:hover:text-white !py-3 h-auto"

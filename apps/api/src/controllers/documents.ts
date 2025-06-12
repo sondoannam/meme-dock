@@ -1,5 +1,58 @@
 import { Request, Response } from 'express';
-import { DocumentService } from '../services/database';
+import { DocumentService } from '../services';
+import { DocumentIncreaseTimePeriod } from '../models/document-analytics';
+
+/**
+ * Get document count increases over time
+ *
+ * This endpoint returns the number of documents added to a collection over specified time periods.
+ * It supports grouping by day, week, or month, and allows specifying the number of periods to return.
+ */
+export const getDocumentIncreaseOverTime = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { collectionId } = req.params;
+    const { duration = 'month', limit } = req.query;
+
+    if (!collectionId) {
+      res.status(400).json({ message: 'Collection ID is required' });
+      return;
+    }
+
+    // Validate duration parameter
+    if (!['day', 'week', 'month'].includes(duration as string)) {
+      res.status(400).json({
+        message: 'Duration must be one of: day, week, month',
+        allowedValues: ['day', 'week', 'month'],
+      });
+      return;
+    }
+
+    // Parse limit with validation
+    const parsedLimit = limit ? parseInt(limit as string, 10) : undefined;
+    if (parsedLimit !== undefined && (isNaN(parsedLimit) || parsedLimit <= 0)) {
+      res.status(400).json({ message: 'Limit must be a positive number' });
+      return;
+    }
+
+    const increases = await DocumentService.getDocumentIncreaseOverTime(
+      collectionId,
+      duration as DocumentIncreaseTimePeriod,
+      parsedLimit,
+    );
+
+    res.status(200).json({
+      collectionId,
+      duration,
+      periods: increases,
+    });
+  } catch (error) {
+    console.error('Error fetching document increases:', error);
+    res.status(500).json({
+      message: 'Failed to fetch document increases',
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
+  }
+};
 
 /**
  * Get documents from a collection

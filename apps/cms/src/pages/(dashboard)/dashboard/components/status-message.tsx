@@ -1,5 +1,6 @@
-import { CheckCircle, Loader2, AlertCircle } from 'lucide-react';
+import { CheckCircle, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { InlineLoading } from '@/components/custom/loading';
 
 interface StatusMessageProps {
   status: 'idle' | 'loading' | 'success' | 'error';
@@ -8,12 +9,11 @@ interface StatusMessageProps {
 
 export const StatusMessage = ({ status, message }: StatusMessageProps) => {
   if (!message) return null;
-
   // Helper function for status icons
   const getStatusIcon = (status: 'idle' | 'loading' | 'success' | 'error') => {
     switch (status) {
       case 'loading':
-        return <Loader2 className="h-4 w-4 animate-spin" />;
+        return <InlineLoading size="sm" />;
       case 'success':
         return <CheckCircle className="h-4 w-4 text-green-500" />;
       case 'error':

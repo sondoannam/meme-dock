@@ -3,14 +3,10 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
 import { DialogCustom } from '@/components/custom/dialog-custom';
-import { Loader2, Plus, Save } from 'lucide-react';
+import { Plus, Save } from 'lucide-react';
 import { InputText } from '@/components/custom/form-field/input-text';
 import { CollectionFieldsForm } from './collection-fields-form';
-import {
-  CollectionFieldType,
-  CollectionSchemaType,
-  collectionSchema,
-} from '@/validators/collection-schema';
+import { CollectionFieldType, CollectionSchemaType, collectionSchema } from '@/validators';
 import { collectionApi } from '@/services/database';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Form } from '@/components/ui/form';
@@ -18,7 +14,7 @@ import { DialogInstance } from '@/components/custom/dialog-custom/use-dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { SmallLoading } from '@/components/custom/small-loading';
+import { SmallLoading, InlineLoading } from '@/components/custom/loading';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 
@@ -43,7 +39,7 @@ export const CollectionSetupDialog = ({
 
   const [selectedCollection, setSelectedCollection] = useState<CollectionWithId | null>(null);
   const [mode, setMode] = useState<'create' | 'update'>('create');
-  console.log(collections);
+
   const form = useForm<CollectionSchemaType>({
     resolver: zodResolver(collectionSchema) as any,
     defaultValues: {
@@ -231,7 +227,7 @@ export const CollectionSetupDialog = ({
                           {collection.description ?? 'No description provided'}
                         </p>
                         <p className="!text-sm mt-2">
-                          <span className="font-medium">{collection.fields?.length || 0}</span>
+                          <span className="font-medium">{collection.fields?.length || 0}{' '}</span>
                           attributes
                         </p>
                       </CardContent>
@@ -300,17 +296,13 @@ export const CollectionSetupDialog = ({
                       disabled={isSubmitting}
                     >
                       Cancel
-                    </Button>
+                    </Button>{' '}
                     <Button
                       type="submit"
                       disabled={isSubmitting}
                       className="flex items-center gap-1"
                     >
-                      {isSubmitting ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <Save className="h-4 w-4" />
-                      )}
+                      {isSubmitting ? <InlineLoading size="sm" /> : <Save className="h-4 w-4" />}
                       Update Collection
                     </Button>
                   </div>
@@ -371,13 +363,9 @@ export const CollectionSetupDialog = ({
                     disabled={isSubmitting}
                   >
                     Cancel
-                  </Button>
+                  </Button>{' '}
                   <Button type="submit" disabled={isSubmitting} className="flex items-center gap-1">
-                    {isSubmitting ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <Save className="h-4 w-4" />
-                    )}
+                    {isSubmitting ? <InlineLoading size="sm" /> : <Save className="h-4 w-4" />}
                     Save Collection
                   </Button>
                 </div>

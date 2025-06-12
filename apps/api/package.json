@@ -66,9 +66,11 @@
   "dependencies": {
     "cors": "^2.8.5",
     "dotenv": "^16.5.0",
+    "jsonwebtoken": "^9.0.2",
     "node-appwrite": "^17.0.0"
   },
   "devDependencies": {
-    "@types/cors": "^2.8.19"
+    "@types/cors": "^2.8.19",
+    "@types/jsonwebtoken": "^9.0.9"
   }
 }

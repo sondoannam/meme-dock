@@ -4,7 +4,7 @@ import { useFieldArray, useFormContext } from 'react-hook-form';
 import { InputText } from '@/components/custom/form-field/input-text';
 import { InputSimpleSelect } from '@/components/custom/form-field/input-simple-select';
 import { InputTagsCustom } from '@/components/custom/form-field/input-tags-custom';
-import { fieldTypes, type CollectionFieldType } from '@/validators/collection-schema';
+import { fieldTypes, type CollectionFieldType } from '@/validators';
 import { Card, CardContent } from '@/components/ui/card';
 import { FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form';
 import { Switch } from '@/components/ui/switch';
