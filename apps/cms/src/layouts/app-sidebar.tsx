@@ -19,7 +19,7 @@ import { ROUTE_PATH } from '@/constants/routes';
 
 const sidebarItems = [
   { name: 'Dashboard', icon: LayoutDashboardIcon, path: ROUTE_PATH.DASHBOARD },
-  { name: 'Media', icon: ImageIcon, path: ROUTE_PATH.MEDIA },
+  { name: 'Memes', icon: ImageIcon, path: ROUTE_PATH.MEMES },
   { name: 'Users', icon: UsersIcon, path: ROUTE_PATH.USERS },
   { name: 'Settings', icon: SettingsIcon, path: ROUTE_PATH.SETTINGS },
 ];
