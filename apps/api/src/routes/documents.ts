@@ -6,6 +6,9 @@ const router: Router = express.Router();
 // GET /api/documents/:collectionId/increases - Get document count increases over time
 router.get('/:collectionId/increases', DocumentController.getDocumentIncreaseOverTime);
 
+// GET /api/documents/:collectionId/count - Get total document count for a collection
+router.get('/:collectionId/count', DocumentController.getDocumentCount);
+
 // GET /api/documents/:collectionId - Get all documents for a collection
 router.get('/:collectionId', DocumentController.getDocuments);
 

@@ -9,8 +9,9 @@ import { InlineLoading } from '@/components/custom/loading';
 import { CollectionSetupDialog } from './collection-setup-dialog';
 import { DialogCustom } from '@/components/custom/dialog-custom';
 import { useRequest } from 'ahooks';
-import { collectionApi } from '@/services/database';
+import { collectionApi } from '@/services/collection';
 import { CollectionSchemaType } from '@/validators';
+import { useMemeCollectionStore } from '@/stores/meme-store';
 
 export const DatabaseManager = () => {
   const [healthStatus, setHealthStatus] = useState<'idle' | 'loading' | 'success' | 'error'>(
@@ -21,21 +22,28 @@ export const DatabaseManager = () => {
   const [setupMessage, setSetupMessage] = useState<string | null>(null);
 
   const databaseDialog = DialogCustom.useDialog();
-  // Fetch collections
+
+  const { memeCollection, setMemeCollection } = useMemeCollectionStore((state) => state);
+
   const {
     data: collections = [],
     refresh,
     loading,
   } = useRequest(collectionApi.getCollections, {
     onSuccess: (data) => {
-      // If collections exist, we can assume setup was successful
       if (data && data.length > 0) {
         setSetupStatus('success');
+      }
+
+      if (!memeCollection) {
+        const meme = data.find((collection) => collection.name === 'meme')
+        if (meme) {
+          setMemeCollection(meme);
+        }
       }
     },
   });
 
-  // Function to check database health
   async function checkDatabaseHealth() {
     setHealthStatus('loading');
     setHealthMessage(null);
@@ -49,7 +57,8 @@ export const DatabaseManager = () => {
         err instanceof AppwriteException ? err.message : 'Failed to connect to the database',
       );
     }
-  } // Handler for collection setup success
+  }
+  
   const handleCollectionSetupSuccess = (newCollections: CollectionSchemaType[]) => {
     setSetupStatus('success');
     // We don't rely on ID comparison here since we're not sure about the ID structure

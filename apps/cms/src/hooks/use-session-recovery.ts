@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { useUser } from '@/lib/context/UserContext';
 import { TokenService } from '@/services/token';
+import { ROUTE_PATH } from '@/constants/routes';
 
 /**
  * Hook for handling authentication session recovery
@@ -37,7 +38,7 @@ export function useSessionRecovery() {
     // If we were already logged out, just redirect
     if (!user) {
       if (options.redirectToLogin) {
-        navigate('/login', {
+        navigate(ROUTE_PATH.LOGIN, {
           state: {
             from: window.location.pathname,
             authError: 'Your session has expired. Please log in again.',
@@ -52,7 +53,7 @@ export function useSessionRecovery() {
       await logout();
 
       if (options.redirectToLogin) {
-        navigate('/login', {
+        navigate(ROUTE_PATH.LOGIN, {
           state: {
             from: window.location.pathname,
             authError: 'Your session has expired. Please log in again.',
@@ -63,7 +64,7 @@ export function useSessionRecovery() {
       console.error('Error during logout in session recovery:', logoutError);
       // Force navigation to login as a last resort
       if (options.redirectToLogin) {
-        navigate('/login', {
+        navigate(ROUTE_PATH.LOGIN, {
           state: {
             from: window.location.pathname,
             authError: 'Authentication error. Please log in again.',

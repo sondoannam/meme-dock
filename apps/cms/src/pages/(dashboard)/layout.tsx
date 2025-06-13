@@ -4,6 +4,9 @@ import MainLayout from '@/layouts/main-layout';
 import { useAuthCheck } from '@/hooks/use-auth-check';
 import { ROUTE_PATH } from '@/constants/routes';
 import { PageLoading } from '@/components/custom/loading';
+import { useMount, useRequest, useUpdateEffect } from 'ahooks';
+import { collectionApi } from '@/services/collection';
+import { useMemeCollectionStore } from '@/stores/meme-store';
 
 /**
  * Layout component for dashboard routes
@@ -17,6 +20,29 @@ export function Component() {
     redirectTo: ROUTE_PATH.LOGIN,
     storeRedirectPath: true,
   });
+
+  const { memeCollection, setMemeCollection } = useMemeCollectionStore((state) => state);
+
+  const { run } = useRequest(collectionApi.getCollections, {
+    onSuccess: (data) => {
+      if (data.length === 0) {
+        return;
+      }
+
+      if (!memeCollection) {
+        const meme = data.find((collection) => collection.name === 'meme');
+        if (meme) {
+          setMemeCollection(meme);
+        }
+      }
+    },
+  });
+
+  useUpdateEffect(() => {
+    if (!isLoading) {
+      run();
+    }
+  }, [isLoading]);
 
   if (isLoading) {
     return (

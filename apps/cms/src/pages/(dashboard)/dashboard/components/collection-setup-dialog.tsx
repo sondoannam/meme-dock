@@ -7,7 +7,7 @@ import { Plus, Save } from 'lucide-react';
 import { InputText } from '@/components/custom/form-field/input-text';
 import { CollectionFieldsForm } from './collection-fields-form';
 import { CollectionFieldType, CollectionSchemaType, collectionSchema } from '@/validators';
-import { collectionApi } from '@/services/database';
+import { collectionApi } from '@/services/collection';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Form } from '@/components/ui/form';
 import { DialogInstance } from '@/components/custom/dialog-custom/use-dialog';
@@ -227,7 +227,7 @@ export const CollectionSetupDialog = ({
                           {collection.description ?? 'No description provided'}
                         </p>
                         <p className="!text-sm mt-2">
-                          <span className="font-medium">{collection.fields?.length || 0}{' '}</span>
+                          <span className="font-medium">{collection.fields?.length || 0} </span>
                           attributes
                         </p>
                       </CardContent>

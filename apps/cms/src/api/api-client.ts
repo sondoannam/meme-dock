@@ -1,11 +1,8 @@
 import axios from 'axios';
 import { AuthService } from '../services/auth';
 import { TokenService } from '../services/token';
-// import { CollectionSchemaType } from '@/validators/collection-schema';
-// import { toast } from '@/components/ui/use-toast';
 
 const API_URL = process.env.VITE_API_URL ?? 'http://localhost:3001/api';
-console.log(`API URL: ${API_URL}`);
 
 // Create axios instance with default config
 const apiClient = axios.create({

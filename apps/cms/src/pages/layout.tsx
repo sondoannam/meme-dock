@@ -11,8 +11,8 @@ import { PageLoading } from '@/components/custom/loading';
  * Handles global authentication state and token validation
  */
 export function Component() {
-  const { isAuthenticated, isLoading } = useUser();
-  const location = useLocation();
+  const { isAuthenticated, isLoading, isAdmin } = useUser();
+  const { pathname } = useLocation();
   const navigate = useNavigate();
 
   // Initialize token refresh service when user is authenticated
@@ -38,14 +38,17 @@ export function Component() {
     }
 
     if (isAuthenticated && !isLoading) {
-      // If token is expired or invalid, TokenService will handle token refresh
       if (TokenService.isTokenExpired()) {
         console.log('Token is expired or close to expiry, refreshing...');
         TokenRefreshService.checkAndRefreshToken();
       }
+
+      if (isAdmin && pathname === ROUTE_PATH.HOME) {
+        navigate(ROUTE_PATH.DASHBOARD);
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [location.pathname, isAuthenticated, isLoading]);
+  }, [pathname, isAuthenticated, isLoading]);
 
   return (
     <Suspense fallback={<PageLoading message="Loading application..." />}>

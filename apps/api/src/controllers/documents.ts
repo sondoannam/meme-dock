@@ -180,3 +180,33 @@ export const deleteDocument = async (req: Request, res: Response): Promise<void>
     });
   }
 };
+
+/**
+ * Get total document count for a collection
+ *
+ * This endpoint returns the total count of documents in a collection.
+ */
+export const getDocumentCount = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { collectionId } = req.params;
+
+    if (!collectionId) {
+      res.status(400).json({ message: 'Collection ID is required' });
+      return;
+    }
+
+    // Using the DocumentService to get all documents with a minimal limit just to get the total
+    const documents = await DocumentService.getDocuments(collectionId, { limit: 1 });
+
+    res.status(200).json({
+      collectionId,
+      total: documents.total,
+    });
+  } catch (error) {
+    console.error('Error fetching document count:', error);
+    res.status(500).json({
+      message: 'Failed to fetch document count',
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
+  }
+};
