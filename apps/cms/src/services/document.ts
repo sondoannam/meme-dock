@@ -76,14 +76,14 @@ export const documentApi = {
   ) {
     const { limit, offset, orderBy, orderType, queries } = options;
 
-    const params = new URLSearchParams();
-    if (limit) params.append('limit', String(limit));
-    if (offset) params.append('offset', String(offset));
-    if (orderBy) params.append('orderBy', orderBy);
-    if (orderType) params.append('orderType', orderType);
-    if (queries && queries.length) {
-      queries.forEach((q) => params.append('queries', q));
-    }
+    const params: Record<string, any> = {};
+    if (limit !== undefined) params.limit = limit;
+    if (offset !== undefined) params.offset = offset;
+    if (orderBy) params.orderBy = orderBy;
+    if (orderType) params.orderType = orderType;
+    queries?.forEach((q) => {
+      (params.queries ??= []).push(q);
+    });
 
     const response = await apiClient.get(`/documents/${collectionId}`, { params });
     return response.data;

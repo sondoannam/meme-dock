@@ -253,7 +253,7 @@ export const FileUploaderContent = forwardRef<HTMLDivElement, React.HTMLAttribut
           ref={ref}
           className={cn(
             'flex rounded-xl gap-1',
-            orientation === 'horizontal' ? 'flex-raw flex-wrap' : 'flex-col',
+            orientation === 'horizontal' ? 'flex-row flex-wrap' : 'flex-col',
             className,
           )}
         >
