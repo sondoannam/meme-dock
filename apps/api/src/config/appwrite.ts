@@ -1,11 +1,16 @@
 import dotenv from 'dotenv';
-import { Client, Databases, ID, Permission, Role, Teams } from 'node-appwrite';
+import { Client, Databases, ID, Permission, Role, Teams, Storage } from 'node-appwrite';
 
 // Load environment variables
 dotenv.config();
 
-const { APPWRITE_ENDPOINT, APPWRITE_PROJECT_ID, APPWRITE_API_KEY, APPWRITE_DATABASE_ID } =
-  process.env;
+const { 
+  APPWRITE_ENDPOINT, 
+  APPWRITE_PROJECT_ID, 
+  APPWRITE_API_KEY, 
+  APPWRITE_DATABASE_ID, 
+  APPWRITE_MEME_BUCKET_ID 
+} = process.env;
 
 // Validate required configuration
 if (!APPWRITE_ENDPOINT || !APPWRITE_PROJECT_ID || !APPWRITE_API_KEY) {
@@ -22,10 +27,16 @@ const client = new Client()
 
 // Initialize Appwrite services
 const databases = new Databases(client);
+const storage = new Storage(client);
 const DATABASE_ID = APPWRITE_DATABASE_ID ?? 'default';
+const MEME_BUCKET_ID = APPWRITE_MEME_BUCKET_ID ?? '';
+
+if (!MEME_BUCKET_ID) {
+  console.warn('APPWRITE_MEME_BUCKET_ID is not set. File upload/download will not work properly.');
+}
 
 // Only export a factory so every consumer gets an isolated client
 const createBaseClient = () =>
   new Client().setEndpoint(APPWRITE_ENDPOINT).setProject(APPWRITE_PROJECT_ID);
 
-export { client, databases, DATABASE_ID, ID, Permission, Role, Teams, createBaseClient };
+export { client, databases, storage, DATABASE_ID, MEME_BUCKET_ID, ID, Permission, Role, Teams, createBaseClient };
