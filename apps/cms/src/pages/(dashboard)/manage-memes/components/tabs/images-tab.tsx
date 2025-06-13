@@ -16,13 +16,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import StorageProviderSelector from '../storage-provider-selector';
+import { StorageProviderSelector, StorageProvider } from '../storage-provider-selector';
 import { mockImages } from '../mock-data';
 
 type GridSize = '2' | '3' | '4' | '6';
 
 export default function ImagesTab() {
-  const [selectedStorage, setSelectedStorage] = useState<'appwrite' | 'imagekit'>('appwrite');
+  const [selectedStorage, setSelectedStorage] = useState<StorageProvider>('all');
   const [gridSize, setGridSize] = useState<GridSize>('3');
 
   const getGridSizeClass = (): string => {

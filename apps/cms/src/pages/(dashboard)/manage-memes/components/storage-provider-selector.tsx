@@ -1,12 +1,15 @@
 import { Button } from '@/components/ui/button';
 import { useTheme } from '@/components/theme-provider';
+import { Layers } from 'lucide-react';
+
+export type StorageProvider = 'all' | 'appwrite' | 'imagekit';
 
 interface StorageProviderSelectorProps {
-  selectedStorage: 'appwrite' | 'imagekit';
-  onSelect: (provider: 'appwrite' | 'imagekit') => void;
+  selectedStorage: StorageProvider;
+  onSelect: (provider: StorageProvider) => void;
 }
 
-export default function StorageProviderSelector({
+export function StorageProviderSelector({
   selectedStorage,
   onSelect,
 }: StorageProviderSelectorProps) {
@@ -16,11 +19,19 @@ export default function StorageProviderSelector({
     const variant = theme === 'dark' ? 'dark' : 'light';
     return `/logos/svgs/${provider}/${variant}.svg`;
   };
-
   return (
     <div className="flex items-center space-x-4">
       <span className="!text-base font-medium">Storage:</span>
       <div className="flex space-x-2">
+        <Button
+          variant={selectedStorage === 'all' ? 'default' : 'outline'}
+          size="sm"
+          onClick={() => onSelect('all')}
+          className="h-auto px-4 py-2 flex items-center justify-center"
+        >
+          <Layers className="!h-6 !w-6 mr-1" />
+          <span className="!text-sm">All</span>
+        </Button>
         <Button
           variant={selectedStorage === 'appwrite' ? 'default' : 'outline'}
           size="sm"
