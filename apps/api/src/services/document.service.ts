@@ -6,7 +6,7 @@ import { DocumentData, DocumentResponse, ListDocumentsResponse } from '../models
 /**
  * Get documents from a collection with optional filtering and pagination
  * @param collectionId Collection ID to query
- * @param options Query options like limit, offset, and filters
+ * @param options Query options like limit, offset, ordering, and filters
  * @returns List of matching documents
  */
 export async function getDocuments(
@@ -20,8 +20,8 @@ export async function getDocuments(
   } = {},
 ): Promise<ListDocumentsResponse> {
   try {
-    // Extract only queries from options
-    const { queries = [] } = options;
+    // Extract options
+    const { limit, offset, orderBy, orderType, queries = [] } = options;
 
     // Convert string queries to Query objects if provided
     const parsedQueries: string[] = [];
@@ -59,8 +59,32 @@ export async function getDocuments(
           parsedQueries.push(Query.contains(field, value));
           break;
       }
-    } // Create options object for the Appwrite SDK method
-    const response = await databases.listDocuments(DATABASE_ID, collectionId, parsedQueries);
+    }
+    
+    // Add sorting if orderBy is provided
+    if (orderBy) {
+      // Determine sort direction (default to ascending if not specified)
+      const isDesc = orderType?.toLowerCase() === 'desc';
+      parsedQueries.push(isDesc ? Query.orderDesc(orderBy) : Query.orderAsc(orderBy));
+    }
+      // Create options object for the Appwrite SDK method
+    // According to the Appwrite SDK, we need to pass queries as the third parameter
+    // Pagination parameters are handled via specific Query methods
+    
+    // Add pagination queries if provided
+    if (limit !== undefined) {
+      parsedQueries.push(Query.limit(limit));
+    }
+    
+    if (offset !== undefined) {
+      parsedQueries.push(Query.offset(offset));
+    }
+    
+    const response = await databases.listDocuments(
+      DATABASE_ID, 
+      collectionId, 
+      parsedQueries
+    );
 
     return response;
   } catch (error) {

@@ -1,85 +1,21 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
+import { useDebounce, useRequest } from 'ahooks';
+import { toast } from 'sonner';
+import { Plus, Pencil, Trash2 } from 'lucide-react';
+import { useForm } from 'react-hook-form';
+
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Plus, Pencil, Trash2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { DialogCustom } from '@/components/custom/dialog-custom';
-import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { InputText } from '@/components/custom/form-field/input-text';
 import { Badge } from '@/components/ui/badge';
-import { memeTagSchema, MemeTagFormValues } from '@/validators';
+import { BasicSelect, SelectOption } from '@/components/custom/basic-select';
 import { FormDialog } from '@/components/custom/form-dialog';
-import { SortBySelect, SortOption } from '@/components/custom/sort-by-select';
-
-// Mock data for demonstrations
-const mockTags = [
-  {
-    id: '1',
-    label: 'funny',
-    usageCount: 150,
-    lastUsedAt: '2023-07-20T10:30:00Z',
-    trendingScore: 95,
-  },
-  {
-    id: '2',
-    label: 'politics',
-    usageCount: 120,
-    lastUsedAt: '2023-07-18T14:20:00Z',
-    trendingScore: 70,
-  },
-  {
-    id: '3',
-    label: 'technology',
-    usageCount: 135,
-    lastUsedAt: '2023-07-19T08:45:00Z',
-    trendingScore: 85,
-  },
-  {
-    id: '4',
-    label: 'gaming',
-    usageCount: 140,
-    lastUsedAt: '2023-07-17T16:30:00Z',
-    trendingScore: 90,
-  },
-  {
-    id: '5',
-    label: 'wholesome',
-    usageCount: 110,
-    lastUsedAt: '2023-07-15T11:20:00Z',
-    trendingScore: 80,
-  },
-  {
-    id: '6',
-    label: 'relationship',
-    usageCount: 80,
-    lastUsedAt: '2023-07-10T09:45:00Z',
-    trendingScore: 60,
-  },
-  {
-    id: '7',
-    label: 'school',
-    usageCount: 70,
-    lastUsedAt: '2023-07-05T13:20:00Z',
-    trendingScore: 50,
-  },
-  {
-    id: '8',
-    label: 'movies',
-    usageCount: 100,
-    lastUsedAt: '2023-07-12T18:15:00Z',
-    trendingScore: 75,
-  },
-];
-
-type MemeTagType = {
-  id: string;
-  label: string;
-  usageCount?: number;
-  lastUsedAt?: string;
-  trendingScore?: number;
-};
-
+import { memeTagSchema, MemeTagFormValues } from '@/validators';
+import { documentApi, GetDocumentsParams } from '@/services/document';
+import { MemeTagType } from '@/types';
 
 // Trending score color categories
 const getTrendingColor = (score: number) => {
@@ -88,91 +24,137 @@ const getTrendingColor = (score: number) => {
   return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100';
 };
 
-export default function TagsTab() {
-  const [tags, setTags] = useState<MemeTagType[]>(mockTags);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [isEditing, setIsEditing] = useState(false);
-  const [selectedTag, setSelectedTag] = useState<MemeTagType | null>(null);
-  const [sortOption, setSortOption] = useState<string>("");
+const sortOptions: SelectOption[] = [
+  { value: 'trending', label: 'Trending' },
+  { value: 'usage', label: 'Most Used' },
+  { value: 'date', label: 'Recently Used' },
+  { value: 'label', label: 'Alphabetical' },
+];
 
-  // Dialogs
-  const addDialog = DialogCustom.useDialog();
-  const editDialog = DialogCustom.useDialog();
+interface TagsViewProps {
+  tagCollectionId: string;
+  tags: MemeTagType[];
+  onRefresh: (params?: GetDocumentsParams) => void;
+}
+
+export function TagsView({ tagCollectionId, tags, onRefresh }: TagsViewProps) {
+  const [selectedTag, setSelectedTag] = useState<MemeTagType | null>(null);
+  const [sortOption, setSortOption] = useState<string>('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const debouncedSearchQuery = useDebounce(searchQuery, { wait: 500 });
+
+  const cuDialog = DialogCustom.useDialog();
   const deleteDialog = DialogCustom.useDialog();
+
+  // const handleRefresh = () => {
+  //   onRefresh({
+  //     ...(sortOption === 'label' && {
+  //       orderBy: 'label',
+  //       orderType: 'asc',
+  //     }),
+  //   });
+  // };
+
+  const handleOpenCreate = () => {
+    setSelectedTag(null);
+    cuDialog.open();
+  };
+
+  const handleOpenUpdate = (tag: MemeTagType) => {
+    setSelectedTag(tag);
+    cuDialog.open();
+  };
+
+  const handleOpenDelete = (tag: MemeTagType) => {
+    setSelectedTag(tag);
+    deleteDialog.open();
+  };
+
+  const closeCUDialog = () => {
+    cuDialog.close();
+    setSelectedTag(null);
+  };
+
+  const closeDeleteDialog = () => {
+    deleteDialog.close();
+    setSelectedTag(null);
+  };
+
+  const createOrUpdateMeme = async (data: MemeTagFormValues) => {
+    if (selectedTag) {
+      return documentApi.updateDocument<MemeTagType>(tagCollectionId, selectedTag.id, data);
+    }
+
+    return documentApi.createDocument<MemeTagType>(tagCollectionId, data);
+  };
+
+  const { run: deleteMeme, loading: isDeleting } = useRequest(
+    (memeId: string) => {
+      return documentApi.deleteDocument(tagCollectionId, memeId);
+    },
+    {
+      manual: true,
+      onSuccess: () => {
+        toast.success('Tag deleted successfully!');
+        onRefresh();
+        closeDeleteDialog();
+      },
+      onError: (error: any) => {
+        console.error('Error deleting tag:', error);
+        toast.error(`Failed to delete tag: ${error.message || 'Unknown error'}`);
+      },
+    },
+  );
+
   const form = useForm<MemeTagFormValues>({
     resolver: zodResolver(memeTagSchema),
     defaultValues: {
-      label: '',
+      label: selectedTag ? selectedTag.label : '',
     },
-  }); // Reset form when dialog opens/closes
-  const resetForm = (tag?: MemeTagType) => {
-    form.reset({
-      id: tag?.id || '',
-      label: tag?.label || '',
-      // System-managed fields are not included in the form
-    });
-  };  // Define sort options for tags
-  const sortOptions: SortOption[] = [
-    { value: "trending", label: "Trending" },
-    { value: "usage", label: "Most Used" },
-    { value: "date", label: "Recently Used" },
-  ];
-  
+  });
+
   // Apply sorting and filtering
-  const getSortedAndFilteredTags = () => {
+  const filteredTags = useMemo(() => {
     // First filter by search query
     const filtered = tags.filter((tag) =>
-      tag.label.toLowerCase().includes(searchQuery.toLowerCase())
+      tag.label.toLowerCase().includes(debouncedSearchQuery.toLowerCase()),
     );
-    
+
     // Then apply sorting if a sort option is selected
     if (!sortOption) return filtered;
-    
+
     return [...filtered].sort((a, b) => {
       switch (sortOption) {
         case 'trending':
           return (b.trendingScore || 0) - (a.trendingScore || 0);
         case 'usage':
-          return (b.usageCount || 0) - (a.usageCount || 0);        case 'date': {
+          return (b.usageCount || 0) - (a.usageCount || 0);
+        case 'date': {
           // Parse dates and compare them
           const dateA = a.lastUsedAt ? new Date(a.lastUsedAt).getTime() : 0;
           const dateB = b.lastUsedAt ? new Date(b.lastUsedAt).getTime() : 0;
           return dateB - dateA;
         }
+        case 'label':
+          return a.label.localeCompare(b.label);
         default:
           return 0;
       }
     });
-  };
-  
-  const filteredTags = getSortedAndFilteredTags();
+  }, [debouncedSearchQuery, sortOption]);
 
   // Handle form submission
-  const onSubmit = (values: MemeTagFormValues) => {
-    if (isEditing && selectedTag) {
-      // Update existing tag
-      setTags(
-        tags.map((tag) => (tag.id === selectedTag.id ? { ...values, id: selectedTag.id } : tag)),
-      );
-      editDialog.close();
-    } else {
-      // Add new tag
-      const newTag = {
-        ...values,
-        id: Math.random().toString(36).substring(7), // Simple random ID for demo
-      };
-      setTags([...tags, newTag]);
-      addDialog.close();
-    }
-    resetForm();
-  };
+  const onSubmit = async (values: MemeTagFormValues) => {
+    try {
+      await createOrUpdateMeme(values);
 
-  // Handle delete
-  const handleDelete = () => {
-    if (selectedTag) {
-      setTags(tags.filter((tag) => tag.id !== selectedTag.id));
-      deleteDialog.close();
-      setSelectedTag(null);
+      toast.success(`Tag ${selectedTag ? 'updated' : 'created'} successfully!`);
+      onRefresh();
+      cuDialog.close();
+      form.reset();
+    } catch (error: any) {
+      console.error('Error saving tag:', error);
+      toast.error(`Failed to save tag: ${error.message || 'Unknown error'}`);
     }
   };
 
@@ -185,17 +167,12 @@ export default function TagsTab() {
             <CardDescription>Add, edit and manage tags that describe memes</CardDescription>
           </div>
 
-          <Button
-            onClick={() => {
-              setIsEditing(false);
-              resetForm();
-              addDialog.open();
-            }}
-          >
+          <Button onClick={handleOpenCreate}>
             <Plus className="mr-2 h-4 w-4" /> Add Tag
           </Button>
         </div>
-      </CardHeader>      <CardContent>
+      </CardHeader>{' '}
+      <CardContent>
         <div className="flex flex-col md:flex-row md:items-center gap-4 mb-6">
           <div className="flex-grow">
             <Input
@@ -205,10 +182,13 @@ export default function TagsTab() {
               className="max-w-md"
             />
           </div>
-            <SortBySelect
+          <BasicSelect
+            placeholder="Sort by..."
             value={sortOption}
             onValueChange={setSortOption}
             options={sortOptions}
+            enableReset
+            className='w-[180px]'
           />
         </div>
 
@@ -226,7 +206,7 @@ export default function TagsTab() {
                 className="relative group border rounded-lg p-4 hover:shadow-md transition-all overflow-hidden"
               >
                 <div className="flex flex-col gap-2">
-                    <h3 className="font-medium text-lg break-all">{tag.label}</h3>
+                  <h3 className="font-medium text-lg break-all">{tag.label}</h3>
 
                   <div className="flex flex-wrap gap-2 mt-1">
                     {tag.usageCount !== undefined && (
@@ -250,12 +230,7 @@ export default function TagsTab() {
                     variant="ghost"
                     size="sm"
                     className="h-7 w-7 p-0"
-                    onClick={() => {
-                      setSelectedTag(tag);
-                      setIsEditing(true);
-                      resetForm(tag);
-                      editDialog.open();
-                    }}
+                    onClick={() => handleOpenUpdate(tag)}
                   >
                     <Pencil className="h-4 w-4" />
                   </Button>
@@ -263,10 +238,7 @@ export default function TagsTab() {
                     variant="ghost"
                     size="sm"
                     className="h-7 w-7 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
-                    onClick={() => {
-                      setSelectedTag(tag);
-                      deleteDialog.open();
-                    }}
+                    onClick={() => handleOpenDelete(tag)}
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>
@@ -275,14 +247,15 @@ export default function TagsTab() {
             ))}
           </div>
         )}
-      </CardContent>      {/* Add/Edit Dialog */}
+      </CardContent>{' '}
+      {/* Add/Edit Dialog */}
       <FormDialog
-        dialog={isEditing ? editDialog : addDialog}
-        header={isEditing ? 'Edit Tag' : 'Add New Tag'}
+        dialog={cuDialog}
+        header={selectedTag ? 'Edit Tag' : 'Add New Tag'}
         form={form}
         onSubmit={onSubmit}
-        submitText={isEditing ? 'Save Changes' : 'Add Tag'}
-        onClose={resetForm}
+        submitText={selectedTag ? 'Save Changes' : 'Add Tag'}
+        onClose={closeCUDialog}
         className="max-w-md"
       >
         <InputText
@@ -293,14 +266,14 @@ export default function TagsTab() {
         />
         {/* System-managed fields are not included in the form as they are not user-editable */}
       </FormDialog>
-
       {/* Delete Confirmation Dialog */}
       <DialogCustom
         dialog={deleteDialog}
         isConfirmDelete={true}
         header="Delete Tag"
-        onConfirmDelete={handleDelete}
+        onConfirmDelete={() => deleteMeme(selectedTag?.id || '')}
         onCloseDelete={() => deleteDialog.close()}
+        deleteLoading={isDeleting}
       >
         <p>
           Are you sure you want to delete <strong>{selectedTag?.label}</strong>?

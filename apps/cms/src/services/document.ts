@@ -24,12 +24,20 @@ export interface GetDocumentCountResponse {
   total: number;
 }
 
+export interface GetDocumentsParams {
+  limit?: number;
+  offset?: number;
+  orderBy?: string;
+  orderType?: 'asc' | 'desc';
+  queries?: string[];
+}
+
 export const documentApi = {
   /**
    * Get document count increases over time
    * @param params Parameters for the request (collectionId, duration, limit)
    * @returns Promise with the document increase data
-   */  getDocumentIncreases: async (
+   */ getDocumentIncreases: async (
     params: GetDocumentIncreaseParams,
   ): Promise<DocumentIncreaseResponse> => {
     const { collectionId, duration = 'month', limit = 12 } = params;
@@ -37,12 +45,12 @@ export const documentApi = {
     // Use the custom param serializer through axios params
     const queryParams = {
       duration,
-      limit
+      limit,
     };
 
     const response = await apiClient.get<DocumentIncreaseResponse>(
       `/documents/${collectionId}/increases`,
-      { params: queryParams }
+      { params: queryParams },
     );
 
     return response.data;
@@ -65,15 +73,10 @@ export const documentApi = {
    * @param collectionId ID of the collection to retrieve documents from
    * @param options Optional parameters for pagination, sorting, and filtering
    * @returns Promise with the list of documents
-   */  async getDocuments<T = unknown>(
+   */
+  async getDocuments<T = unknown>(
     collectionId: string,
-    options: {
-      limit?: number;
-      offset?: number;
-      orderBy?: string;
-      orderType?: string;
-      queries?: string[];
-    } = {},
+    options: GetDocumentsParams = {},
   ) {
     const { limit, offset, orderBy, orderType, queries } = options;
 
@@ -117,7 +120,11 @@ export const documentApi = {
    * @param data Updated document data
    * @returns Promise with the updated document
    */
-  async updateDocument<T = unknown>(collectionId: string, documentId: string, data: Record<string, unknown>) {
+  async updateDocument<T = unknown>(
+    collectionId: string,
+    documentId: string,
+    data: Record<string, unknown>,
+  ) {
     const response = await apiClient.put<T>(`/documents/${collectionId}/${documentId}`, data);
     return response.data;
   },
