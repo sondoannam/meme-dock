@@ -42,16 +42,24 @@ This web app is a **collection of internet memes** (image, gif, video) with supp
 - `fileId`: string — file in Appwrite Storage or external source
 
 ### `tags` Collection
-- `label_en`, `label_vi`: string
-- `slug`: string
+- `label`: string
+- `usageCount`: number (optional, for sorting)
+- `lastUsedAt`: date (optional, for sorting)
+- `trendingScore`: number (optional, for sorting)
 
 ### `objects` Collection
 - `label_en`, `label_vi`: string
 - `slug`: string
+- `usageCount`: number (optional, for sorting)
+- `lastUsedAt`: date (optional, for sorting)
+- `trendingScore`: number (optional, for sorting)
 
 ### `moods` Collection
 - `label_en`, `label_vi`: string
 - `slug`: string
+- `usageCount`: number (optional, for sorting)
+- `lastUsedAt`: date (optional, for sorting)
+- `trendingScore`: number (optional, for sorting)
 
 ---
 

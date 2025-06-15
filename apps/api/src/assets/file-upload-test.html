@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File Upload Test - Meme Dock API</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .container {
+            background-color: #f5f5f5;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+        }
+        h2 {
+            margin-top: 25px;
+            color: #444;
+        }
+        label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+        input[type="file"] {
+            margin-bottom: 15px;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        #result {
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background-color: #f9f9f9;
+            min-height: 100px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        #errorMsg {
+            color: #d32f2f;
+            font-weight: bold;
+        }
+        .api-url {
+            background-color: #e9e9e9;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>Appwrite File Upload Test</h1>
+    
+    <div class="container">
+        <h2>Single File Upload</h2>
+        <form id="singleUploadForm">
+            <label for="singleFile">Select a file:</label>
+            <input type="file" id="singleFile" name="file" required>
+            <button type="submit">Upload File</button>
+        </form>
+        <div id="singleResult"></div>
+    </div>
+
+    <div class="container">
+        <h2>Multiple Files Upload</h2>
+        <form id="multipleUploadForm">
+            <label for="multipleFiles">Select files (up to 10):</label>
+            <input type="file" id="multipleFiles" name="files" multiple required>
+            <button type="submit">Upload Files</button>
+        </form>
+        <div id="multipleResult"></div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:3001/api';
+        const TOKEN = ''; // Replace with your authorization token if needed
+        
+        document.getElementById('singleUploadForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const resultDiv = document.getElementById('singleResult');
+            resultDiv.innerHTML = 'Uploading...';
+            
+            const fileInput = document.getElementById('singleFile');
+            if (!fileInput.files || fileInput.files.length === 0) {
+                resultDiv.innerHTML = 'Please select a file.';
+                return;
+            }
+            
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+              try {
+                const response = await fetch(`${API_URL}/files/upload`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': TOKEN ? `Bearer ${TOKEN}` : '',
+                    },
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    // Handle API error responses
+                    resultDiv.innerHTML = `
+                        <h3>Error (${response.status}):</h3>
+                        <p id="errorMsg">${data.message || data.error || 'Unknown error'}</p>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                    return;
+                }
+                
+                resultDiv.innerHTML = '<h3>Response:</h3><pre>' + JSON.stringify(data, null, 2) + '</pre>';
+                
+                if (data.success && data.file) {
+                    const fileId = data.file.$id;
+                    resultDiv.innerHTML += `
+                        <h3>File Actions:</h3>
+                        <p><strong>File ID:</strong> ${fileId}</p>
+                        <p><strong>Get Metadata:</strong> <span class="api-url">${API_URL}/files/${fileId}/metadata</span></p>
+                        <p><strong>Download URL:</strong> <span class="api-url">${API_URL}/files/${fileId}/download</span></p>
+                        <p><strong>Preview URL:</strong> <span class="api-url">${API_URL}/files/${fileId}/preview</span></p>
+                        <p><strong>View URL:</strong> <span class="api-url">${API_URL}/files/${fileId}/view</span></p>
+                        
+                        <div>
+                            <h4>Test Preview:</h4>
+                            <img src="${API_URL}/files/${fileId}/preview?width=300" alt="Preview" style="max-width: 300px; border: 1px solid #ccc;">
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<h3>Error:</h3><p id="errorMsg">${error.message}</p>`;
+            }
+        });
+        
+        document.getElementById('multipleUploadForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const resultDiv = document.getElementById('multipleResult');
+            resultDiv.innerHTML = 'Uploading...';
+            
+            const filesInput = document.getElementById('multipleFiles');
+            if (!filesInput.files || filesInput.files.length === 0) {
+                resultDiv.innerHTML = 'Please select at least one file.';
+                return;
+            }
+            
+            const formData = new FormData();
+            for (let i = 0; i < filesInput.files.length; i++) {
+                formData.append('files', filesInput.files[i]);
+            }
+              try {
+                const response = await fetch(`${API_URL}/files/upload/multiple`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': TOKEN ? `Bearer ${TOKEN}` : '',
+                    },
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    // Handle API error responses
+                    resultDiv.innerHTML = `
+                        <h3>Error (${response.status}):</h3>
+                        <p id="errorMsg">${data.message || data.error || 'Unknown error'}</p>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                    return;
+                }
+                
+                resultDiv.innerHTML = '<h3>Response:</h3><pre>' + JSON.stringify(data, null, 2) + '</pre>';
+                
+                if (data.success && data.files && data.files.length > 0) {
+                    let filesHtml = '<h3>Files Actions:</h3>';
+                    data.files.forEach(file => {
+                        const fileId = file.$id;
+                        filesHtml += `
+                            <div style="margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px solid #ddd;">
+                                <p><strong>File ID:</strong> ${fileId}</p>
+                                <p><strong>Get Metadata:</strong> <span class="api-url">${API_URL}/files/${fileId}/metadata</span></p>
+                                <p><strong>Download URL:</strong> <span class="api-url">${API_URL}/files/${fileId}/download</span></p>
+                                <p><strong>Preview URL:</strong> <span class="api-url">${API_URL}/files/${fileId}/preview</span></p>
+                                <p><strong>View URL:</strong> <span class="api-url">${API_URL}/files/${fileId}/view</span></p>
+                                <div>
+                                    <h4>Test Preview:</h4>
+                                    <img src="${API_URL}/files/${fileId}/preview?width=200" alt="Preview" style="max-width: 200px; border: 1px solid #ccc;">
+                                </div>
+                            </div>
+                        `;
+                    });
+                    resultDiv.innerHTML += filesHtml;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<h3>Error:</h3><p id="errorMsg">${error.message}</p>`;
+            }
+        });
+    </script>
+</body>
+</html>

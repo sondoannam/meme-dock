@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { User, AuthService } from '../../services/auth';
+import { User, authService } from '../../services/auth';
 import { authApi } from '../../api/auth-client';
 
 // Define the context shape
@@ -32,7 +32,7 @@ export function UserProvider({ children }: UserProviderProps) {
     const initializeAuth = async () => {
       setIsLoading(true);
       try {
-        const currentUser = await AuthService.getCurrentUser();
+        const currentUser = await authService.getCurrentUser();
         if (currentUser) {
           setUser(currentUser);
           setIsAdmin(currentUser.isAdmin);
@@ -51,7 +51,7 @@ export function UserProvider({ children }: UserProviderProps) {
   const login = async (email: string, password: string) => {
     setIsLoading(true);
     try {
-      const user = await AuthService.login(email, password);
+      const user = await authService.login(email, password);
       if (user) {
         setUser(user);
         setIsAdmin(user.isAdmin);
@@ -70,7 +70,7 @@ export function UserProvider({ children }: UserProviderProps) {
   const logout = async () => {
     setIsLoading(true);
     try {
-      await AuthService.logout();
+      await authService.logout();
       setUser(null);
       setIsAdmin(false);
     } finally {
