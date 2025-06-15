@@ -10,16 +10,16 @@ import { isAppError } from '../utils/errors';
 export async function uploadFile(req: Request, res: Response): Promise<Response> {
   try {
     if (!req.file) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         success: false,
-        error: 'No file provided' 
+        message: 'No file provided',
       });
     }
 
     if (!MEME_BUCKET_ID) {
-      return res.status(500).json({ 
+      return res.status(500).json({
         success: false,
-        error: 'Storage bucket not configured' 
+        message: 'Storage bucket not configured',
       });
     }
 
@@ -31,21 +31,21 @@ export async function uploadFile(req: Request, res: Response): Promise<Response>
     });
   } catch (error) {
     console.error('Error in uploadFile controller:', error);
-    
+
     // Handle our custom errors
     if (isAppError(error)) {
       return res.status(error.statusCode).json({
         success: false,
         message: error.message,
-        code: error.constructor.name
+        code: error.constructor.name,
       });
     }
-    
+
     // Handle other types of errors
     return res.status(500).json({
       success: false,
       message: error instanceof Error ? error.message : 'Unknown error',
-      code: 'InternalServerError'
+      code: 'InternalServerError',
     });
   }
 }
@@ -57,11 +57,11 @@ export async function uploadFile(req: Request, res: Response): Promise<Response>
 export async function uploadMultipleFiles(req: Request, res: Response): Promise<Response> {
   try {
     if (!req.files || !Array.isArray(req.files) || req.files.length === 0) {
-      return res.status(400).json({ error: 'No files provided' });
+      return res.status(400).json({ message: 'No files provided' });
     }
 
     if (!MEME_BUCKET_ID) {
-      return res.status(500).json({ error: 'Storage bucket not configured' });
+      return res.status(500).json({ message: 'Storage bucket not configured' });
     }
 
     const results = await FileService.uploadMultipleFiles(req.files);
@@ -88,11 +88,11 @@ export async function getFileMetadata(req: Request, res: Response): Promise<Resp
     const { fileId } = req.params;
 
     if (!fileId) {
-      return res.status(400).json({ error: 'No file ID provided' });
+      return res.status(400).json({ message: 'No file ID provided' });
     }
 
     if (!MEME_BUCKET_ID) {
-      return res.status(500).json({ error: 'Storage bucket not configured' });
+      return res.status(500).json({ message: 'Storage bucket not configured' });
     }
 
     const file = await FileService.getFileMetadata(fileId);
@@ -119,11 +119,11 @@ export async function getFileDownload(req: Request, res: Response): Promise<Resp
     const { fileId } = req.params;
 
     if (!fileId) {
-      return res.status(400).json({ error: 'No file ID provided' });
+      return res.status(400).json({ message: 'No file ID provided' });
     }
 
     if (!MEME_BUCKET_ID) {
-      return res.status(500).json({ error: 'Storage bucket not configured' });
+      return res.status(500).json({ message: 'Storage bucket not configured' });
     }
 
     // Get download URL
@@ -152,11 +152,11 @@ export async function getFilePreview(req: Request, res: Response): Promise<Respo
     const { width, height, quality } = req.query;
 
     if (!fileId) {
-      return res.status(400).json({ error: 'No file ID provided' });
+      return res.status(400).json({ message: 'No file ID provided' });
     }
 
     if (!MEME_BUCKET_ID) {
-      return res.status(500).json({ error: 'Storage bucket not configured' });
+      return res.status(500).json({ message: 'Storage bucket not configured' });
     }
 
     // Parse the options
@@ -191,11 +191,11 @@ export async function getFileView(req: Request, res: Response): Promise<Response
     const { fileId } = req.params;
 
     if (!fileId) {
-      return res.status(400).json({ error: 'No file ID provided' });
+      return res.status(400).json({ message: 'No file ID provided' });
     }
 
     if (!MEME_BUCKET_ID) {
-      return res.status(500).json({ error: 'Storage bucket not configured' });
+      return res.status(500).json({ message: 'Storage bucket not configured' });
     }
 
     // Get view URL
@@ -223,7 +223,7 @@ export async function listFiles(req: Request, res: Response): Promise<Response> 
     const { limit, offset } = req.query;
 
     if (!MEME_BUCKET_ID) {
-      return res.status(500).json({ error: 'Storage bucket not configured' });
+      return res.status(500).json({ message: 'Storage bucket not configured' });
     }
 
     // Parse the options
@@ -256,11 +256,11 @@ export async function deleteFile(req: Request, res: Response): Promise<Response>
     const { fileId } = req.params;
 
     if (!fileId) {
-      return res.status(400).json({ error: 'No file ID provided' });
+      return res.status(400).json({ message: 'No file ID provided' });
     }
 
     if (!MEME_BUCKET_ID) {
-      return res.status(500).json({ error: 'Storage bucket not configured' });
+      return res.status(500).json({ message: 'Storage bucket not configured' });
     }
 
     await FileService.deleteFile(fileId);

@@ -79,7 +79,7 @@ export const FileUploader = forwardRef<
         'image/*': ['.jpg', '.jpeg', '.png', '.gif'],
       },
       maxFiles = 1,
-      maxSize = 4 * 1024 * 1024,
+      maxSize = 2 * 1024 * 1024,
       multiple = true,
     } = dropzoneOptions;
 
