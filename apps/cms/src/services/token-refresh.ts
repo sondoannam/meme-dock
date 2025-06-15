@@ -1,5 +1,5 @@
 import { TokenService } from './token';
-import { AuthService } from './auth';
+import { authService } from './auth';
 
 // Configuration
 const REFRESH_TOKEN_THRESHOLD = 5 * 60; // 5 minutes before expiry in seconds
@@ -51,7 +51,7 @@ export const TokenRefreshService = {
       // Check if token will expire within threshold
       if (TokenService.isTokenExpired(REFRESH_TOKEN_THRESHOLD)) {
         console.log('Token expiring soon. Refreshing...');
-        await AuthService.getJWT();
+        await authService.getJWT();
       }
     } catch (error) {
       console.error('Error checking/refreshing token:', error);

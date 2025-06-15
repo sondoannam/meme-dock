@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { AuthService } from '../services/auth';
+import { authService } from '../services/auth';
 import { TokenService } from '../services/token';
 
 const API_URL = process.env.VITE_API_URL ?? 'http://localhost:3001/api';
@@ -51,7 +51,7 @@ apiClient.interceptors.request.use(
       // If token is expired or not found, request a new one
       if (!token || TokenService.isTokenExpired()) {
         if (!tokenRefreshPromise) {
-          tokenRefreshPromise = AuthService.getJWT();
+          tokenRefreshPromise = authService.getJWT();
         }
         token = await tokenRefreshPromise;
         tokenRefreshPromise = null;

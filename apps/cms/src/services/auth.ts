@@ -22,7 +22,7 @@ export interface User {
 }
 
 // Auth service to handle user authentication and team membership
-export const AuthService = {
+export const authService = {
   // Login user with email and password
   async login(email: string, password: string): Promise<User | null> {
     try {

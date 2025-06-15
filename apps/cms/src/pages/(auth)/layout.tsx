@@ -1,7 +1,6 @@
 import { Suspense } from 'react';
 import { Outlet } from 'react-router-dom';
 import { useAuthCheck } from '@/hooks/use-auth-check';
-import { PageLoading } from '@/components/custom/loading';
 
 /**
  * Layout component for authentication routes (login, register, etc.)
@@ -13,7 +12,7 @@ export function Component() {
   });
 
   return (
-    <Suspense fallback={<PageLoading message="Loading authentication..." />}>
+    <Suspense fallback={undefined}>
       <Outlet />
     </Suspense>
   );

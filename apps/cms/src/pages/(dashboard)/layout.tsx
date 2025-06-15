@@ -20,7 +20,16 @@ export function Component() {
     storeRedirectPath: true,
   });
 
-  const { memeCollection, setMemeCollection } = useMemeCollectionStore((state) => state);
+  const {
+    memeCollection,
+    setMemeCollection,
+    objectCollection,
+    setObjectCollection,
+    tagCollection,
+    setTagCollection,
+    moodCollection,
+    setMoodCollection,
+  } = useMemeCollectionStore((state) => state);
 
   const { run } = useRequest(collectionApi.getCollections, {
     onSuccess: (data) => {
@@ -34,11 +43,29 @@ export function Component() {
           setMemeCollection(meme);
         }
       }
+      if (!objectCollection) {
+        const object = data.find((collection) => collection.name === 'object');
+        if (object) {
+          setObjectCollection(object);
+        }
+      }
+      if (!tagCollection) {
+        const tag = data.find((collection) => collection.name === 'tag');
+        if (tag) {
+          setTagCollection(tag);
+        }
+      }
+      if (!moodCollection) {
+        const mood = data.find((collection) => collection.name === 'mood');
+        if (mood) {
+          setMoodCollection(mood);
+        }
+      }
     },
   });
 
   useUpdateEffect(() => {
-    if (!isLoading) {
+    if (!isLoading && !memeCollection && !objectCollection && !tagCollection && !moodCollection) {
       run();
     }
   }, [isLoading]);

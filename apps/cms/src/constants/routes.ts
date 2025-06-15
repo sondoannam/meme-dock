@@ -3,7 +3,7 @@ export const ROUTE_PATH = {
   LOGIN: '/login',
   DASHBOARD: '/dashboard',
   MEMES: '/manage-memes',
-  MEDIA: '/media',
+  RELATIONS: '/manage-meme-relations',
   USERS: '/users',
   SETTINGS: '/settings',
   UNAUTHORIZED: '/unauthorized',
