@@ -65,7 +65,7 @@ export const Component = () => {
         <span className="text-brand-yellow-2 !text-3xl">Memes</span> Gallery
       </h1>
       {isFetchingRelations && <SmallLoading />}
-      {relationOptions && (
+      {relationOptions && !isFetchingRelations && (
         <MemesGalleryTabs
           relationOptions={relationOptions}
           onRefreshRelations={onRefreshRelations}

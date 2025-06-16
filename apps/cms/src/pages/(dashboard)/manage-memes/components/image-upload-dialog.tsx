@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
@@ -29,7 +29,8 @@ export interface ImageUploadDialogProps {
 export function ImageUploadDialog({ dialog, relationOptions, onSuccess }: ImageUploadDialogProps) {
   const dialogInstance = DialogCustom.useDialog(dialog);
   const [files, setFiles] = useState<File[] | null>(null);
-    console.log('relationOptions', relationOptions.tags);
+  const [previewUrl, setPreviewUrl] = useState<string>();
+
   const form = useForm<ImageUploadFormValues>({
     resolver: zodResolver(imageUploadSchema) as any,
     defaultValues: {
@@ -72,6 +73,13 @@ export function ImageUploadDialog({ dialog, relationOptions, onSuccess }: ImageU
     setFiles(null);
     dialogInstance.close();
   };
+
+  useEffect(() => {
+    if (!files || files.length === 0) return;
+    const url = URL.createObjectURL(files[0]);
+    setPreviewUrl(url);
+    return () => URL.revokeObjectURL(url);
+  }, [files]);
 
   return (
     <DialogCustom
@@ -116,7 +124,7 @@ export function ImageUploadDialog({ dialog, relationOptions, onSuccess }: ImageU
                     {files && files.length > 0 ? (
                       <div className="relative w-full h-full">
                         <img
-                          src={URL.createObjectURL(files[0])}
+                          src={previewUrl}
                           alt="Preview"
                           className="object-contain w-full h-full"
                         />

@@ -69,6 +69,11 @@ export function MoodsTabView({ moodCollectionId, moods, onRefresh }: MoodsViewPr
 
   const handleOpenUpdate = (mood: MemeMoodType) => {
     setSelectedMood(mood);
+    form.reset({
+      label_en: mood.label_en,
+      label_vi: mood.label_vi,
+      slug: mood.slug,
+    });
     cuDialog.open();
   };
 

@@ -46,6 +46,13 @@ export function TagsView({ tagCollectionId, tags, onRefresh }: TagsViewProps) {
   const cuDialog = DialogCustom.useDialog();
   const deleteDialog = DialogCustom.useDialog();
 
+  const form = useForm<MemeTagFormValues>({
+    resolver: zodResolver(memeTagSchema),
+    defaultValues: {
+      label: selectedTag ? selectedTag.label : '',
+    },
+  });
+
   const handleOpenCreate = () => {
     setSelectedTag(null);
     cuDialog.open();
@@ -53,6 +60,9 @@ export function TagsView({ tagCollectionId, tags, onRefresh }: TagsViewProps) {
 
   const handleOpenUpdate = (tag: MemeTagType) => {
     setSelectedTag(tag);
+    form.reset({
+      label: tag.label,
+    });
     cuDialog.open();
   };
 
@@ -105,13 +115,6 @@ export function TagsView({ tagCollectionId, tags, onRefresh }: TagsViewProps) {
       },
     },
   );
-
-  const form = useForm<MemeTagFormValues>({
-    resolver: zodResolver(memeTagSchema),
-    defaultValues: {
-      label: selectedTag ? selectedTag.label : '',
-    },
-  });
 
   // Apply sorting and filtering
   const filteredTags = useMemo(() => {

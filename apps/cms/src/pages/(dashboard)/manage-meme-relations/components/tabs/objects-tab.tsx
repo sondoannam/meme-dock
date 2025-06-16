@@ -61,6 +61,11 @@ export function ObjectsTabView({ objectCollectionId, objects, onRefresh }: Objec
 
   const handleOpenUpdate = (object: MemeObjectType) => {
     setSelectedObject(object);
+    form.reset({
+      label_en: object.label_en,
+      label_vi: object.label_vi,
+      slug: object.slug,
+    });
     cuDialog.open();
   };
 

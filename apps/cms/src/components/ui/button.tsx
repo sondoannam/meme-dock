@@ -54,6 +54,7 @@ function Button({
     <Comp
       data-slot="button"
       className={cn(buttonVariants({ variant, size, className }))}
+      aria-busy={loading}
       {...props}
     >
       {loading && <InlineLoading className="mr-2" />}

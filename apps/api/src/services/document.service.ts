@@ -17,6 +17,25 @@ export interface BatchDocumentsResult {
 }
 
 /**
+ * Format a raw document from Appwrite by removing system fields and renaming them
+ * @param doc Raw document from Appwrite
+ * @returns Clean document with renamed system fields
+ */
+function formatDocument(doc: any): DocumentResponse {
+  // Extract values we want to keep
+  const { $id, $createdAt, $updatedAt, $collectionId, ...restOfDoc } = doc;
+
+  // Return cleaned object with renamed fields
+  return {
+    ...restOfDoc,
+    id: $id,
+    collectionId: $collectionId,
+    createdAt: $createdAt || '',
+    updatedAt: $updatedAt || '',
+  };
+}
+
+/**
  * Get documents from a collection with optional filtering and pagination
  * @param collectionId Collection ID to query
  * @param options Query options like limit, offset, ordering, and filters
@@ -85,30 +104,20 @@ export async function getDocuments(
     // Pagination parameters are handled via specific Query methods
 
     // Add pagination queries if provided
-    if (limit !== undefined) {
+    if (typeof limit === 'number') {
+      if (limit <= 0) throw new Error('limit must be positive');
       parsedQueries.push(Query.limit(limit));
     }
 
-    if (offset !== undefined) {
+    if (typeof offset === 'number') {
+      if (offset < 0) throw new Error('offset cannot be negative');
       parsedQueries.push(Query.offset(offset));
     }
 
     const response = await databases.listDocuments(DATABASE_ID, collectionId, parsedQueries);
 
     // Map documents and remove system fields
-    const cleanDocuments = response.documents.map((doc) => {
-      // Extract values we want to keep
-      const { $id, $createdAt, $updatedAt, $collectionId, ...restOfDoc } = doc;
-
-      // Return cleaned object with renamed fields
-      return {
-        ...restOfDoc,
-        id: $id,
-        createdAt: $createdAt || '',
-        updatedAt: $updatedAt || '',
-        collectionId: $collectionId,
-      };
-    });
+    const cleanDocuments = response.documents.map(formatDocument);
 
     return {
       total: response.total,
@@ -263,13 +272,7 @@ export async function getDocument(
 ): Promise<DocumentResponse> {
   try {
     const doc = await databases.getDocument(DATABASE_ID, collectionId, documentId);
-    return {
-      id: doc.$id,
-      collectionId: doc.$collectionId,
-      createdAt: doc.$createdAt || '',
-      updatedAt: doc.$updatedAt || '',
-      ...doc,
-    };
+    return formatDocument(doc);
   } catch (error) {
     console.error(`Error fetching document ${documentId} from collection ${collectionId}:`, error);
     throw error;
@@ -299,7 +302,6 @@ export async function createDocument(
         );
       }
     }
-
     const createdDocument = await databases.createDocument(
       DATABASE_ID,
       collectionId,
@@ -311,13 +313,7 @@ export async function createDocument(
       ],
     );
 
-    return {
-      id: createdDocument.$id,
-      collectionId: createdDocument.$collectionId,
-      createdAt: createdDocument.$createdAt || '',
-      updatedAt: createdDocument.$updatedAt || '',
-      ...createdDocument,
-    };
+    return formatDocument(createdDocument);
   } catch (error) {
     console.error(`Error creating document in collection ${collectionId}:`, error);
     throw error;
@@ -350,20 +346,14 @@ export async function updateDocument(
         );
       }
     }
-
     const updatedDocument = await databases.updateDocument(
       DATABASE_ID,
       collectionId,
       documentId,
       data,
     );
-    return {
-      id: updatedDocument.$id,
-      collectionId: updatedDocument.$collectionId,
-      createdAt: updatedDocument.$createdAt || '',
-      updatedAt: updatedDocument.$updatedAt || '',
-      ...updatedDocument,
-    };
+
+    return formatDocument(updatedDocument);
   } catch (error) {
     console.error(`Error updating document ${documentId} in collection ${collectionId}:`, error);
     throw error;
@@ -431,9 +421,18 @@ export async function createDocuments(
       // Continue with the operation, but note we couldn't verify duplicates
     }
   }
+  const seenSlugs = new Set<string>();
 
-  // Process each document item
   for (const data of dataItems) {
+    if (data.slug) {
+      if (seenSlugs.has(data.slug)) {
+        result.failed.push({ data, error: `Duplicate slug "${data.slug}" in request` });
+        result.totalFailed++;
+        continue;
+      }
+      seenSlugs.add(data.slug);
+    }
+
     try {
       // Skip if slug exists and skipDuplicateSlugs is true
       if (data.slug && existingSlugs.includes(data.slug)) {
@@ -451,7 +450,6 @@ export async function createDocuments(
           );
         }
       }
-
       const createdDocument = await databases.createDocument(
         DATABASE_ID,
         collectionId,
@@ -463,13 +461,8 @@ export async function createDocuments(
         ],
       );
 
-      const formattedDocument = {
-        id: createdDocument.$id,
-        collectionId: createdDocument.$collectionId,
-        createdAt: createdDocument.$createdAt || '',
-        updatedAt: createdDocument.$updatedAt || '',
-        ...createdDocument,
-      };
+      // Format document using the helper function
+      const formattedDocument = formatDocument(createdDocument);
 
       result.successful.push(formattedDocument);
       result.totalSuccessful++;

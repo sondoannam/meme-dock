@@ -140,7 +140,7 @@ export const createDocuments = async (req: Request, res: Response): Promise<void
     const { collectionId } = req.params;
     const { documents, skipDuplicateSlugs = true } = req.body;
 
-    if (!collectionId || !documents || !Array.isArray(documents)) {
+    if (!collectionId || !Array.isArray(documents) || documents.length === 0) {
       res.status(400).json({ 
         message: 'Collection ID and documents array are required',
         format: {
