@@ -1,7 +1,17 @@
 import { Card, CardHeader, CardContent, CardTitle, CardDescription } from '@/components/ui/card';
 import { mockGifs } from '../mock-data';
+import { SelectOption } from '@/components/custom/basic-select';
 
-export default function GifsTab() {
+interface GifsTabProps {
+  relationOptions: {
+    tags: SelectOption[];
+    objects: SelectOption[];
+    moods: SelectOption[];
+  };
+  onRefreshRelations: () => void;
+}
+
+export default function GifsTab({ relationOptions, onRefreshRelations }: GifsTabProps) {
   return (
     <Card>
       <CardHeader>

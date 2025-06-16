@@ -87,7 +87,6 @@ export function TagsView({ tagCollectionId, tags, onRefresh }: TagsViewProps) {
 
   const { run: deleteMeme, loading: isDeleting } = useRequest(
     () => {
-      console.log(selectedTag);
       if (!selectedTag || !selectedTag.id) {
         return Promise.reject(new Error('No tag selected for deletion'));
       }
@@ -143,6 +142,7 @@ export function TagsView({ tagCollectionId, tags, onRefresh }: TagsViewProps) {
           return 0;
       }
     });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debouncedSearchQuery, sortOption]);
 
   // Handle form submission
@@ -168,7 +168,6 @@ export function TagsView({ tagCollectionId, tags, onRefresh }: TagsViewProps) {
             <CardTitle className="!text-2xl">Meme Tags</CardTitle>
             <CardDescription>Add, edit and manage tags that describe memes</CardDescription>
           </div>
-
           <Button onClick={handleOpenCreate}>
             <Plus className="mr-2 h-4 w-4" /> Add Tag
           </Button>
@@ -208,7 +207,7 @@ export function TagsView({ tagCollectionId, tags, onRefresh }: TagsViewProps) {
                 className="relative group border rounded-lg p-4 hover:shadow-md transition-all overflow-hidden"
               >
                 <div className="flex flex-col gap-2">
-                  <h3 className="font-medium text-lg break-all">{tag.label}</h3>
+                  <h3 className="font-medium text-lg break-all">#{tag.label}</h3>
 
                   <div className="flex flex-wrap gap-2 mt-1">
                     {tag.usageCount !== undefined && (

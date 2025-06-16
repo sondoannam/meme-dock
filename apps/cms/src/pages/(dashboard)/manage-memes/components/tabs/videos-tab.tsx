@@ -7,8 +7,18 @@ import {
   CardDescription,
 } from '@/components/ui/card';
 import { mockVideos } from '../mock-data';
+import { SelectOption } from '@/components/custom/basic-select';
 
-export default function VideosTab() {
+interface VideosTabProps {
+  relationOptions: {
+    tags: SelectOption[];
+    objects: SelectOption[];
+    moods: SelectOption[];
+  };
+  onRefreshRelations: () => void;
+}
+
+export default function VideosTab({ relationOptions, onRefreshRelations }: VideosTabProps) {
   return (
     <Card>
       <CardHeader>

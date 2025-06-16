@@ -56,7 +56,7 @@ export const BasicSelect = ({
           ))}
         </SelectContent>
       </Select>
-      {value && (
+      {enableReset && value && (
         <Button
           variant="outline"
           size="icon"

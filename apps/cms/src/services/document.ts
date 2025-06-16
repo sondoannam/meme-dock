@@ -135,8 +135,26 @@ export const documentApi = {
    * @param collectionId ID of the collection
    * @param documentId ID of the document to delete
    * @returns Promise that resolves when the document is deleted
-   */
+   */  
   async deleteDocument(collectionId: string, documentId: string) {
     await apiClient.delete(`/documents/${collectionId}/${documentId}`);
+  },
+
+  /**
+   * Create multiple documents in a collection (batch creation)
+   * @param collectionId ID of the collection to create documents in
+   * @param documents Array of document data to create
+   * @param skipDuplicateSlugs Whether to skip documents with duplicate slugs (default: true)
+   * @returns Promise with the batch creation results
+   */  async createDocuments(
+    collectionId: string, 
+    documents: Record<string, unknown>[], 
+    skipDuplicateSlugs = true
+  ) {
+    const response = await apiClient.post(`/documents/${collectionId}/batch`, {
+      documents,
+      skipDuplicateSlugs
+    });
+    return response.data;
   },
 };

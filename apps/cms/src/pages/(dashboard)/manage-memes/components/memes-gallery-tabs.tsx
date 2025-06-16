@@ -5,10 +5,20 @@ import ImagesTab from './tabs/images-tab';
 import GifsTab from './tabs/gifs-tab';
 import VideosTab from './tabs/videos-tab';
 import { Icons } from '@/components/icons';
+import { Option as SelectOption } from '@/components/ui/multiple-selector';
 
 export type MemeType = 'images' | 'gifs' | 'videos';
 
-export default function MemesGalleryTabs() {
+interface MemesGalleryTabsProps {
+  relationOptions: {
+    tags: SelectOption[];
+    objects: SelectOption[];
+    moods: SelectOption[];
+  };
+  onRefreshRelations: () => void;
+}
+
+export default function MemesGalleryTabs(props: MemesGalleryTabsProps) {
   const [activeTab, setActiveTab] = useState<MemeType>('images');
 
   return (
@@ -34,15 +44,15 @@ export default function MemesGalleryTabs() {
       </TabsList>
 
       <TabsContent value="images" className="mt-4">
-        <ImagesTab />
+        <ImagesTab {...props} />
       </TabsContent>
 
       <TabsContent value="gifs">
-        <GifsTab />
+        <GifsTab {...props} />
       </TabsContent>
 
       <TabsContent value="videos">
-        <VideosTab />
+        <VideosTab {...props} />
       </TabsContent>
     </Tabs>
   );

@@ -133,6 +133,44 @@ export const createDocument = async (req: Request, res: Response): Promise<void>
 };
 
 /**
+ * Create multiple documents in batch
+ */
+export const createDocuments = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { collectionId } = req.params;
+    const { documents, skipDuplicateSlugs = true } = req.body;
+
+    if (!collectionId || !documents || !Array.isArray(documents)) {
+      res.status(400).json({ 
+        message: 'Collection ID and documents array are required',
+        format: {
+          documents: 'Array of document objects',
+          skipDuplicateSlugs: 'Boolean (optional, default: true)'
+        }
+      });
+      return;
+    }
+
+    const result = await DocumentService.createDocuments(
+      collectionId, 
+      documents, 
+      skipDuplicateSlugs
+    );
+    
+    res.status(207).json({
+      message: `Created ${result.totalSuccessful} documents, failed to create ${result.totalFailed} documents`,
+      ...result
+    });
+  } catch (error) {
+    console.error('Error creating documents in batch:', error);
+    res.status(500).json({
+      message: 'Failed to create documents in batch',
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
+  }
+};
+
+/**
  * Update a document
  */
 export const updateDocument = async (req: Request, res: Response): Promise<void> => {

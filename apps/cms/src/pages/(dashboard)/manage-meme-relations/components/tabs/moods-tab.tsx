@@ -23,6 +23,7 @@ import { memeMoodSchema, MemeMoodFormValues } from '@/validators';
 import { FormDialog } from '@/components/custom/form-dialog';
 import { documentApi, GetDocumentsParams } from '@/services/document';
 import { MemeMoodType } from '@/types';
+// import { MoodsBatchCreation } from '@/components/custom/MoodsBatchCreation';
 
 // Trending score color categories
 const getTrendingColor = (score: number) => {
@@ -31,12 +32,12 @@ const getTrendingColor = (score: number) => {
   return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100';
 };
 
-const getIntensityColor = (intensity: number) => {
-  if (intensity >= 8) return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100';
-  if (intensity >= 5)
-    return 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-100';
-  return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100';
-};
+// const getIntensityColor = (intensity: number) => {
+//   if (intensity >= 8) return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100';
+//   if (intensity >= 5)
+//     return 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-100';
+//   return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100';
+// };
 
 interface MoodsViewProps {
   moodCollectionId: string;
@@ -154,18 +155,27 @@ export function MoodsTabView({ moodCollectionId, moods, onRefresh }: MoodsViewPr
 
   return (
     <div className="space-y-6 p-1">
-      {/* Header with search and add button */}
-      <div className="flex flex-col gap-4 md:flex-row justify-between items-start md:items-center">
-        <Input
+      <div className="flex flex-col gap-4 md:flex-row justify-between items-start md:items-center">        <Input
           className="max-w-sm"
           placeholder="Search moods..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
         />
-        <Button onClick={handleOpenCreate}>
-          <Plus className="mr-2 h-4 w-4" />
-          Add Mood
-        </Button>
+
+        <div className="flex gap-2">          
+          {/* One-time batch creation button - Delete or comment out after use */}
+          {/* {moods.length === 0 && (
+            <MoodsBatchCreation 
+              collectionId={moodCollectionId}
+              onComplete={() => setTimeout(() => onRefresh(), 500)} 
+            />
+          )} */}
+
+          <Button onClick={handleOpenCreate}>
+            <Plus className="mr-2 h-4 w-4" />
+            Add Mood
+          </Button>
+        </div>
       </div>
       {/* Grid of moods */}{' '}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-4">
@@ -173,7 +183,7 @@ export function MoodsTabView({ moodCollectionId, moods, onRefresh }: MoodsViewPr
           <Card key={mood.id} className="overflow-hidden hover:shadow-md transition-all">
             <CardHeader className="pb-2">
               <div className="flex justify-between items-start">
-                <CardTitle className="text-lg">{mood.label_en}</CardTitle>
+                <CardTitle className="!text-lg">{mood.label_en}</CardTitle>
                 <div className="flex gap-1">
                   <Button
                     variant="ghost"
@@ -196,19 +206,19 @@ export function MoodsTabView({ moodCollectionId, moods, onRefresh }: MoodsViewPr
               <CardDescription className="text-foreground/80">{mood.label_vi}</CardDescription>
             </CardHeader>
             <CardContent className="pb-2">
-              <div className="text-sm text-muted-foreground space-y-2">
+              <div className="!text-sm text-muted-foreground space-y-2">
                 <div>
                   <span className="font-medium">Slug: </span>
                   <span className="font-mono bg-muted px-1 py-0.5 rounded text-xs">
                     {mood.slug}
                   </span>
                 </div>
-                {mood.intensity !== undefined && (
+                {/* {mood.intensity !== undefined && (
                   <div className="flex items-center gap-2">
                     <span className="font-medium">Intensity:</span>
                     <Badge className={getIntensityColor(mood.intensity)}>{mood.intensity}/10</Badge>
                   </div>
-                )}
+                )} */}
               </div>
             </CardContent>
             <CardFooter className="pt-0 flex flex-wrap gap-2">

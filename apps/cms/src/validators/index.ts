@@ -132,3 +132,16 @@ export const memeMoodSchema = z.object({
 });
 
 export type MemeMoodFormValues = z.infer<typeof memeMoodSchema>;
+
+// Schema for image upload form
+export const imageUploadSchema = z.object({
+  title_en: z.string().min(1, { message: "English title is required" }),
+  title_vi: z.string().min(1, { message: "Vietnamese title is required" }),
+  description: z.string().optional(),
+  tags: z.array(z.string()).default([]),
+  objects: z.array(z.string()).default([]),
+  moods: z.array(z.string()).default([]),
+  imageFile: z.instanceof(File).array().min(1, { message: "Image is required" })
+});
+
+export type ImageUploadFormValues = z.infer<typeof imageUploadSchema>;

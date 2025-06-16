@@ -36,7 +36,6 @@ export const Component = () => {
     defaultParams: [{}],
     refreshDeps: [tagCollectionId],
   });
-  console.log(isFetchingTags, tagList, tagCollectionId);
   
   const {
     data: objectList,
