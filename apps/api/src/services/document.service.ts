@@ -86,7 +86,16 @@ export async function getDocuments(
       parsedQueries
     );
 
-    return response;
+    return {
+      total: response.total,
+      documents: response.documents.map((doc) => ({
+        ...doc,
+        id: doc.$id,
+        createdAt: doc.$createdAt || '',
+        updatedAt: doc.$updatedAt || '',
+        collectionId: doc.$collectionId,
+      })),
+    };
   } catch (error) {
     console.error(`Error fetching documents from collection ${collectionId}:`, error);
     throw error;
@@ -235,7 +244,14 @@ export async function getDocument(
   documentId: string,
 ): Promise<DocumentResponse> {
   try {
-    return await databases.getDocument(DATABASE_ID, collectionId, documentId);
+    const doc = await databases.getDocument(DATABASE_ID, collectionId, documentId);
+    return {
+      id: doc.$id,
+      collectionId: doc.$collectionId,
+      createdAt: doc.$createdAt || '',
+      updatedAt: doc.$updatedAt || '',
+      ...doc,
+    };
   } catch (error) {
     console.error(`Error fetching document ${documentId} from collection ${collectionId}:`, error);
     throw error;
@@ -253,10 +269,18 @@ export async function createDocument(
   data: DocumentData,
 ): Promise<DocumentResponse> {
   try {
-    return await databases.createDocument(DATABASE_ID, collectionId, ID.unique(), data, [
+    const createdDocument = await databases.createDocument(DATABASE_ID, collectionId, ID.unique(), data, [
       Permission.read(Role.any()), // Public read access
       Permission.write(Role.team('admin')), // Admin team write access
     ]);
+
+    return {
+      id: createdDocument.$id,
+      collectionId: createdDocument.$collectionId,
+      createdAt: createdDocument.$createdAt || '',
+      updatedAt: createdDocument.$updatedAt || '',
+      ...createdDocument,
+    };
   } catch (error) {
     console.error(`Error creating document in collection ${collectionId}:`, error);
     throw error;
@@ -276,7 +300,14 @@ export async function updateDocument(
   data: DocumentData,
 ): Promise<DocumentResponse> {
   try {
-    return await databases.updateDocument(DATABASE_ID, collectionId, documentId, data);
+    const updatedDocument = await databases.updateDocument(DATABASE_ID, collectionId, documentId, data);
+    return {
+      id: updatedDocument.$id,
+      collectionId: updatedDocument.$collectionId,
+      createdAt: updatedDocument.$createdAt || '',
+      updatedAt: updatedDocument.$updatedAt || '',
+      ...updatedDocument,
+    };
   } catch (error) {
     console.error(`Error updating document ${documentId} in collection ${collectionId}:`, error);
     throw error;

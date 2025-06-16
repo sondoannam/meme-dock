@@ -46,15 +46,6 @@ export function TagsView({ tagCollectionId, tags, onRefresh }: TagsViewProps) {
   const cuDialog = DialogCustom.useDialog();
   const deleteDialog = DialogCustom.useDialog();
 
-  // const handleRefresh = () => {
-  //   onRefresh({
-  //     ...(sortOption === 'label' && {
-  //       orderBy: 'label',
-  //       orderType: 'asc',
-  //     }),
-  //   });
-  // };
-
   const handleOpenCreate = () => {
     setSelectedTag(null);
     cuDialog.open();
@@ -81,16 +72,26 @@ export function TagsView({ tagCollectionId, tags, onRefresh }: TagsViewProps) {
   };
 
   const createOrUpdateMeme = async (data: MemeTagFormValues) => {
-    if (selectedTag) {
-      return documentApi.updateDocument<MemeTagType>(tagCollectionId, selectedTag.id, data);
+    const defaultPayload: Partial<MemeTagType> = {
+      usageCount: 0,
+      trendingScore: 0.0,
+      ...data,
     }
 
-    return documentApi.createDocument<MemeTagType>(tagCollectionId, data);
+    if (selectedTag) {
+      return documentApi.updateDocument<MemeTagType>(tagCollectionId, selectedTag.id, defaultPayload);
+    }
+
+    return documentApi.createDocument<MemeTagType>(tagCollectionId, defaultPayload);
   };
 
   const { run: deleteMeme, loading: isDeleting } = useRequest(
-    (memeId: string) => {
-      return documentApi.deleteDocument(tagCollectionId, memeId);
+    () => {
+      console.log(selectedTag);
+      if (!selectedTag || !selectedTag.id) {
+        return Promise.reject(new Error('No tag selected for deletion'));
+      }
+      return documentApi.deleteDocument(tagCollectionId, selectedTag.id);
     },
     {
       manual: true,
@@ -255,6 +256,7 @@ export function TagsView({ tagCollectionId, tags, onRefresh }: TagsViewProps) {
         header={selectedTag ? 'Edit Tag' : 'Add New Tag'}
         form={form}
         onSubmit={onSubmit}
+        isSubmitting={form.formState.isSubmitting}
         submitText={selectedTag ? 'Save Changes' : 'Add Tag'}
         onClose={closeCUDialog}
         className="max-w-md"
@@ -272,7 +274,7 @@ export function TagsView({ tagCollectionId, tags, onRefresh }: TagsViewProps) {
         dialog={deleteDialog}
         isConfirmDelete={true}
         header="Delete Tag"
-        onConfirmDelete={() => deleteMeme(selectedTag?.id || '')}
+        onConfirmDelete={deleteMeme}
         onCloseDelete={() => deleteDialog.close()}
         deleteLoading={isDeleting}
       >

@@ -1,35 +1,36 @@
-import { CollectionSchemaType } from '@/validators';
+import { CUCollectionFieldValues } from '@/validators';
+import { Collection } from '@/types';
 import apiClient from '../api/api-client';
 
 // Collection API service
 export const collectionApi = {
   // Get all collections
   async getCollections() {
-    const response = await apiClient.get<CollectionSchemaType[]>('/collections');
+    const response = await apiClient.get<Collection[]>('/collections');
     return response.data;
   },
 
   // Get a collection by ID
   async getCollection(id: string) {
-    const response = await apiClient.get<CollectionSchemaType>(`/collections/${id}`);
+    const response = await apiClient.get<Collection>(`/collections/${id}`);
     return response.data;
   },
 
   // Create a collection
-  async createCollection(collection: CollectionSchemaType) {
-    const response = await apiClient.post<CollectionSchemaType>('/collections', collection);
+  async createCollection(collection: CUCollectionFieldValues) {
+    const response = await apiClient.post<Collection>('/collections', collection);
     return response.data;
   },
 
   // Update a collection
-  async updateCollection(id: string, collection: CollectionSchemaType) {
-    const response = await apiClient.put<CollectionSchemaType>(`/collections/${id}`, collection);
+  async updateCollection(id: string, collection: CUCollectionFieldValues) {
+    const response = await apiClient.put<Collection>(`/collections/${id}`, collection);
     return response.data;
   },
 
   // Create multiple collections (batch)
-  async createCollections(collections: CollectionSchemaType[]) {
-    const response = await apiClient.post<CollectionSchemaType[]>(
+  async createCollections(collections: CUCollectionFieldValues[]) {
+    const response = await apiClient.post<Collection[]>(
       '/collections/batch',
       collections,
     );

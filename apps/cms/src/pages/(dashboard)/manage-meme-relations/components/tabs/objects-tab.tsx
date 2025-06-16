@@ -44,34 +44,23 @@ export function ObjectsTabView({ objectCollectionId, objects, onRefresh }: Objec
   // Dialogs
   const cuDialog = DialogCustom.useDialog();
   const deleteDialog = DialogCustom.useDialog();
-  
+
   const form = useForm<MemeObjectFormValues>({
     resolver: zodResolver(memeObjectSchema),
     defaultValues: {
-      label_en: '',
-      label_vi: '',
-      slug: '',
+      label_en: selectedObject ? selectedObject.label_en : '',
+      label_vi: selectedObject ? selectedObject.label_vi : '',
+      slug: selectedObject ? selectedObject.slug : '',
     },
   });
-  
-  // Handle opening dialogs
+
   const handleOpenCreate = () => {
     setSelectedObject(null);
-    form.reset({
-      label_en: '',
-      label_vi: '',
-      slug: '',
-    });
     cuDialog.open();
   };
 
   const handleOpenUpdate = (object: MemeObjectType) => {
     setSelectedObject(object);
-    form.reset({
-      label_en: object.label_en,
-      label_vi: object.label_vi,
-      slug: object.slug,
-    });
     cuDialog.open();
   };
 
@@ -80,30 +69,48 @@ export function ObjectsTabView({ objectCollectionId, objects, onRefresh }: Objec
     deleteDialog.open();
   };
 
-  const closeCUDialog = () => {
+  const handleCloseCUDialog = () => {
     cuDialog.close();
     setSelectedObject(null);
   };
-  // closeDeleteDialog is now handled by onCloseDelete in DialogCustom
-    // Create or update object
+
+  const handleCloseDeleteDialog = () => {
+    deleteDialog.close();
+    setSelectedObject(null);
+  };
+
   const createOrUpdateObject = async (data: MemeObjectFormValues) => {
+    const defaultPayload: Partial<MemeObjectType> = {
+      usageCount: 0,
+      trendingScore: 0.0,
+      ...data,
+    };
     if (selectedObject) {
-      return documentApi.updateDocument<MemeObjectType>(objectCollectionId, selectedObject.id, data);
+      return documentApi.updateDocument<MemeObjectType>(
+        objectCollectionId,
+        selectedObject.id,
+        defaultPayload,
+      );
     }
-    return documentApi.createDocument<MemeObjectType>(objectCollectionId, data);
+    return documentApi.createDocument<MemeObjectType>(objectCollectionId, defaultPayload);
   };
 
   // Delete object
   const { run: deleteObject, loading: isDeleting } = useRequest(
-    (objectId: string) => {
-      return documentApi.deleteDocument(objectCollectionId, objectId);
+    () => {
+      if (!selectedObject || !selectedObject.id) {
+        return Promise.reject(new Error('No object selected for deletion'));
+      }
+      return documentApi.deleteDocument(objectCollectionId, selectedObject.id);
     },
     {
       manual: true,
       onSuccess: () => {
         toast.success('Object deleted successfully!');
+        handleCloseDeleteDialog();
         onRefresh();
-      },      onError: (error: Error) => {
+      },
+      onError: (error: Error) => {
         toast.error(`Failed to delete object: ${error.message}`);
       },
     },
@@ -113,26 +120,31 @@ export function ObjectsTabView({ objectCollectionId, objects, onRefresh }: Objec
   const onSubmit = async (values: MemeObjectFormValues) => {
     try {
       await createOrUpdateObject(values);
-      toast.success(selectedObject ? 'Object updated successfully!' : 'Object created successfully!');
-      closeCUDialog();
-      onRefresh();    } catch (error: unknown) {
+      toast.success(
+        selectedObject ? 'Object updated successfully!' : 'Object created successfully!',
+      );
+      handleCloseCUDialog();
+      onRefresh();
+    } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       toast.error(`Failed to ${selectedObject ? 'update' : 'create'} object: ${errorMessage}`);
     }
-  };  // Delete is now handled by onConfirmDelete in DialogCustom
-  
+  }; // Delete is now handled by onConfirmDelete in DialogCustom
+
   // Filter objects based on search query
-  const filteredObjects = useMemo(() => 
-    objects.filter(
-      (object) =>
-        object.label_en.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        object.label_vi.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        object.slug.toLowerCase().includes(searchQuery.toLowerCase()),
-    ), [objects, searchQuery]);
+  const filteredObjects = useMemo(
+    () =>
+      objects.filter(
+        (object) =>
+          object.label_en.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          object.label_vi.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          object.slug.toLowerCase().includes(searchQuery.toLowerCase()),
+      ),
+    [objects, searchQuery],
+  );
 
   return (
     <div className="space-y-6 p-1">
-      {/* Header with search and add button */}
       <div className="flex flex-col gap-4 md:flex-row justify-between items-start md:items-center">
         <Input
           className="max-w-sm"
@@ -146,24 +158,24 @@ export function ObjectsTabView({ objectCollectionId, objects, onRefresh }: Objec
         </Button>
       </div>
 
-      {/* Grid of objects */}      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-4">
         {filteredObjects.map((object) => (
           <Card key={object.id} className="overflow-hidden hover:shadow-md transition-all">
             <CardHeader className="pb-2">
               <div className="flex justify-between items-start">
                 <CardTitle className="text-lg">{object.label_en}</CardTitle>
                 <div className="flex gap-1">
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
+                  <Button
+                    variant="ghost"
+                    size="icon"
                     className="h-8 w-8"
                     onClick={() => handleOpenUpdate(object)}
                   >
                     <Pencil className="h-4 w-4" />
                   </Button>
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
+                  <Button
+                    variant="ghost"
+                    size="icon"
                     className="h-8 w-8 text-destructive"
                     onClick={() => handleOpenDelete(object)}
                   >
@@ -171,14 +183,14 @@ export function ObjectsTabView({ objectCollectionId, objects, onRefresh }: Objec
                   </Button>
                 </div>
               </div>
-              <CardDescription className="text-foreground/80">
-                {object.label_vi} 
-              </CardDescription>
+              <CardDescription className="text-foreground/80">{object.label_vi}</CardDescription>
             </CardHeader>
             <CardContent className="pb-2">
               <div className="text-sm text-muted-foreground">
                 <span className="font-medium">Slug: </span>
-                <span className="font-mono bg-muted px-1 py-0.5 rounded text-xs">{object.slug}</span>
+                <span className="font-mono bg-muted px-1 py-0.5 rounded text-xs">
+                  {object.slug}
+                </span>
               </div>
             </CardContent>
             <CardFooter className="pt-0 flex flex-wrap gap-2">
@@ -203,13 +215,14 @@ export function ObjectsTabView({ objectCollectionId, objects, onRefresh }: Objec
         </div>
       )}
 
-      {/* Create/Edit Dialog */}      <FormDialog
+      <FormDialog
         form={form}
         dialog={cuDialog}
         header={selectedObject ? 'Edit Object' : 'Add New Object'}
         onSubmit={onSubmit}
+        isSubmitting={form.formState.isSubmitting}
         submitText={selectedObject ? 'Save Changes' : 'Add Object'}
-        onClose={closeCUDialog}
+        onClose={handleCloseCUDialog}
       >
         <div className="grid gap-4 py-4">
           <InputText
@@ -224,27 +237,24 @@ export function ObjectsTabView({ objectCollectionId, objects, onRefresh }: Objec
             placeholder="e.g. Người"
             control={form.control}
           />
-          <InputText
-            name="slug"
-            label="Slug"
-            placeholder="e.g. person"
-            control={form.control}
-          />
+          <InputText name="slug" label="Slug" placeholder="e.g. person" control={form.control} />
         </div>
-      </FormDialog>      {/* Delete Confirmation Dialog */}
+      </FormDialog>
+
       <DialogCustom
         dialog={deleteDialog}
         isConfirmDelete={true}
         header="Delete Object"
-        onConfirmDelete={() => deleteObject(selectedObject?.id || '')}
-        onCloseDelete={() => deleteDialog.close()}
+        onConfirmDelete={deleteObject}
+        onCloseDelete={handleCloseDeleteDialog}
         deleteLoading={isDeleting}
       >
         <p>
           Are you sure you want to delete <strong>{selectedObject?.label_en}</strong>?
         </p>
         <p className="text-muted-foreground mt-2">
-          This action cannot be undone. This will permanently delete the object and any relationships.
+          This action cannot be undone. This will permanently delete the object and any
+          relationships.
         </p>
       </DialogCustom>
     </div>

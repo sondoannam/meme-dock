@@ -21,37 +21,45 @@ const emptyList = {
 export const Component = () => {
   const [activeTab, setActiveTab] = useState<RelationType>('tags');
 
-  const tagCollectionId = useMemeCollectionStore((state) => state.tagCollection?.slug);
-  const objectCollectionId = useMemeCollectionStore((state) => state.objectCollection?.slug);
-  const moodCollectionId = useMemeCollectionStore((state) => state.moodCollection?.slug);
+  const tagCollectionId = useMemeCollectionStore((state) => state.tagCollection?.id);
+  const objectCollectionId = useMemeCollectionStore((state) => state.objectCollection?.id);
+  const moodCollectionId = useMemeCollectionStore((state) => state.moodCollection?.id);
 
-  // Fetch tags data
   const {
     data: tagList,
     run: onRefreshTags,
     loading: isFetchingTags,
-  } = useRequest((params: GetDocumentsParams = {}) => {
+  } = useRequest((params?: GetDocumentsParams) => {
     if (!tagCollectionId) return Promise.resolve(emptyList);
     return documentApi.getDocuments<MemeTagType>(tagCollectionId, params);
+  }, {
+    defaultParams: [{}],
+    refreshDeps: [tagCollectionId],
   });
-  // Fetch objects data
+  console.log(isFetchingTags, tagList, tagCollectionId);
+  
   const {
     data: objectList,
     run: onRefreshObjects,
     loading: isFetchingObjects,
-  } = useRequest((params: GetDocumentsParams = {}) => {
+  } = useRequest((params?: GetDocumentsParams) => {
     if (!objectCollectionId) return Promise.resolve(emptyList);
     return documentApi.getDocuments<MemeObjectType>(objectCollectionId, params);
+  }, {
+    defaultParams: [{}],
+    refreshDeps: [objectCollectionId],
   });
 
-  // Fetch moods data
   const {
     data: moodList,
     run: onRefreshMoods,
     loading: isFetchingMoods,
-  } = useRequest((params: GetDocumentsParams = {}) => {
+  } = useRequest((params?: GetDocumentsParams) => {
     if (!moodCollectionId) return Promise.resolve(emptyList);
     return documentApi.getDocuments<MemeMoodType>(moodCollectionId, params);
+  }, {
+    defaultParams: [{}],
+    refreshDeps: [moodCollectionId],
   });
 
   return (

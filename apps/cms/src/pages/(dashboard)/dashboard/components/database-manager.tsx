@@ -10,7 +10,7 @@ import { CollectionSetupDialog } from './collection-setup-dialog';
 import { DialogCustom } from '@/components/custom/dialog-custom';
 import { useRequest } from 'ahooks';
 import { collectionApi } from '@/services/collection';
-import { CollectionSchemaType } from '@/validators';
+import { Collection } from '@/types';
 import { useMemeCollectionStore } from '@/stores/meme-store';
 
 export const DatabaseManager = () => {
@@ -60,7 +60,7 @@ export const DatabaseManager = () => {
     }
   }
   
-  const handleCollectionSetupSuccess = (newCollections: CollectionSchemaType[]) => {
+  const handleCollectionSetupSuccess = (newCollections: Collection[]) => {
     setSetupStatus('success');
     // We don't rely on ID comparison here since we're not sure about the ID structure
     setSetupMessage('Database collections successfully updated!');

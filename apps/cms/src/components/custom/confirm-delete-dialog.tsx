@@ -29,11 +29,16 @@ export const ConfirmDeleteDialog = ({
       title={title}
       header={header}
       footer={
-        <div className='flex gap-4'>
-          <Button variant='outline' onClick={closeDelete}>
+        <div className="flex gap-4">
+          <Button variant="outline" onClick={closeDelete}>
             Cancel
           </Button>
-          <Button variant='destructive' onClick={onConfirmDelete} disabled={deleteLoading}>
+          <Button
+            variant="destructive"
+            onClick={onConfirmDelete}
+            disabled={deleteLoading}
+            loading={deleteLoading}
+          >
             {confirmText}
           </Button>
         </div>

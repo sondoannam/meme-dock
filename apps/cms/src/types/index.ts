@@ -1,3 +1,5 @@
+import { CUCollectionFieldValues } from "@/validators";
+
 export type MemeTagType = {
   id: string;
   label: string;
@@ -32,4 +34,11 @@ export type MemeMoodType = {
 export type DocumentList<T> = {
   documents: T[];
   total: number;
+}
+
+export type Collection = CUCollectionFieldValues & {
+  id: string;
+  createdAt: string;
+  updatedAt: string;
+  enabled: boolean;
 }

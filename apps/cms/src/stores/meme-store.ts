@@ -1,18 +1,18 @@
-import { CollectionSchemaType } from '@/validators';
+import { Collection } from '@/types';
 import { create } from 'zustand';
 
 type MemeCollectionState = {
-  memeCollection: CollectionSchemaType | null;
-  objectCollection: CollectionSchemaType | null;
-  tagCollection: CollectionSchemaType | null;
-  moodCollection: CollectionSchemaType | null;
+  memeCollection: Collection | null;
+  objectCollection: Collection | null;
+  tagCollection: Collection | null;
+  moodCollection: Collection | null;
 };
 
 type MemeCollectionAction = {
-  setMemeCollection: (collection: CollectionSchemaType | null) => void;
-  setObjectCollection: (collection: CollectionSchemaType | null) => void;
-  setTagCollection: (collection: CollectionSchemaType | null) => void;
-  setMoodCollection: (collection: CollectionSchemaType | null) => void;
+  setMemeCollection: (collection: Collection | null) => void;
+  setObjectCollection: (collection: Collection | null) => void;
+  setTagCollection: (collection: Collection | null) => void;
+  setMoodCollection: (collection: Collection | null) => void;
 };
 
 export const useMemeCollectionStore = create<MemeCollectionState & MemeCollectionAction>((set) => ({

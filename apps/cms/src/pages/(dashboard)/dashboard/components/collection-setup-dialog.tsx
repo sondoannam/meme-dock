@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
@@ -6,7 +6,8 @@ import { DialogCustom } from '@/components/custom/dialog-custom';
 import { Plus, Save } from 'lucide-react';
 import { InputText } from '@/components/custom/form-field/input-text';
 import { CollectionFieldsForm } from './collection-fields-form';
-import { CollectionFieldType, CollectionSchemaType, collectionSchema } from '@/validators';
+import { CollectionFieldType, CUCollectionFieldValues, cuCollectionReqSchema } from '@/validators';
+import { Collection } from '@/types';
 import { collectionApi } from '@/services/collection';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Form } from '@/components/ui/form';
@@ -20,9 +21,9 @@ import { toast } from 'sonner';
 
 interface CollectionSetupDialogProps {
   dialog: DialogInstance;
-  collections?: CollectionSchemaType[];
+  collections?: Collection[];
   loadingCollections?: boolean;
-  onSuccess?: (collections: CollectionSchemaType[]) => void;
+  onSuccess?: (collections: Collection[]) => void;
 }
 
 export const CollectionSetupDialog = ({
@@ -34,35 +35,31 @@ export const CollectionSetupDialog = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<string>('new');
-  // Define extended type for collections that might include IDs from the backend
-  type CollectionWithId = CollectionSchemaType & { $id?: string; id?: string };
 
-  const [selectedCollection, setSelectedCollection] = useState<CollectionWithId | null>(null);
+  const [selectedCollection, setSelectedCollection] = useState<Collection | null>(null);
   const [mode, setMode] = useState<'create' | 'update'>('create');
 
-  const form = useForm<CollectionSchemaType>({
-    resolver: zodResolver(collectionSchema) as any,
+  const form = useForm<CUCollectionFieldValues>({
+    resolver: zodResolver(cuCollectionReqSchema) as any,
     defaultValues: {
+      id: '',
       name: '',
-      slug: '',
-      description: '',
       fields: [] as CollectionFieldType[],
     },
   });
 
-  function resetExistingCollection() {
+  const resetExistingCollection = useCallback(() => {
     setSelectedCollection(null);
     form.reset();
-  }
+  }, [form]);
 
   // Reset form when dialog opens or closes
   useEffect(() => {
     if (dialog.isOpen) {
       if (mode === 'create') {
         form.reset({
+          id: '',
           name: '',
-          slug: '',
-          description: '',
           fields: [] as CollectionFieldType[],
         });
       }
@@ -71,9 +68,8 @@ export const CollectionSetupDialog = ({
     }
 
     resetExistingCollection();
-  }, [dialog.isOpen, form, mode]);
+  }, [dialog.isOpen, form, mode, resetExistingCollection]);
 
-  // Handle tab change
   const handleTabChange = (value: string) => {
     setActiveTab(value);
     setSelectedCollection(null);
@@ -82,25 +78,22 @@ export const CollectionSetupDialog = ({
       setMode('create');
       form.reset({
         name: '',
-        slug: '',
-        description: '',
         fields: [] as CollectionFieldType[],
       });
     }
   };
-
-  // Handle selecting a collection to edit
-  const handleSelectCollection = (collection: CollectionSchemaType & { id?: string }) => {
+  
+  const handleSelectCollection = (collection: Collection & { $id?: string }) => {
     setSelectedCollection(collection);
     setMode('update');
     form.reset({
-      ...collection,
+      id: collection.id,
+      name: collection.name,
       fields: Array.isArray(collection.fields) ? collection.fields : ([] as CollectionFieldType[]),
     });
   };
 
   const handleFieldDefaultValue = (field: CollectionFieldType) => {
-    console.log('Handling default value for field:', field);
     if (field.required || field.type === 'enum' || field.type === 'datetime') {
       return undefined;
     }
@@ -108,33 +101,35 @@ export const CollectionSetupDialog = ({
     return field.defaultValue;
   };
 
-  const onSubmit = async (data: CollectionSchemaType) => {
+  const onSubmit = async (data: CUCollectionFieldValues) => {
     setIsSubmitting(true);
     setError(null);
 
     const { fields, ...restData } = data;
-    const payloadData: CollectionSchemaType = {
+    const payloadData: CUCollectionFieldValues = {
       ...restData,
-      fields: fields.map((field) => ({
+      fields: fields.map((field: CollectionFieldType) => ({
         ...field,
         defaultValue: handleFieldDefaultValue(field),
       })),
     };
 
     try {
-      if (mode === 'create') {
-        await collectionApi.createCollection(payloadData);
-      } else if (mode === 'update' && selectedCollection) {
-        const collectionId = (selectedCollection.$id ||
-          selectedCollection.id ||
-          selectedCollection.slug) as string;
+      let createdCollection: Collection;
 
-        await collectionApi.updateCollection(collectionId, payloadData);
+      if (mode === 'create') {
+        createdCollection = await collectionApi.createCollection(payloadData);
+      } else if (mode === 'update' && selectedCollection) {
+        const collectionId = selectedCollection.id as string;
+
+        createdCollection = await collectionApi.updateCollection(collectionId, payloadData);
+      } else {
+        throw new Error('Invalid operation mode');
       }
 
       form.reset();
       dialog.close();
-      onSuccess?.([data]);
+      onSuccess?.([createdCollection]);
 
       toast.success(`Collection ${mode === 'create' ? 'created' : 'updated'} successfully!`);
     } catch (err) {
@@ -150,20 +145,9 @@ export const CollectionSetupDialog = ({
       setIsSubmitting(false);
     }
   };
-
-  //   Auto-generate slug from name
+  // Handle name change (no longer needed to auto-generate slug)
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const name = e.target.value;
-    // Only auto-generate slug if it's empty or in create mode
-    if (mode === 'create' || !form.getValues('slug')) {
-      form.setValue(
-        'slug',
-        name
-          .toLowerCase()
-          .replace(/\s+/g, '_')
-          .replace(/[^a-z0-9_-]/g, ''),
-      );
-    }
+    // Name change handler is kept for any future needs
   };
 
   if (loadingCollections) {
@@ -200,37 +184,32 @@ export const CollectionSetupDialog = ({
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {collections.map((collectionItem, idx) => {
-                  // Cast to our extended collection type
-                  const collection = collectionItem as CollectionWithId;
-                  const collectionId = collection.$id || collection.id;
                   const isSelected =
-                    selectedCollection &&
-                    ((selectedCollection.$id && selectedCollection.$id === collection.$id) ||
-                      (selectedCollection.id && selectedCollection.id === collection.id) ||
-                      selectedCollection.slug === collection.slug);
+                    selectedCollection && selectedCollection.id === collectionItem.id;
 
                   return (
                     <Card
-                      key={collectionId || `collection-${idx}`}
+                      key={collectionItem.id || `collection-${idx}`}
                       className={cn(
                         'cursor-pointer transition-all hover:border-primary',
                         isSelected ? 'border-2 border-primary' : '',
                       )}
-                      onClick={() => handleSelectCollection(collection)}
+                      onClick={() => handleSelectCollection(collectionItem)}
                     >
                       <CardHeader className="pb-2">
-                        <CardTitle className="!text-lg">{collection.name}</CardTitle>
+                        <CardTitle className="!text-lg">{collectionItem.name}</CardTitle>
                         <CardDescription className="!text-xs">
-                          Slug: {collection.slug ?? 'none'}
+                          ID: {collectionItem.id ?? 'none'}
                         </CardDescription>
                       </CardHeader>
                       <CardContent>
-                        <p className="!text-sm text-muted-foreground">
-                          {collection.description ?? 'No description provided'}
-                        </p>
                         <p className="!text-sm mt-2">
-                          <span className="font-medium">{collection.fields?.length || 0} </span>
-                          attributes
+                          <span className="font-medium">{collectionItem.fields?.length || 0} </span>
+                          fields
+                        </p>
+                        <p className="!text-xs mt-1 text-muted-foreground">
+                          {collectionItem.enabled ? 'Enabled' : 'Disabled'} • Updated:{' '}
+                          {new Date(collectionItem.updatedAt).toLocaleDateString()}
                         </p>
                       </CardContent>
                     </Card>
@@ -249,8 +228,7 @@ export const CollectionSetupDialog = ({
                       <AlertDescription>{error}</AlertDescription>
                     </Alert>
                   )}
-
-                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <div className="grid grid-cols-1 gap-4">
                     <InputText
                       control={form.control}
                       name="name"
@@ -262,34 +240,10 @@ export const CollectionSetupDialog = ({
                       className="mb-auto cursor-not-allowed"
                       readOnly
                     />
-
-                    <InputText
-                      control={form.control}
-                      name="slug"
-                      label="Collection Slug"
-                      placeholder="e.g. users, posts, comments"
-                      description="Used as the collection identifier in the database"
-                      className="cursor-not-allowed"
-                      readOnly
-                    />
-
-                    <div className="md:col-span-2">
-                      <InputText
-                        control={form.control}
-                        name="description"
-                        label="Description"
-                        placeholder="Describe the purpose of this collection (optional)"
-                        isTextArea={true}
-                        className="cursor-not-allowed"
-                        readOnly
-                      />
-                    </div>
                   </div>
-
                   <div className="border-t pt-4">
                     <CollectionFieldsForm />
                   </div>
-
                   <div className="flex justify-end space-x-2">
                     <Button
                       type="button"
@@ -321,8 +275,7 @@ export const CollectionSetupDialog = ({
                     <AlertDescription>{error}</AlertDescription>
                   </Alert>
                 )}
-
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div className="grid grid-cols-1 gap-4">
                   <InputText
                     control={form.control}
                     name="name"
@@ -333,30 +286,10 @@ export const CollectionSetupDialog = ({
                     }}
                     className="mb-auto"
                   />
-
-                  <InputText
-                    control={form.control}
-                    name="slug"
-                    label="Collection Slug"
-                    placeholder="e.g. users, posts, comments"
-                    description="Used as the collection identifier in the database"
-                  />
-
-                  <div className="md:col-span-2">
-                    <InputText
-                      control={form.control}
-                      name="description"
-                      label="Description"
-                      placeholder="Describe the purpose of this collection (optional)"
-                      isTextArea={true}
-                    />
-                  </div>
                 </div>
-
                 <div className="border-t pt-4">
                   <CollectionFieldsForm />
                 </div>
-
                 <div className="flex justify-end space-x-2">
                   <Button
                     type="button"

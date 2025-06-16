@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { CollectionService } from '../services';
-import { CollectionSchemaType } from '../models/collection-schema';
+import { CUCollectionReq } from '../models/collection-schema';
 
 /**
  * Get all collections
@@ -23,9 +23,9 @@ export const getCollections = async (req: Request, res: Response): Promise<void>
  */
 export const createCollection = async (req: Request, res: Response): Promise<void> => {
   try {
-    const collectionData = req.body as CollectionSchemaType;
+    const collectionData = req.body as CUCollectionReq;
 
-    if (!collectionData || !collectionData.name || !collectionData.slug || !collectionData.fields) {
+    if (!collectionData || !collectionData.name || !collectionData.fields) {
       res.status(400).json({ message: 'Invalid collection data' });
       return;
     }
@@ -47,14 +47,14 @@ export const createCollection = async (req: Request, res: Response): Promise<voi
 export const updateCollection = async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
-    const collectionData = req.body as CollectionSchemaType;
+    const collectionData = req.body as CUCollectionReq;
 
     if (!id) {
       res.status(400).json({ message: 'Collection ID is required' });
       return;
     }
 
-    if (!collectionData || !collectionData.name || !collectionData.slug || !collectionData.fields) {
+    if (!collectionData || !collectionData.name || !collectionData.fields) {
       res.status(400).json({ message: 'Invalid collection data' });
       return;
     }
@@ -85,7 +85,7 @@ export const updateCollection = async (req: Request, res: Response): Promise<voi
  */
 export const createCollections = async (req: Request, res: Response): Promise<void> => {
   try {
-    const collectionsData = req.body as CollectionSchemaType[];
+    const collectionsData = req.body as CUCollectionReq[];
 
     if (!Array.isArray(collectionsData) || collectionsData.length === 0) {
       res
