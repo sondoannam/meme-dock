@@ -31,6 +31,7 @@ export const DatabaseManager = () => {
     loading,
   } = useRequest(collectionApi.getCollections, {
     onSuccess: (data) => {
+      console.log('collections data', data);
       if (data && data.length > 0) {
         setSetupStatus('success');
       }

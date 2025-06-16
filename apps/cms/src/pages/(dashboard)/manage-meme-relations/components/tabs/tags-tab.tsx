@@ -115,6 +115,7 @@ export function TagsView({ tagCollectionId, tags, onRefresh }: TagsViewProps) {
 
   // Apply sorting and filtering
   const filteredTags = useMemo(() => {
+    if (!tags || tags.length === 0) return [];
     // First filter by search query
     const filtered = tags.filter((tag) =>
       tag.label.toLowerCase().includes(debouncedSearchQuery.toLowerCase()),

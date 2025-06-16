@@ -1,3 +1,4 @@
+import { DocumentList } from '@/types';
 import apiClient from '../api/api-client';
 
 export interface DocumentCountPeriod {
@@ -89,7 +90,7 @@ export const documentApi = {
     if (orderType) params.orderType = orderType;
     if (queries && queries.length > 0) params.queries = queries;
 
-    const response = await apiClient.get<T>(`/documents/${collectionId}`, { params });
+    const response = await apiClient.get<DocumentList<T>>(`/documents/${collectionId}`, { params });
     return response.data;
   },
   /**

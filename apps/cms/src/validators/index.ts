@@ -20,6 +20,7 @@ export type LoginFormData = z.infer<typeof loginSchema>;
 export const fieldTypes: SelectOption[] = [
   { id: 'string', value: 'string', label: 'String' },
   { id: 'number', value: 'number', label: 'Number' },
+  { id: 'float', value: 'float', label: 'Float' }, // Float is treated as number
   { id: 'boolean', value: 'boolean', label: 'Boolean' },
   { id: 'array', value: 'array', label: 'Array' },
   { id: 'datetime', value: 'datetime', label: 'DateTime' },
@@ -39,7 +40,7 @@ export const collectionFieldSchema = z
         /^[a-zA-Z]\w*$/,
         'Field name must start with a letter and contain only letters, numbers and underscores',
       ),
-    type: z.enum(['string', 'number', 'boolean', 'array', 'datetime', 'relation', 'enum'], {
+    type: z.enum(['string', 'number', 'float', 'boolean', 'array', 'datetime', 'relation', 'enum'], {
       required_error: 'Field type is required',
     }),
     required: z.boolean().default(false),
@@ -87,8 +88,9 @@ export const collectionSchema = z.object({
     ),
   slug: z
     .string()
-    .min(1, 'Collection slug is required')
-    .regex(/^[a-z0-9]+(-[a-z0-9]+)*$/, 'Slug may contain lowercase letters, numbers and hyphens'),
+    // .min(1, 'Collection slug is required')
+    .regex(/^[a-z0-9_-]+$/, 'Slug may contain lowercase letters, numbers, underscores and hyphens')
+    .optional(),
   description: z.string().optional(),
   fields: z.array(collectionFieldSchema).min(1, 'Collection must have at least one field'),
 });

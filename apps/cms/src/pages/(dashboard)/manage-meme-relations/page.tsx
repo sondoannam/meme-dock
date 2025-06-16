@@ -2,29 +2,56 @@ import { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { BoxesIcon, TagIcon, SmileIcon } from 'lucide-react';
 
-import ObjectsTab from './components/tabs/objects-tab';
+import { ObjectsTabView } from './components/tabs/objects-tab';
 import { TagsView } from './components/tabs/tags-tab';
-import MoodsTab from './components/tabs/moods-tab';
+import { MoodsTabView } from './components/tabs/moods-tab';
 import { useMemeCollectionStore } from '@/stores/meme-store';
 import { useRequest } from 'ahooks';
 import { documentApi, GetDocumentsParams } from '@/services/document';
-import { MemeTagType } from '@/types';
+import { MemeMoodType, MemeObjectType, MemeTagType } from '@/types';
 import { SmallLoading } from '@/components/custom/loading';
 
 export type RelationType = 'objects' | 'tags' | 'moods';
 
+const emptyList = {
+  documents: [],
+  total: 0,
+}
+
 export const Component = () => {
-  const [activeTab, setActiveTab] = useState<RelationType>('objects');
+  const [activeTab, setActiveTab] = useState<RelationType>('tags');
 
   const tagCollectionId = useMemeCollectionStore((state) => state.tagCollection?.slug);
+  const objectCollectionId = useMemeCollectionStore((state) => state.objectCollection?.slug);
+  const moodCollectionId = useMemeCollectionStore((state) => state.moodCollection?.slug);
 
+  // Fetch tags data
   const {
-    data: tags,
+    data: tagList,
     run: onRefreshTags,
     loading: isFetchingTags,
   } = useRequest((params: GetDocumentsParams = {}) => {
-    if (!tagCollectionId) return Promise.resolve([]);
-    return documentApi.getDocuments<MemeTagType[]>(tagCollectionId, params);
+    if (!tagCollectionId) return Promise.resolve(emptyList);
+    return documentApi.getDocuments<MemeTagType>(tagCollectionId, params);
+  });
+  // Fetch objects data
+  const {
+    data: objectList,
+    run: onRefreshObjects,
+    loading: isFetchingObjects,
+  } = useRequest((params: GetDocumentsParams = {}) => {
+    if (!objectCollectionId) return Promise.resolve(emptyList);
+    return documentApi.getDocuments<MemeObjectType>(objectCollectionId, params);
+  });
+
+  // Fetch moods data
+  const {
+    data: moodList,
+    run: onRefreshMoods,
+    loading: isFetchingMoods,
+  } = useRequest((params: GetDocumentsParams = {}) => {
+    if (!moodCollectionId) return Promise.resolve(emptyList);
+    return documentApi.getDocuments<MemeMoodType>(moodCollectionId, params);
   });
 
   return (
@@ -40,13 +67,13 @@ export const Component = () => {
         className="w-full"
       >
         <TabsList className="!h-auto grid w-full grid-cols-3 mb-4">
-          <TabsTrigger value="objects" className="!text-base py-3">
-            <BoxesIcon className="mr-2 !h-6 !w-6" />
-            Objects
-          </TabsTrigger>
           <TabsTrigger value="tags" className="!text-base py-3">
             <TagIcon className="mr-2 !h-6 !w-6" />
             Tags
+          </TabsTrigger>
+          <TabsTrigger value="objects" className="!text-base py-3">
+            <BoxesIcon className="mr-2 !h-6 !w-6" />
+            Objects
           </TabsTrigger>
           <TabsTrigger value="moods" className="!text-base py-3">
             <SmileIcon className="mr-2 !h-6 !w-6" />
@@ -54,19 +81,33 @@ export const Component = () => {
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="objects" className="mt-4">
-          <ObjectsTab />
-        </TabsContent>
-
         <TabsContent value="tags">
           {isFetchingTags && <SmallLoading />}
-          {(!isFetchingTags && tags && tagCollectionId) && (
-            <TagsView tagCollectionId={tagCollectionId} tags={tags} onRefresh={onRefreshTags} />
+          {!isFetchingTags && tagList && tagCollectionId && (
+            <TagsView tagCollectionId={tagCollectionId} tags={tagList.documents} onRefresh={onRefreshTags} />
+          )}
+        </TabsContent>
+
+        <TabsContent value="objects" className="mt-4">
+          {isFetchingObjects && <SmallLoading />}
+          {!isFetchingObjects && objectList && objectCollectionId && (
+            <ObjectsTabView
+              objectCollectionId={objectCollectionId}
+              objects={objectList.documents}
+              onRefresh={onRefreshObjects}
+            />
           )}
         </TabsContent>
 
         <TabsContent value="moods">
-          <MoodsTab />
+          {isFetchingMoods && <SmallLoading />}
+          {!isFetchingMoods && moodList && moodCollectionId && (
+            <MoodsTabView
+              moodCollectionId={moodCollectionId}
+              moods={moodList.documents}
+              onRefresh={onRefreshMoods}
+            />
+          )}
         </TabsContent>
       </Tabs>
     </div>

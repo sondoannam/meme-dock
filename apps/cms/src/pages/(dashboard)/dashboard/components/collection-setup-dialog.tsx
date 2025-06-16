@@ -100,6 +100,7 @@ export const CollectionSetupDialog = ({
   };
 
   const handleFieldDefaultValue = (field: CollectionFieldType) => {
+    console.log('Handling default value for field:', field);
     if (field.required || field.type === 'enum' || field.type === 'datetime') {
       return undefined;
     }
@@ -111,23 +112,24 @@ export const CollectionSetupDialog = ({
     setIsSubmitting(true);
     setError(null);
 
+    const { fields, ...restData } = data;
+    const payloadData: CollectionSchemaType = {
+      ...restData,
+      fields: fields.map((field) => ({
+        ...field,
+        defaultValue: handleFieldDefaultValue(field),
+      })),
+    };
+
     try {
       if (mode === 'create') {
-        await collectionApi.createCollection(data);
+        await collectionApi.createCollection(payloadData);
       } else if (mode === 'update' && selectedCollection) {
-        const collectionId =
-          selectedCollection.$id || selectedCollection.id || selectedCollection.slug;
+        const collectionId = (selectedCollection.$id ||
+          selectedCollection.id ||
+          selectedCollection.slug) as string;
 
-        const { fields, ...restData } = data;
-        const updateData: CollectionSchemaType = {
-          ...restData,
-          fields: fields.map((field) => ({
-            ...field,
-            defaultValue: handleFieldDefaultValue(field),
-          })),
-        };
-
-        await collectionApi.updateCollection(collectionId, updateData);
+        await collectionApi.updateCollection(collectionId, payloadData);
       }
 
       form.reset();

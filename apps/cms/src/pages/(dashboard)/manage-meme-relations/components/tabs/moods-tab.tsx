@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import {
   Card,
   CardContent,
@@ -10,336 +10,289 @@ import {
 import { Button } from '@/components/ui/button';
 import { Plus, Pencil, Trash2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
 import { DialogCustom } from '@/components/custom/dialog-custom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import {
-  FormField,
-  FormItem,
-  FormLabel,
-  FormControl,
-  FormMessage,
-} from '@/components/ui/form';
 import { InputText } from '@/components/custom/form-field/input-text';
+import { useRequest } from 'ahooks';
+import { toast } from 'sonner';
+import { Slider } from '@/components/ui/slider';
 
 import { memeMoodSchema, MemeMoodFormValues } from '@/validators';
-import { Slider } from '@/components/ui/slider';
 import { FormDialog } from '@/components/custom/form-dialog';
+import { documentApi, GetDocumentsParams } from '@/services/document';
+import { MemeMoodType } from '@/types';
 
-// Mock data for demonstrations
-const mockMoods = [
-  { 
-    id: '1', 
-    label_en: 'Happy', 
-    label_vi: 'Vui vẻ',
-    slug: 'happy',
-    intensity: 7,
-    usageCount: 120,
-    lastUsedAt: '2023-07-20T14:30:00Z',
-    trendingScore: 85
-  },
-  { 
-    id: '2', 
-    label_en: 'Sad', 
-    label_vi: 'Buồn',
-    slug: 'sad',
-    intensity: 5,
-    usageCount: 95,
-    lastUsedAt: '2023-07-18T09:15:00Z',
-    trendingScore: 70
-  },
-  {
-    id: '3',
-    label_en: 'Angry',
-    label_vi: 'Giận dữ',
-    slug: 'angry',
-    intensity: 9,
-    usageCount: 110,
-    lastUsedAt: '2023-07-19T16:45:00Z',
-    trendingScore: 90
-  },
-  { 
-    id: '4', 
-    label_en: 'Surprised', 
-    label_vi: 'Ngạc nhiên',
-    slug: 'surprised',
-    intensity: 8,
-    usageCount: 80,
-    lastUsedAt: '2023-07-15T11:20:00Z',
-    trendingScore: 65
-  },
-  {
-    id: '5',
-    label_en: 'Confused',
-    label_vi: 'Bối rối',
-    slug: 'confused',
-    intensity: 6,
-    usageCount: 75,
-    lastUsedAt: '2023-07-10T08:50:00Z',
-    trendingScore: 60
-  },
-];
-
-type MemeMoodType = {
-  id: string;
-  label_en: string;
-  label_vi: string;
-  slug: string;
-  intensity?: number;
-  // System-managed fields (display only)
-  usageCount?: number;
-  lastUsedAt?: string;
-  trendingScore?: number;
+// Trending score color categories
+const getTrendingColor = (score: number) => {
+  if (score >= 80) return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100';
+  if (score >= 50) return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-100';
+  return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100';
 };
 
-export default function MoodsTab() {
-  const [moods, setMoods] = useState<MemeMoodType[]>(mockMoods);
+const getIntensityColor = (intensity: number) => {
+  if (intensity >= 8) return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100';
+  if (intensity >= 5) return 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-100';
+  return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100';
+};
+
+interface MoodsViewProps {
+  moodCollectionId: string;
+  moods: MemeMoodType[];
+  onRefresh: (params?: GetDocumentsParams) => void;
+}
+
+export function MoodsTabView({ moodCollectionId, moods, onRefresh }: MoodsViewProps) {
   const [searchQuery, setSearchQuery] = useState('');
-  const [isEditing, setIsEditing] = useState(false);
   const [selectedMood, setSelectedMood] = useState<MemeMoodType | null>(null);
+  const [intensityValue, setIntensityValue] = useState<number>(5);
 
   // Dialogs
-  const addDialog = DialogCustom.useDialog();
-  const editDialog = DialogCustom.useDialog();
-  const deleteDialog = DialogCustom.useDialog();const form = useForm<MemeMoodFormValues>({
+  const cuDialog = DialogCustom.useDialog();
+  const deleteDialog = DialogCustom.useDialog();
+  
+  const form = useForm<MemeMoodFormValues>({
     resolver: zodResolver(memeMoodSchema),
     defaultValues: {
       label_en: '',
       label_vi: '',
       slug: '',
-      intensity: 5 as unknown as number, // Default mid-range intensity
+      intensity: 5,
     },
-  });  // Reset form when dialog opens/closes
-  const resetForm = (mood?: MemeMoodType) => {
+  });
+  
+  // Handle opening dialogs
+  const handleOpenCreate = () => {
+    setSelectedMood(null);
+    setIntensityValue(5);
     form.reset({
-      id: mood?.id || '',
-      label_en: mood?.label_en || '',
-      label_vi: mood?.label_vi || '',
-      slug: mood?.slug || '',
-      intensity: mood?.intensity ? Number(mood.intensity) : 5,
-      // System-managed fields are not included in the form
+      label_en: '',
+      label_vi: '',
+      slug: '',
+      intensity: 5,
     });
-  };  // Filter moods based on search query
-  const filteredMoods = moods.filter(
-    (mood) =>
-      mood.label_en.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      mood.label_vi.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      mood.slug.toLowerCase().includes(searchQuery.toLowerCase()),
+    cuDialog.open();
+  };
+
+  const handleOpenUpdate = (mood: MemeMoodType) => {
+    setSelectedMood(mood);
+    const intensity = mood.intensity || 5;
+    setIntensityValue(intensity);
+    form.reset({
+      label_en: mood.label_en,
+      label_vi: mood.label_vi,
+      slug: mood.slug,
+      intensity,
+    });
+    cuDialog.open();
+  };
+
+  const handleOpenDelete = (mood: MemeMoodType) => {
+    setSelectedMood(mood);
+    deleteDialog.open();
+  };
+
+  const closeCUDialog = () => {
+    cuDialog.close();
+    setSelectedMood(null);
+  };
+  // closeDeleteDialog is now handled by onCloseDelete in DialogCustom
+  
+  // Handle intensity slider change
+  const handleIntensityChange = (value: number[]) => {
+    const intensity = value[0];
+    setIntensityValue(intensity);
+    form.setValue('intensity', intensity);
+  };
+    // Create or update mood
+  const createOrUpdateMood = async (data: MemeMoodFormValues) => {
+    if (selectedMood) {
+      return documentApi.updateDocument<MemeMoodType>(moodCollectionId, selectedMood.id, data);
+    }
+    return documentApi.createDocument<MemeMoodType>(moodCollectionId, data);
+  };
+
+  // Delete mood
+  const { run: deleteMood, loading: isDeleting } = useRequest(
+    (moodId: string) => {
+      return documentApi.deleteDocument(moodCollectionId, moodId);
+    },
+    {
+      manual: true,
+      onSuccess: () => {
+        toast.success('Mood deleted successfully!');
+        onRefresh();
+      },      onError: (error: Error) => {
+        toast.error(`Failed to delete mood: ${error.message}`);
+      },
+    },
   );
 
   // Handle form submission
-  const onSubmit = (values: MemeMoodFormValues) => {
-    if (isEditing && selectedMood) {
-      // Update existing mood
-      setMoods(
-        moods.map((mood) =>
-          mood.id === selectedMood.id ? { ...values, id: selectedMood.id } : mood,
-        ),
-      );
-      editDialog.close();
-    } else {
-      // Add new mood
-      const newMood = {
-        ...values,
-        id: Math.random().toString(36).substring(7), // Simple random ID for demo
-      };
-      setMoods([...moods, newMood]);
-      addDialog.close();
+  const onSubmit = async (values: MemeMoodFormValues) => {
+    try {
+      await createOrUpdateMood(values);
+      toast.success(selectedMood ? 'Mood updated successfully!' : 'Mood created successfully!');
+      closeCUDialog();
+      onRefresh();    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      toast.error(`Failed to ${selectedMood ? 'update' : 'create'} mood: ${errorMessage}`);
     }
-    resetForm();
-  };
-
-  // Handle delete
-  const handleDelete = () => {
-    if (selectedMood) {
-      setMoods(moods.filter((mood) => mood.id !== selectedMood.id));
-      deleteDialog.close();
-      setSelectedMood(null);
-    }
-  };
-
-  const getIntensityColor = (intensity: number) => {
-    if (intensity <= 3) return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100';
-    if (intensity <= 6)
-      return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-100';
-    return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100';
-  };
+  };  // Handle delete is now directly passed to DialogCustom component through onConfirmDelete
+  
+  // Filter moods based on search query
+  const filteredMoods = useMemo(() => 
+    moods.filter(
+      (mood) =>
+        mood.label_en.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        mood.label_vi.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        mood.slug.toLowerCase().includes(searchQuery.toLowerCase()),
+    ), [moods, searchQuery]);
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div>
-            <CardTitle className="!text-2xl">Meme Moods</CardTitle>
-            <CardDescription>Add, edit and manage moods that express meme emotions</CardDescription>
-          </div>
+    <div className="space-y-6 p-1">
+      {/* Header with search and add button */}
+      <div className="flex flex-col gap-4 md:flex-row justify-between items-start md:items-center">
+        <Input
+          className="max-w-sm"
+          placeholder="Search moods..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+        />
+        <Button onClick={handleOpenCreate}>
+          <Plus className="mr-2 h-4 w-4" />
+          Add Mood
+        </Button>
+      </div>
 
-          <Button
-            onClick={() => {
-              setIsEditing(false);
-              resetForm();
-              addDialog.open();
-            }}
-          >
-            <Plus className="mr-2 h-4 w-4" /> Add Mood
-          </Button>
-        </div>
-      </CardHeader>      <CardContent>        <div className="mb-6">
-          <Input
-            placeholder="Search moods..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="max-w-md"
-          />
-        </div>
-
-        {filteredMoods.length === 0 ? (
-          <div className="text-center p-8 border rounded-md">
-            <p className="text-muted-foreground">
-              No moods found. Add your first mood to get started.
-            </p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredMoods.map((mood) => (              <Card key={mood.id} className="overflow-hidden hover:shadow-md transition-all">
-                <CardHeader className="pb-2">
-                  <CardTitle>{mood.label_en}</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div>
-                    <span className="text-sm font-medium">Vietnamese:</span>
-                    <span className="ml-2">{mood.label_vi}</span>
-                  </div>
-                  <div>
-                    <span className="text-sm font-medium">Slug:</span>
-                    <span className="ml-2 text-muted-foreground">{mood.slug}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium">Intensity:</span>
-                    <span
-                      className={`text-xs font-medium py-1 px-2 rounded-full ${getIntensityColor(
-                        mood.intensity || 0,
-                      )}`}
-                    >
-                      {mood.intensity}/10
-                    </span>
-                  </div>
-                  {mood.usageCount !== undefined && (
-                    <div>
-                      <span className="text-sm font-medium">Usage Count:</span>
-                      <span className="ml-2 text-muted-foreground">{mood.usageCount}</span>
-                    </div>
-                  )}
-                  {mood.trendingScore !== undefined && (
-                    <div>
-                      <span className="text-sm font-medium">Trending Score:</span>
-                      <span className="ml-2 text-muted-foreground">{mood.trendingScore}</span>
-                    </div>
-                  )}
-                </CardContent>
-                <CardFooter className="flex justify-end gap-2 pt-0">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      setSelectedMood(mood);
-                      setIsEditing(true);
-                      resetForm(mood);
-                      editDialog.open();
-                    }}
+      {/* Grid of moods */}      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-4">
+        {filteredMoods.map((mood) => (
+          <Card key={mood.id} className="overflow-hidden hover:shadow-md transition-all">
+            <CardHeader className="pb-2">
+              <div className="flex justify-between items-start">
+                <CardTitle className="text-lg">{mood.label_en}</CardTitle>
+                <div className="flex gap-1">
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-8 w-8"
+                    onClick={() => handleOpenUpdate(mood)}
                   >
                     <Pencil className="h-4 w-4" />
                   </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                    onClick={() => {
-                      setSelectedMood(mood);
-                      deleteDialog.open();
-                    }}
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-8 w-8 text-destructive"
+                    onClick={() => handleOpenDelete(mood)}
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>
-                </CardFooter>
-              </Card>
-            ))}
-          </div>
-        )}
-      </CardContent>      {/* Add/Edit Dialog */}
-      <FormDialog
-        dialog={isEditing ? editDialog : addDialog}
-        header={isEditing ? 'Edit Mood' : 'Add New Mood'}
+                </div>
+              </div>
+              <CardDescription className="text-foreground/80">
+                {mood.label_vi}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="pb-2">
+              <div className="text-sm text-muted-foreground space-y-2">
+                <div>
+                  <span className="font-medium">Slug: </span>
+                  <span className="font-mono bg-muted px-1 py-0.5 rounded text-xs">{mood.slug}</span>
+                </div>
+                {mood.intensity !== undefined && (
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium">Intensity:</span>
+                    <Badge className={getIntensityColor(mood.intensity)}>
+                      {mood.intensity}/10
+                    </Badge>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+            <CardFooter className="pt-0 flex flex-wrap gap-2">
+              {mood.usageCount !== undefined && (
+                <Badge variant="outline" className="bg-secondary/50">
+                  Used: {mood.usageCount} times
+                </Badge>
+              )}
+              {mood.trendingScore !== undefined && (
+                <Badge className={getTrendingColor(mood.trendingScore)}>
+                  Trending: {mood.trendingScore}%
+                </Badge>
+              )}
+            </CardFooter>
+          </Card>
+        ))}
+      </div>
+
+      {filteredMoods.length === 0 && (
+        <div className="text-center py-10 text-muted-foreground">
+          No moods found. Try a different search or add a new mood.
+        </div>
+      )}
+
+      {/* Create/Edit Dialog */}      <FormDialog
         form={form}
+        dialog={cuDialog}
+        header={selectedMood ? 'Edit Mood' : 'Add New Mood'}
         onSubmit={onSubmit}
-        submitText={isEditing ? 'Save Changes' : 'Add Mood'}
-        onClose={resetForm}
-        className="max-w-md"
+        submitText={selectedMood ? 'Save Changes' : 'Add Mood'}
+        onClose={closeCUDialog}
       >
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="grid gap-4 py-4">
           <InputText
-            control={form.control}
             name="label_en"
             label="English Label"
-            placeholder="e.g. Happy, Sad, Angry"
+            placeholder="e.g. Happy"
+            control={form.control}
           />
           <InputText
-            control={form.control}
             name="label_vi"
             label="Vietnamese Label"
-            placeholder="e.g. Vui vẻ, Buồn, Giận dữ"
+            placeholder="e.g. Vui vẻ"
+            control={form.control}
           />
+          <InputText
+            name="slug"
+            label="Slug"
+            placeholder="e.g. happy"
+            control={form.control}
+          />
+          <div className="space-y-2">
+            <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+              Intensity: {intensityValue}/10
+            </label>
+            <Slider 
+              defaultValue={[intensityValue]} 
+              max={10} 
+              min={1} 
+              step={1}
+              onValueChange={handleIntensityChange}
+              className="py-2"
+            />
+            <p className="text-sm text-muted-foreground">
+              How intense is this emotion (1-10)
+            </p>
+          </div>
         </div>
-        <InputText
-          control={form.control}
-          name="slug"
-          label="Slug"
-          placeholder="e.g. happy, sad, angry"
-        />
-        <FormField
-          control={form.control}
-          name="intensity"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Intensity (1-10)</FormLabel>
-              <div className="space-y-2">
-                <div className="flex justify-between text-xs text-muted-foreground">
-                  <span>Low</span>
-                  <span>Medium</span>
-                  <span>High</span>
-                </div>
-                <FormControl>
-                  <Slider
-                    defaultValue={[typeof field.value === 'number' ? field.value : 5]}
-                    min={1}
-                    max={10}
-                    step={1}
-                    onValueChange={(values) => field.onChange(values[0])}
-                  />
-                </FormControl>
-                <div className="text-center font-medium">{field.value || 5}</div>
-              </div>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        {/* System-managed fields are not included in the form as they are not user-editable */}
-      </FormDialog>
-
-      {/* Delete Confirmation Dialog */}
+      </FormDialog>      {/* Delete Confirmation Dialog */}
       <DialogCustom
         dialog={deleteDialog}
         isConfirmDelete={true}
         header="Delete Mood"
-        onConfirmDelete={handleDelete}
+        onConfirmDelete={() => deleteMood(selectedMood?.id || '')}
         onCloseDelete={() => deleteDialog.close()}
-      >        <p>
+        deleteLoading={isDeleting}
+      >
+        <p>
           Are you sure you want to delete <strong>{selectedMood?.label_en}</strong>?
         </p>
         <p className="text-muted-foreground mt-2">
           This action cannot be undone. This will permanently delete the mood and any relationships.
         </p>
       </DialogCustom>
-    </Card>
+    </div>
   );
 }
