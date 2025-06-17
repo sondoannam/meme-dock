@@ -33,8 +33,8 @@ This web app is a **collection of internet memes** (image, gif, video) with supp
 ### `memes` Collection
 - `title_en`: string (optional)
 - `title_vi`: string (optional)
-- `description_en`: string
-- `description_vi`: string
+- `desc_en`: string
+- `desc_vi`: string
 - `type`: enum (`image`, `gif`, `video`)
 - `objectIds`: array<string> — references `objects` collection
 - `tagIds`: array<string> — references `tags` collection

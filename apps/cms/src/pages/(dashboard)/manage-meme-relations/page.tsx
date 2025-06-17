@@ -16,7 +16,7 @@ export type RelationType = 'objects' | 'tags' | 'moods';
 const emptyList = {
   documents: [],
   total: 0,
-}
+};
 
 export const Component = () => {
   const [activeTab, setActiveTab] = useState<RelationType>('tags');
@@ -27,39 +27,48 @@ export const Component = () => {
 
   const {
     data: tagList,
-    run: onRefreshTags,
+    refresh: onRefreshTags,
     loading: isFetchingTags,
-  } = useRequest((params?: GetDocumentsParams) => {
-    if (!tagCollectionId) return Promise.resolve(emptyList);
-    return documentApi.getDocuments<MemeTagType>(tagCollectionId, params);
-  }, {
-    defaultParams: [{}],
-    refreshDeps: [tagCollectionId],
-  });
-  
+  } = useRequest(
+    (params?: GetDocumentsParams) => {
+      if (!tagCollectionId) return Promise.resolve(emptyList);
+      return documentApi.getDocuments<MemeTagType>(tagCollectionId, params);
+    },
+    {
+      defaultParams: [{ limit: 1000 }],
+      refreshDeps: [tagCollectionId],
+    },
+  );
+
   const {
     data: objectList,
-    run: onRefreshObjects,
+    refresh: onRefreshObjects,
     loading: isFetchingObjects,
-  } = useRequest((params?: GetDocumentsParams) => {
-    if (!objectCollectionId) return Promise.resolve(emptyList);
-    return documentApi.getDocuments<MemeObjectType>(objectCollectionId, params);
-  }, {
-    defaultParams: [{}],
-    refreshDeps: [objectCollectionId],
-  });
+  } = useRequest(
+    (params?: GetDocumentsParams) => {
+      if (!objectCollectionId) return Promise.resolve(emptyList);
+      return documentApi.getDocuments<MemeObjectType>(objectCollectionId, params);
+    },
+    {
+      defaultParams: [{ limit: 1000 }],
+      refreshDeps: [objectCollectionId],
+    },
+  );
 
   const {
     data: moodList,
-    run: onRefreshMoods,
+    refresh: onRefreshMoods,
     loading: isFetchingMoods,
-  } = useRequest((params?: GetDocumentsParams) => {
-    if (!moodCollectionId) return Promise.resolve(emptyList);
-    return documentApi.getDocuments<MemeMoodType>(moodCollectionId, params);
-  }, {
-    defaultParams: [{}],
-    refreshDeps: [moodCollectionId],
-  });
+  } = useRequest(
+    (params?: GetDocumentsParams) => {
+      if (!moodCollectionId) return Promise.resolve(emptyList);
+      return documentApi.getDocuments<MemeMoodType>(moodCollectionId, params);
+    },
+    {
+      defaultParams: [{ limit: 1000 }],
+      refreshDeps: [moodCollectionId],
+    },
+  );
 
   return (
     <div className="container mx-auto py-8">
@@ -91,7 +100,11 @@ export const Component = () => {
         <TabsContent value="tags">
           {isFetchingTags && <SmallLoading />}
           {!isFetchingTags && tagList && tagCollectionId && (
-            <TagsView tagCollectionId={tagCollectionId} tags={tagList.documents} onRefresh={onRefreshTags} />
+            <TagsView
+              tagCollectionId={tagCollectionId}
+              tags={tagList.documents}
+              onRefresh={() => onRefreshTags()}
+            />
           )}
         </TabsContent>
 
@@ -101,7 +114,7 @@ export const Component = () => {
             <ObjectsTabView
               objectCollectionId={objectCollectionId}
               objects={objectList.documents}
-              onRefresh={onRefreshObjects}
+              onRefresh={() => onRefreshObjects()}
             />
           )}
         </TabsContent>
@@ -112,7 +125,7 @@ export const Component = () => {
             <MoodsTabView
               moodCollectionId={moodCollectionId}
               moods={moodList.documents}
-              onRefresh={onRefreshMoods}
+              onRefresh={() => onRefreshMoods()}
             />
           )}
         </TabsContent>

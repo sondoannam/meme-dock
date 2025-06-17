@@ -6,15 +6,15 @@ import { ConfigError } from '../utils/errors';
 dotenv.config();
 
 const {
-  IMAGEKIT_PUBLIC_KEY,
-  IMAGEKIT_PRIVATE_KEY,
+  IMAGEKIT_PUBLIC_API_KEY,
+  IMAGEKIT_PRIVATE_API_KEY,
   IMAGEKIT_URL_ENDPOINT
 } = process.env;
 
 // Validate required configuration
-if (!IMAGEKIT_PUBLIC_KEY || !IMAGEKIT_PRIVATE_KEY || !IMAGEKIT_URL_ENDPOINT) {
+if (!IMAGEKIT_PUBLIC_API_KEY || !IMAGEKIT_PRIVATE_API_KEY || !IMAGEKIT_URL_ENDPOINT) {
   throw new ConfigError(
-    'Missing required ImageKit environment variables: IMAGEKIT_PUBLIC_KEY, IMAGEKIT_PRIVATE_KEY, IMAGEKIT_URL_ENDPOINT'
+    'Missing required ImageKit environment variables: IMAGEKIT_PUBLIC_API_KEY, IMAGEKIT_PRIVATE_API_KEY, IMAGEKIT_URL_ENDPOINT'
   );
 }
 
@@ -27,16 +27,16 @@ let imagekit: ImageKit | null = null;
 export function getImageKit(): ImageKit {
   if (!imagekit) {
     // Validate required configuration
-    if (!IMAGEKIT_PUBLIC_KEY || !IMAGEKIT_PRIVATE_KEY || !IMAGEKIT_URL_ENDPOINT) {
+    if (!IMAGEKIT_PUBLIC_API_KEY || !IMAGEKIT_PRIVATE_API_KEY || !IMAGEKIT_URL_ENDPOINT) {
       throw new ConfigError(
-        'Missing required ImageKit environment variables: IMAGEKIT_PUBLIC_KEY, IMAGEKIT_PRIVATE_KEY, IMAGEKIT_URL_ENDPOINT'
+        'Missing required ImageKit environment variables: IMAGEKIT_PUBLIC_API_KEY, IMAGEKIT_PRIVATE_API_KEY, IMAGEKIT_URL_ENDPOINT'
       );
     }
 
     // Initialize ImageKit client
     imagekit = new ImageKit({
-      publicKey: IMAGEKIT_PUBLIC_KEY,
-      privateKey: IMAGEKIT_PRIVATE_KEY,
+      publicKey: IMAGEKIT_PUBLIC_API_KEY,
+      privateKey: IMAGEKIT_PRIVATE_API_KEY,
       urlEndpoint: IMAGEKIT_URL_ENDPOINT
     });
   }
@@ -45,7 +45,7 @@ export function getImageKit(): ImageKit {
 }
 
 export const IMAGEKIT_CONFIG = {
-  isConfigured: Boolean(IMAGEKIT_PUBLIC_KEY && IMAGEKIT_PRIVATE_KEY && IMAGEKIT_URL_ENDPOINT),
-  publicKey: IMAGEKIT_PUBLIC_KEY,
+  isConfigured: Boolean(IMAGEKIT_PUBLIC_API_KEY && IMAGEKIT_PRIVATE_API_KEY && IMAGEKIT_URL_ENDPOINT),
+  publicKey: IMAGEKIT_PUBLIC_API_KEY,
   urlEndpoint: IMAGEKIT_URL_ENDPOINT
 };

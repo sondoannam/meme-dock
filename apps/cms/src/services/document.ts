@@ -109,7 +109,7 @@ export const documentApi = {
    * @param data Document data to create
    * @returns Promise with the created document
    */
-  async createDocument<T = unknown>(collectionId: string, data: Record<string, unknown>) {
+  async createDocument<T = unknown, D = unknown>(collectionId: string, data: D) {
     const response = await apiClient.post<T>(`/documents/${collectionId}`, data);
     return response.data;
   },
@@ -121,10 +121,10 @@ export const documentApi = {
    * @param data Updated document data
    * @returns Promise with the updated document
    */
-  async updateDocument<T = unknown>(
+  async updateDocument<T = unknown, D = unknown>(
     collectionId: string,
     documentId: string,
-    data: Record<string, unknown>,
+    data: D,
   ) {
     const response = await apiClient.put<T>(`/documents/${collectionId}/${documentId}`, data);
     return response.data;

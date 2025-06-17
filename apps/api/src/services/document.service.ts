@@ -25,6 +25,13 @@ function formatDocument(doc: any): DocumentResponse {
   // Extract values we want to keep
   const { $id, $createdAt, $updatedAt, $collectionId, ...restOfDoc } = doc;
 
+  // remove other variables starting with $
+  Object.keys(restOfDoc).forEach((key) => {
+    if (key.startsWith('$')) {
+      delete restOfDoc[key];
+    }
+  });
+
   // Return cleaned object with renamed fields
   return {
     ...restOfDoc,

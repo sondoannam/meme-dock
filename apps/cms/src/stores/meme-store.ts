@@ -21,9 +21,15 @@ export const useMemeCollectionStore = create<MemeCollectionState & MemeCollectio
   tagCollection: null,
   moodCollection: null,
   setMemeCollection: (collection) =>
-    set(() => ({
-      memeCollection: collection,
-    })),
+    set(() => {
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('memeCollection', JSON.stringify(collection));
+      }
+
+      return {
+        memeCollection: collection,
+      };
+    }),
   setObjectCollection: (collection) =>
     set(() => ({
       objectCollection: collection,
