@@ -294,6 +294,7 @@ export async function createDocument(
       // Ensure slug is unique by checking existing documents
       const existingDocs = await databases.listDocuments(DATABASE_ID, collectionId, [
         Query.equal('slug', data.slug),
+        Query.limit(1),
       ]);
 
       if (existingDocs.total > 0) {

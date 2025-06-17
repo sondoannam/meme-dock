@@ -31,8 +31,11 @@ export async function uploadFile(
   try {
     if (!MEME_BUCKET_ID) {
       throw new ConfigError('APPWRITE_MEME_BUCKET_ID not configured');
-    }    // Validate the file using our utility
-    validateFile(file);    // Create a unique ID or use provided one - use our secure ID generator for local IDs
+    }    
+    // Validate the file using our utility
+    validateFile(file);    
+    
+    // Create a unique ID or use provided one - use our secure ID generator for local IDs
     // We still allow Appwrite's ID.unique() as a fallback, but prefer our more secure method
     const fileId = options.fileId || generateSecureFileId() || ID.unique();
 

@@ -8,6 +8,11 @@ export const MAX_FILE_SIZE = 2 * 1024 * 1024;
 // Minimum allowed file size (10 bytes to avoid empty files)
 export const MIN_FILE_SIZE = 10;
 
+// Image-specific validation constants
+export const IMAGE_MAX_FILE_SIZE = 5 * 1024 * 1024;  // 5MB max for images
+export const IMAGE_MIN_FILE_SIZE = 100;              // 100 bytes min for images
+export const IMAGE_MAX_DIMENSIONS = { width: 4000, height: 4000 }; // Max dimensions
+
 // Supported mime types for various content
 export const SUPPORTED_MIME_TYPES = {
   // Images
@@ -134,4 +139,65 @@ export function validateFile(
   
   // Validate file extension
   validateFileExtension(file.originalname);
+}
+
+/**
+ * Image-specific validation options provide a way to configure how 
+ * image files should be validated. These are used by the validateImageFile 
+ * function to apply more specific constraints to image files.
+ * 
+ * Usage example:
+ * 
+ * ```typescript
+ * // Using the default image validation settings
+ * validateImageFile(file);
+ * 
+ * // Or with custom options
+ * validateImageFile(file, {
+ *   maxSize: 8 * 1024 * 1024, // 8MB
+ *   allowedTypes: ['image/jpeg', 'image/png']
+ * });
+ * ```
+ */
+export interface ImageValidationOptions {
+  maxSize?: number;
+  minSize?: number;
+  allowedTypes?: string[];
+  maxWidth?: number;
+  maxHeight?: number;
+}
+
+/**
+ * Default validation options for images
+ */
+export const DEFAULT_IMAGE_VALIDATION_OPTIONS: ImageValidationOptions = {
+  maxSize: IMAGE_MAX_FILE_SIZE,
+  minSize: IMAGE_MIN_FILE_SIZE,
+  allowedTypes: SUPPORTED_MIME_TYPES.image,
+  maxWidth: IMAGE_MAX_DIMENSIONS.width,
+  maxHeight: IMAGE_MAX_DIMENSIONS.height
+};
+
+/**
+ * Validate an image file with image-specific validation logic
+ * @param file Express Multer file object
+ * @param options Image validation options
+ */
+export function validateImageFile(
+  file: Express.Multer.File,
+  options: ImageValidationOptions = {}
+): void {
+  // Merge options with defaults
+  const validationOptions = {
+    maxSize: options.maxSize || DEFAULT_IMAGE_VALIDATION_OPTIONS.maxSize,
+    minSize: options.minSize || DEFAULT_IMAGE_VALIDATION_OPTIONS.minSize,
+    allowedTypes: options.allowedTypes || DEFAULT_IMAGE_VALIDATION_OPTIONS.allowedTypes
+  };
+  
+  // Validate using general file validation
+  validateFile(file, validationOptions);
+  
+  // Further image-specific validation could be added here
+  // For example, checking image dimensions, aspect ratio, etc.
+  // This would require additional processing of the image buffer
 }

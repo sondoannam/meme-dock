@@ -69,6 +69,7 @@
     "cors": "^2.8.5",
     "dotenv": "^16.5.0",
     "express-rate-limit": "^7.5.0",
+    "imagekit": "^6.0.0",
     "jsonwebtoken": "^9.0.2",
     "multer": "^2.0.1",
     "node-appwrite": "^17.0.0"

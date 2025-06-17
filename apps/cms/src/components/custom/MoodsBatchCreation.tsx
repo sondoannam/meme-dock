@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { BatchCreateButton } from "@/components/custom/BatchCreateButton";
+import { BatchCreateButton } from "@/components/custom/batch-create-button";
 import { BUNCH_OF_MOODS } from "@/constants/moods";
 import { MemeMoodFormValues } from "@/validators";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";

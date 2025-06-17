@@ -1,0 +1,223 @@
+import { Request, Response, NextFunction } from 'express';
+import { ImageService, ImagePlatform } from '../services/image/image.service';
+
+// Create a singleton instance of the ImageService
+const imageService = new ImageService();
+
+/**
+ * Upload a single image
+ */
+export async function uploadImage(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    if (!req.file) {
+      res.status(400).json({ success: false, message: 'No file uploaded' });
+      return;
+    }
+
+    // Parse optional platform parameter
+    const platform = req.body.platform || req.query.platform;
+    let imagePlatform: ImagePlatform | undefined;
+    
+    if (platform === 'appwrite') {
+      imagePlatform = ImagePlatform.APPWRITE;
+    } else if (platform === 'imagekit') {
+      imagePlatform = ImagePlatform.IMAGEKIT;
+    }
+
+    // Extract upload options from request
+    const options = {
+      folder: req.body.folder || req.query.folder,
+      tags: req.body.tags ? Array.isArray(req.body.tags) ? req.body.tags : req.body.tags.split(',') : undefined,
+      isPrivate: req.body.isPrivate === 'true' || req.body.isPrivate === true,
+      useUniqueFileName: req.body.useUniqueFileName !== 'false' && req.body.useUniqueFileName !== false,
+      platform: imagePlatform,
+      
+      // For backward compatibility
+      maxFileSize: req.body.maxFileSize ? parseInt(req.body.maxFileSize, 10) : undefined,
+      minFileSize: req.body.minFileSize ? parseInt(req.body.minFileSize, 10) : undefined,
+      allowedTypes: req.body.allowedTypes ? 
+        (Array.isArray(req.body.allowedTypes) ? 
+          req.body.allowedTypes : 
+          req.body.allowedTypes.split(',').map((type: string) => type.trim())
+        ) : undefined,
+        
+      // Add consolidated validation options
+      validation: {
+        maxFileSize: req.body.maxFileSize ? parseInt(req.body.maxFileSize, 10) : undefined,
+        minFileSize: req.body.minFileSize ? parseInt(req.body.minFileSize, 10) : undefined,
+        allowedTypes: req.body.allowedTypes ? 
+          (Array.isArray(req.body.allowedTypes) ? 
+            req.body.allowedTypes : 
+            req.body.allowedTypes.split(',').map((type: string) => type.trim())
+          ) : undefined,
+        maxWidth: req.body.maxWidth ? parseInt(req.body.maxWidth, 10) : undefined,
+        maxHeight: req.body.maxHeight ? parseInt(req.body.maxHeight, 10) : undefined
+      }
+    };
+
+    // Upload the image
+    const result = await imageService.uploadImage(req.file, options);
+
+    res.status(201).json({
+      success: true,
+      data: result
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * Upload multiple images
+ */
+export async function uploadMultipleImages(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    if (!req.files || !Array.isArray(req.files) || req.files.length === 0) {
+      res.status(400).json({ success: false, message: 'No files uploaded' });
+      return;
+    }
+
+    // Parse optional platform parameter
+    const platform = req.body.platform || req.query.platform;
+    let imagePlatform: ImagePlatform | undefined;
+    
+    if (platform === 'appwrite') {
+      imagePlatform = ImagePlatform.APPWRITE;
+    } else if (platform === 'imagekit') {
+      imagePlatform = ImagePlatform.IMAGEKIT;
+    }
+
+    // Extract options from request
+    const options = {
+      folder: req.body.folder || req.query.folder,
+      tags: req.body.tags ? Array.isArray(req.body.tags) ? req.body.tags : req.body.tags.split(',') : undefined,
+      isPrivate: req.body.isPrivate === 'true' || req.body.isPrivate === true,
+      useUniqueFileName: req.body.useUniqueFileName !== 'false' && req.body.useUniqueFileName !== false,
+      platform: imagePlatform,
+      
+      // For backward compatibility
+      maxFileSize: req.body.maxFileSize ? parseInt(req.body.maxFileSize, 10) : undefined,
+      minFileSize: req.body.minFileSize ? parseInt(req.body.minFileSize, 10) : undefined,
+      allowedTypes: req.body.allowedTypes ? 
+        (Array.isArray(req.body.allowedTypes) ? 
+          req.body.allowedTypes : 
+          req.body.allowedTypes.split(',').map((type: string) => type.trim())
+        ) : undefined,
+        
+      // Add consolidated validation options
+      validation: {
+        maxFileSize: req.body.maxFileSize ? parseInt(req.body.maxFileSize, 10) : undefined,
+        minFileSize: req.body.minFileSize ? parseInt(req.body.minFileSize, 10) : undefined,
+        allowedTypes: req.body.allowedTypes ? 
+          (Array.isArray(req.body.allowedTypes) ? 
+            req.body.allowedTypes : 
+            req.body.allowedTypes.split(',').map((type: string) => type.trim())
+          ) : undefined,
+        maxWidth: req.body.maxWidth ? parseInt(req.body.maxWidth, 10) : undefined,
+        maxHeight: req.body.maxHeight ? parseInt(req.body.maxHeight, 10) : undefined
+      }
+    };
+
+    // Upload the images
+    const results = await imageService.uploadMultipleImages(req.files, options);
+
+    res.status(201).json({
+      success: true,
+      data: results
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * Get image metadata
+ */
+export async function getImage(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const imageId = req.params.id;
+    
+    // Parse optional platform parameter
+    const platform = req.query.platform;
+    let imagePlatform: ImagePlatform | undefined;
+    
+    if (platform === 'appwrite') {
+      imagePlatform = ImagePlatform.APPWRITE;
+    } else if (platform === 'imagekit') {
+      imagePlatform = ImagePlatform.IMAGEKIT;
+    }
+
+    const result = await imageService.getImageMetadata(imageId, imagePlatform);
+
+    res.status(200).json({
+      success: true,
+      data: result
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * List images
+ */
+export async function listImages(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    // Parse optional platform parameter
+    const platform = req.query.platform;
+    let imagePlatform: ImagePlatform | undefined;
+    
+    if (platform === 'appwrite') {
+      imagePlatform = ImagePlatform.APPWRITE;
+    } else if (platform === 'imagekit') {
+      imagePlatform = ImagePlatform.IMAGEKIT;
+    }
+
+    // Extract options from request
+    const options = {
+      limit: req.query.limit ? parseInt(req.query.limit as string, 10) : undefined,
+      offset: req.query.offset ? parseInt(req.query.offset as string, 10) : undefined,
+      folder: req.query.folder as string | undefined,
+      searchQuery: req.query.search as string | undefined,
+      tags: req.query.tags ? (req.query.tags as string).split(',') : undefined,
+      platform: imagePlatform
+    };
+
+    const result = await imageService.listImages(options);
+
+    res.status(200).json({
+      success: true,
+      data: result
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * Delete an image
+ */
+export async function deleteImage(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const imageId = req.params.id;
+    
+    // Parse optional platform parameter
+    const platform = req.query.platform;
+    let imagePlatform: ImagePlatform | undefined;
+    
+    if (platform === 'appwrite') {
+      imagePlatform = ImagePlatform.APPWRITE;
+    } else if (platform === 'imagekit') {
+      imagePlatform = ImagePlatform.IMAGEKIT;
+    }
+
+    await imageService.deleteImage(imageId, imagePlatform);
+
+    res.status(200).json({
+      success: true,
+      message: 'Image deleted successfully'
+    });
+  } catch (error) {
+    next(error);
+  }
+}
