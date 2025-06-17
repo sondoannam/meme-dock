@@ -93,7 +93,6 @@ export const CollectionFieldsForm = () => {
         {fields.map((field, index) => {
           const fieldType = watch(`fields.${index}.type`);
           const isEnum = fieldType === 'enum';
-          console.log(`Rendering field ${index}:`, field); // Debug log to track rendering
 
           return (
             <Card key={field.id} className="relative overflow-visible">

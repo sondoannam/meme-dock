@@ -3,8 +3,7 @@ import { AppSidebar } from '@/layouts/app-sidebar';
 import MainLayout from '@/layouts/main-layout';
 import { useAuthCheck } from '@/hooks/use-auth-check';
 import { ROUTE_PATH } from '@/constants/routes';
-import { PageLoading } from '@/components/custom/loading';
-import { useMount, useRequest, useUpdateEffect } from 'ahooks';
+import { useRequest, useUpdateEffect } from 'ahooks';
 import { collectionApi } from '@/services/collection';
 import { useMemeCollectionStore } from '@/stores/meme-store';
 
@@ -21,7 +20,16 @@ export function Component() {
     storeRedirectPath: true,
   });
 
-  const { memeCollection, setMemeCollection } = useMemeCollectionStore((state) => state);
+  const {
+    memeCollection,
+    setMemeCollection,
+    objectCollection,
+    setObjectCollection,
+    tagCollection,
+    setTagCollection,
+    moodCollection,
+    setMoodCollection,
+  } = useMemeCollectionStore((state) => state);
 
   const { run } = useRequest(collectionApi.getCollections, {
     onSuccess: (data) => {
@@ -35,20 +43,32 @@ export function Component() {
           setMemeCollection(meme);
         }
       }
+      if (!objectCollection) {
+        const object = data.find((collection) => collection.name === 'object');
+        if (object) {
+          setObjectCollection(object);
+        }
+      }
+      if (!tagCollection) {
+        const tag = data.find((collection) => collection.name === 'tag');
+        if (tag) {
+          setTagCollection(tag);
+        }
+      }
+      if (!moodCollection) {
+        const mood = data.find((collection) => collection.name === 'mood');
+        if (mood) {
+          setMoodCollection(mood);
+        }
+      }
     },
   });
 
   useUpdateEffect(() => {
-    if (!isLoading) {
+    if (!isLoading && !memeCollection && !objectCollection && !tagCollection && !moodCollection) {
       run();
     }
   }, [isLoading]);
-
-  if (isLoading) {
-    return (
-      <PageLoading message={isLoading ? 'Verifying authentication...' : 'Checking API access...'} />
-    );
-  }
 
   // If user has admin privileges and API access, render the dashboard layout
   return (

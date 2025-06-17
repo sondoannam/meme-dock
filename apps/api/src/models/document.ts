@@ -5,12 +5,10 @@ export interface DocumentData {
 }
 
 export interface DocumentResponse {
-  $id: string;
-  $collectionId: string;
-  $databaseId: string;
-  $createdAt: string;
-  $updatedAt: string;
-  $permissions: string[];
+  id: string;
+  collectionId: string;
+  createdAt: string;
+  updatedAt: string;
   [key: string]: any;
 }
 

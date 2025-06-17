@@ -11,9 +11,15 @@ export interface CollectionFieldType {
   enumValues?: string[];
 }
 
-export interface CollectionSchemaType {
+export interface CUCollectionReq {
+  id?: string;
   name: string;
-  slug: string;
-  description?: string;
   fields: CollectionFieldType[];
+}
+
+export interface CollectionRes extends CUCollectionReq {
+  id: string;
+  createdAt: string;
+  updatedAt: string;
+  enabled: boolean;
 }

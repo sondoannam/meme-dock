@@ -1,6 +1,6 @@
 import { databases, DATABASE_ID, ID } from '../config/appwrite';
 import { RelationshipType } from 'node-appwrite';
-import { CollectionSchemaType, CollectionFieldType } from '../models/collection-schema';
+import { CollectionFieldType, CollectionRes, CUCollectionReq } from '../models/collection-schema';
 
 /**
  * Helper to map our field schema to Appwrite attributes
@@ -27,34 +27,29 @@ export const mapFieldToAttribute = async (field: CollectionFieldType, collection
         defaultValue,
         isArray,
       );
-    case 'number': {
-      // Determine if number is integer or float based on the default value
-      const isInteger =
-        defaultValue && !isNaN(Number(defaultValue)) && Number.isInteger(Number(defaultValue));
-      if (isInteger) {
-        return await databases.createIntegerAttribute(
-          DATABASE_ID,
-          collectionId,
-          name,
-          required,
-          undefined, // min
-          undefined, // max
-          defaultValue ? parseInt(defaultValue) : undefined,
-          isArray,
-        );
-      } else {
-        return await databases.createFloatAttribute(
-          DATABASE_ID,
-          collectionId,
-          name,
-          required,
-          undefined, // min
-          undefined, // max
-          defaultValue ? parseFloat(defaultValue) : undefined,
-          isArray,
-        );
-      }
-    }
+    case 'number':
+      return await databases.createIntegerAttribute(
+        DATABASE_ID,
+        collectionId,
+        name,
+        required,
+        undefined, // min
+        undefined, // max
+        defaultValue ? parseInt(defaultValue) : undefined,
+        isArray,
+      );
+
+    case 'float':
+      return await databases.createFloatAttribute(
+        DATABASE_ID,
+        collectionId,
+        name,
+        required,
+        undefined, // min
+        undefined, // max
+        defaultValue ? parseFloat(defaultValue) : undefined,
+        isArray,
+      );
     case 'boolean':
       return await databases.createBooleanAttribute(
         DATABASE_ID,
@@ -128,7 +123,7 @@ export function mapAppwriteTypeToFieldType(appwriteType: string): string {
  * Get all collections in the database
  * @returns Array of collection schemas
  */
-export async function getCollections(): Promise<CollectionSchemaType[]> {
+export async function getCollections(): Promise<CollectionRes[]> {
   try {
     // Fetch collections from Appwrite
     const response = await databases.listCollections(DATABASE_ID);
@@ -166,9 +161,11 @@ export async function getCollections(): Promise<CollectionSchemaType[]> {
 
         return {
           name: collection.name,
-          slug: collection.$id,
-          description: collection.name, // Appwrite doesn't have a built-in description field
           fields: fields,
+          id: collection.$id, // Use $id as the unique identifier
+          createdAt: collection.$createdAt,
+          updatedAt: collection.$updatedAt,
+          enabled: collection.enabled,
         };
       }),
     );
@@ -186,8 +183,8 @@ export async function getCollections(): Promise<CollectionSchemaType[]> {
  * @returns Created collection schema
  */
 export async function createCollection(
-  collection: CollectionSchemaType,
-): Promise<CollectionSchemaType> {
+  collection: CUCollectionReq,
+): Promise<CollectionRes> {
   try {
     // Create collection in Appwrite
     const createdCollection = await databases.createCollection(
@@ -206,7 +203,10 @@ export async function createCollection(
     // Return the created collection with the assigned ID
     return {
       ...collection,
-      slug: createdCollection.$id,
+      id: createdCollection.$id,
+      createdAt: createdCollection.$createdAt,
+      updatedAt: createdCollection.$updatedAt,
+      enabled: createdCollection.enabled,
     };
   } catch (error) {
     console.error(`Error creating collection ${collection.name}:`, error);
@@ -222,12 +222,14 @@ export async function createCollection(
  */
 export async function updateCollection(
   collectionId: string,
-  collection: CollectionSchemaType,
-): Promise<CollectionSchemaType> {
+  collection: CUCollectionReq,
+): Promise<CollectionRes> {
   try {
     // Verify collection exists
+    let existingCollection;
+
     try {
-      await databases.getCollection(DATABASE_ID, collectionId);
+      existingCollection = await databases.getCollection(DATABASE_ID, collectionId);
     } catch (e) {
       throw new Error(`Collection with ID ${collectionId} not found: ${(e as Error).message}`);
     }
@@ -262,7 +264,10 @@ export async function updateCollection(
     // Return updated collection
     return {
       ...collection,
-      slug: collectionId,
+      id: collectionId,
+      createdAt: existingCollection.$createdAt,
+      updatedAt: existingCollection.$updatedAt,
+      enabled: existingCollection.enabled,
     };
   } catch (error) {
     console.error(`Error updating collection ${collectionId}:`, error);
@@ -276,8 +281,8 @@ export async function updateCollection(
  * @returns Array of created collection schemas
  */
 export async function createCollections(
-  collections: CollectionSchemaType[],
-): Promise<CollectionSchemaType[]> {
+  collections: CUCollectionReq[],
+): Promise<CollectionRes[]> {
   try {
     const createdCollections = [];
 

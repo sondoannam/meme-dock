@@ -20,6 +20,7 @@ export type LoginFormData = z.infer<typeof loginSchema>;
 export const fieldTypes: SelectOption[] = [
   { id: 'string', value: 'string', label: 'String' },
   { id: 'number', value: 'number', label: 'Number' },
+  { id: 'float', value: 'float', label: 'Float' }, // Float is treated as number
   { id: 'boolean', value: 'boolean', label: 'Boolean' },
   { id: 'array', value: 'array', label: 'Array' },
   { id: 'datetime', value: 'datetime', label: 'DateTime' },
@@ -39,7 +40,7 @@ export const collectionFieldSchema = z
         /^[a-zA-Z]\w*$/,
         'Field name must start with a letter and contain only letters, numbers and underscores',
       ),
-    type: z.enum(['string', 'number', 'boolean', 'array', 'datetime', 'relation', 'enum'], {
+    type: z.enum(['string', 'number', 'float', 'boolean', 'array', 'datetime', 'relation', 'enum'], {
       required_error: 'Field type is required',
     }),
     required: z.boolean().default(false),
@@ -76,8 +77,9 @@ export const collectionFieldSchema = z
     },
   );
 
-// Collection schema validation
-export const collectionSchema = z.object({
+// Collection Request schema (for create and update operations)
+export const cuCollectionReqSchema = z.object({
+  id: z.string().optional(),
   name: z
     .string()
     .min(1, 'Collection name is required')
@@ -85,14 +87,61 @@ export const collectionSchema = z.object({
       /^[a-zA-Z]\w*$/,
       'Collection name must start with a letter and contain only letters, numbers and underscores',
     ),
-  slug: z
-    .string()
-    .min(1, 'Collection slug is required')
-    .regex(/^[a-z0-9]+(-[a-z0-9]+)*$/, 'Slug may contain lowercase letters, numbers and hyphens'),
-  description: z.string().optional(),
   fields: z.array(collectionFieldSchema).min(1, 'Collection must have at least one field'),
 });
 
 // Infer types from schemas
 export type CollectionFieldType = z.infer<typeof collectionFieldSchema>;
-export type CollectionSchemaType = z.infer<typeof collectionSchema>;
+export type CUCollectionFieldValues = z.infer<typeof cuCollectionReqSchema>;
+
+// ============= MEME RELATION SCHEMAS =============
+
+// Schema for meme objects
+export const memeObjectSchema = z.object({
+  id: z.string().optional(),
+  label_en: z.string().min(1, { message: "English label is required" }),
+  label_vi: z.string().min(1, { message: "Vietnamese label is required" }),
+  slug: z.string().min(1, { message: "Slug is required" })
+    .regex(/^[a-z0-9]+(-[a-z0-9]+)*$/, 'Slug may contain lowercase letters, numbers and hyphens'),
+  // System-managed fields (not editable in forms):
+  // usageCount, lastUsedAt, trendingScore
+});
+
+export type MemeObjectFormValues = z.infer<typeof memeObjectSchema>;
+
+// Schema for meme tags
+export const memeTagSchema = z.object({
+  id: z.string().optional(),
+  label: z.string().min(1, { message: "Label is required" }),
+  // System-managed fields (not editable in forms):
+  // usageCount, lastUsedAt, trendingScore
+});
+
+export type MemeTagFormValues = z.infer<typeof memeTagSchema>;
+
+// Schema for meme moods
+export const memeMoodSchema = z.object({
+  id: z.string().optional(),
+  label_en: z.string().min(1, { message: "English label is required" }),
+  label_vi: z.string().min(1, { message: "Vietnamese label is required" }),
+  slug: z.string().min(1, { message: "Slug is required" })
+    .regex(/^[a-z0-9]+(-[a-z0-9]+)*$/, 'Slug may contain lowercase letters, numbers and hyphens'),
+  // intensity: z.number().int().min(1).max(10).optional(),
+  // System-managed fields (not editable in forms):
+  // usageCount, lastUsedAt, trendingScore
+});
+
+export type MemeMoodFormValues = z.infer<typeof memeMoodSchema>;
+
+// Schema for image upload form
+export const imageUploadSchema = z.object({
+  title_en: z.string().min(1, { message: "English title is required" }),
+  title_vi: z.string().min(1, { message: "Vietnamese title is required" }),
+  description: z.string().optional(),
+  tags: z.array(z.string()).default([]),
+  objects: z.array(z.string()).default([]),
+  moods: z.array(z.string()).default([]),
+  imageFile: z.instanceof(File).array().min(1, { message: "Image is required" })
+});
+
+export type ImageUploadFormValues = z.infer<typeof imageUploadSchema>;

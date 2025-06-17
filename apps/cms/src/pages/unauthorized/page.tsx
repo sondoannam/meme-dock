@@ -12,6 +12,17 @@ export function Component() {
   const location = useLocation();
   const { logout, user, checkAdminAccess } = useUser();
 
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } catch (error) {
+      console.error('Logout failed:', error);
+      // Navigate anyway as a fallback
+    } finally {
+      navigate(ROUTE_PATH.LOGIN, { state: { autoLogout: true } });
+    }
+  };
+
   const { seconds } = useCountdown({
     startSeconds: 5,
     onComplete: () => {
@@ -30,17 +41,6 @@ export function Component() {
 
     verifyAccess();
   }, [checkAdminAccess, navigate]);
-
-  const handleLogout = async () => {
-    try {
-      await logout();
-    } catch (error) {
-      console.error('Logout failed:', error);
-      // Navigate anyway as a fallback
-    } finally {
-      navigate('/login', { state: { autoLogout: true } });
-    }
-  };
 
   const attemptedPath = (location.state as { from?: string })?.from;
 

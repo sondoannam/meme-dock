@@ -4,9 +4,41 @@ import { DocumentIncreaseTimePeriod, DocumentCountPeriod } from '../models/docum
 import { DocumentData, DocumentResponse, ListDocumentsResponse } from '../models/document';
 
 /**
+ * Result of a batch document creation operation
+ */
+export interface BatchDocumentsResult {
+  successful: DocumentResponse[];
+  failed: {
+    data: DocumentData;
+    error: string;
+  }[];
+  totalSuccessful: number;
+  totalFailed: number;
+}
+
+/**
+ * Format a raw document from Appwrite by removing system fields and renaming them
+ * @param doc Raw document from Appwrite
+ * @returns Clean document with renamed system fields
+ */
+function formatDocument(doc: any): DocumentResponse {
+  // Extract values we want to keep
+  const { $id, $createdAt, $updatedAt, $collectionId, ...restOfDoc } = doc;
+
+  // Return cleaned object with renamed fields
+  return {
+    ...restOfDoc,
+    id: $id,
+    collectionId: $collectionId,
+    createdAt: $createdAt || '',
+    updatedAt: $updatedAt || '',
+  };
+}
+
+/**
  * Get documents from a collection with optional filtering and pagination
  * @param collectionId Collection ID to query
- * @param options Query options like limit, offset, and filters
+ * @param options Query options like limit, offset, ordering, and filters
  * @returns List of matching documents
  */
 export async function getDocuments(
@@ -20,8 +52,8 @@ export async function getDocuments(
   } = {},
 ): Promise<ListDocumentsResponse> {
   try {
-    // Extract only queries from options
-    const { queries = [] } = options;
+    // Extract options
+    const { limit, offset, orderBy, orderType, queries = [] } = options;
 
     // Convert string queries to Query objects if provided
     const parsedQueries: string[] = [];
@@ -59,10 +91,38 @@ export async function getDocuments(
           parsedQueries.push(Query.contains(field, value));
           break;
       }
-    } // Create options object for the Appwrite SDK method
+    }
+
+    // Add sorting if orderBy is provided
+    if (orderBy) {
+      // Determine sort direction (default to ascending if not specified)
+      const isDesc = orderType?.toLowerCase() === 'desc';
+      parsedQueries.push(isDesc ? Query.orderDesc(orderBy) : Query.orderAsc(orderBy));
+    }
+    // Create options object for the Appwrite SDK method
+    // According to the Appwrite SDK, we need to pass queries as the third parameter
+    // Pagination parameters are handled via specific Query methods
+
+    // Add pagination queries if provided
+    if (typeof limit === 'number') {
+      if (limit <= 0) throw new Error('limit must be positive');
+      parsedQueries.push(Query.limit(limit));
+    }
+
+    if (typeof offset === 'number') {
+      if (offset < 0) throw new Error('offset cannot be negative');
+      parsedQueries.push(Query.offset(offset));
+    }
+
     const response = await databases.listDocuments(DATABASE_ID, collectionId, parsedQueries);
 
-    return response;
+    // Map documents and remove system fields
+    const cleanDocuments = response.documents.map(formatDocument);
+
+    return {
+      total: response.total,
+      documents: cleanDocuments,
+    };
   } catch (error) {
     console.error(`Error fetching documents from collection ${collectionId}:`, error);
     throw error;
@@ -211,7 +271,8 @@ export async function getDocument(
   documentId: string,
 ): Promise<DocumentResponse> {
   try {
-    return await databases.getDocument(DATABASE_ID, collectionId, documentId);
+    const doc = await databases.getDocument(DATABASE_ID, collectionId, documentId);
+    return formatDocument(doc);
   } catch (error) {
     console.error(`Error fetching document ${documentId} from collection ${collectionId}:`, error);
     throw error;
@@ -229,10 +290,30 @@ export async function createDocument(
   data: DocumentData,
 ): Promise<DocumentResponse> {
   try {
-    return await databases.createDocument(DATABASE_ID, collectionId, ID.unique(), data, [
-      Permission.read(Role.any()), // Public read access
-      Permission.write(Role.team('admin')), // Admin team write access
-    ]);
+    if (data?.slug) {
+      // Ensure slug is unique by checking existing documents
+      const existingDocs = await databases.listDocuments(DATABASE_ID, collectionId, [
+        Query.equal('slug', data.slug),
+      ]);
+
+      if (existingDocs.total > 0) {
+        throw new Error(
+          `Document with slug "${data.slug}" already exists in collection ${collectionId}`,
+        );
+      }
+    }
+    const createdDocument = await databases.createDocument(
+      DATABASE_ID,
+      collectionId,
+      ID.unique(),
+      data,
+      [
+        Permission.read(Role.any()), // Public read access
+        Permission.write(Role.team('admin')), // Admin team write access
+      ],
+    );
+
+    return formatDocument(createdDocument);
   } catch (error) {
     console.error(`Error creating document in collection ${collectionId}:`, error);
     throw error;
@@ -252,7 +333,27 @@ export async function updateDocument(
   data: DocumentData,
 ): Promise<DocumentResponse> {
   try {
-    return await databases.updateDocument(DATABASE_ID, collectionId, documentId, data);
+    if (data?.slug) {
+      // Ensure slug is unique by checking existing documents
+      const existingDocs = await databases.listDocuments(DATABASE_ID, collectionId, [
+        Query.equal('slug', data.slug),
+        Query.notEqual('$id', documentId), // Exclude current document
+      ]);
+
+      if (existingDocs.total > 0) {
+        throw new Error(
+          `Document with slug "${data.slug}" already exists in collection ${collectionId}`,
+        );
+      }
+    }
+    const updatedDocument = await databases.updateDocument(
+      DATABASE_ID,
+      collectionId,
+      documentId,
+      data,
+    );
+
+    return formatDocument(updatedDocument);
   } catch (error) {
     console.error(`Error updating document ${documentId} in collection ${collectionId}:`, error);
     throw error;
@@ -271,4 +372,109 @@ export async function deleteDocument(collectionId: string, documentId: string): 
     console.error(`Error deleting document ${documentId} from collection ${collectionId}:`, error);
     throw error;
   }
+}
+
+/**
+ * Create multiple documents in a collection
+ * @param collectionId Collection ID to create the documents in
+ * @param dataItems Array of document data to save
+ * @param skipDuplicateSlugs Whether to skip documents with duplicate slugs (true) or throw an error (false)
+ * @returns Result object with successful and failed documents
+ */
+export async function createDocuments(
+  collectionId: string,
+  dataItems: DocumentData[],
+  skipDuplicateSlugs = true,
+): Promise<BatchDocumentsResult> {
+  const result: BatchDocumentsResult = {
+    successful: [],
+    failed: [],
+    totalSuccessful: 0,
+    totalFailed: 0,
+  };
+
+  if (!dataItems || !dataItems.length) {
+    return result;
+  }
+
+  // Process documents with slugs first to check for duplicates
+  const slugsToCheck = dataItems.filter((item) => !!item.slug).map((item) => item.slug as string);
+
+  let existingSlugs: string[] = [];
+
+  if (slugsToCheck.length > 0) {
+    try {
+      // Get existing slugs in chunks to avoid query limits
+      const chunkSize = 30; // Appwrite has limits on query complexity
+
+      for (let i = 0; i < slugsToCheck.length; i += chunkSize) {
+        const chunk = slugsToCheck.slice(i, i + chunkSize);
+        const query = Query.equal('slug', chunk);
+        const response = await databases.listDocuments(DATABASE_ID, collectionId, [query]);
+
+        // Extract slugs from found documents
+        const foundSlugs = response.documents.map((doc) => doc.slug);
+        existingSlugs = existingSlugs.concat(foundSlugs);
+      }
+    } catch (error) {
+      console.error(`Error checking for duplicate slugs in collection ${collectionId}:`, error);
+      // Continue with the operation, but note we couldn't verify duplicates
+    }
+  }
+  const seenSlugs = new Set<string>();
+
+  for (const data of dataItems) {
+    if (data.slug) {
+      if (seenSlugs.has(data.slug)) {
+        result.failed.push({ data, error: `Duplicate slug "${data.slug}" in request` });
+        result.totalFailed++;
+        continue;
+      }
+      seenSlugs.add(data.slug);
+    }
+
+    try {
+      // Skip if slug exists and skipDuplicateSlugs is true
+      if (data.slug && existingSlugs.includes(data.slug)) {
+        if (skipDuplicateSlugs) {
+          console.log(`Skipping document with duplicate slug "${data.slug}"`);
+          result.failed.push({
+            data,
+            error: `Document with slug "${data.slug}" already exists`,
+          });
+          result.totalFailed++;
+          continue;
+        } else {
+          throw new Error(
+            `Document with slug "${data.slug}" already exists in collection ${collectionId}`,
+          );
+        }
+      }
+      const createdDocument = await databases.createDocument(
+        DATABASE_ID,
+        collectionId,
+        ID.unique(),
+        data,
+        [
+          Permission.read(Role.any()), // Public read access
+          Permission.write(Role.team('admin')), // Admin team write access
+        ],
+      );
+
+      // Format document using the helper function
+      const formattedDocument = formatDocument(createdDocument);
+
+      result.successful.push(formattedDocument);
+      result.totalSuccessful++;
+    } catch (error) {
+      console.error(`Error creating document in collection ${collectionId}:`, error);
+      result.failed.push({
+        data,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
+      result.totalFailed++;
+    }
+  }
+
+  return result;
 }

@@ -1,8 +1,34 @@
 import axios from 'axios';
-import { AuthService } from '../services/auth';
+import { authService } from '../services/auth';
 import { TokenService } from '../services/token';
 
 const API_URL = process.env.VITE_API_URL ?? 'http://localhost:3001/api';
+
+/**
+ * Custom parameter serializer that maintains compatibility with the API
+ * Uses URLSearchParams to serialize array parameters as repeated keys instead of array notation
+ * @param params The parameters to serialize
+ * @returns Serialized query string
+ */
+const customParamsSerializer = (params: Record<string, unknown>): string => {
+  const searchParams = new URLSearchParams();
+  
+  // Process each parameter
+  Object.entries(params).forEach(([key, value]) => {
+    if (Array.isArray(value)) {
+      // For arrays, add each item as a separate parameter with the same key
+      // This turns [a, b, c] into key=a&key=b&key=c instead of key[]=a&key[]=b&key[]=c
+      value.forEach(item => {
+        searchParams.append(key, String(item));
+      });
+    } else if (value !== undefined && value !== null) {
+      // For non-array values, add as a single parameter
+      searchParams.append(key, String(value));
+    }
+  });
+  
+  return searchParams.toString();
+};
 
 // Create axios instance with default config
 const apiClient = axios.create({
@@ -10,6 +36,8 @@ const apiClient = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  // Use the custom parameter serializer for all requests
+  paramsSerializer: customParamsSerializer
 });
 
 let tokenRefreshPromise: Promise<string> | null = null;
@@ -23,7 +51,7 @@ apiClient.interceptors.request.use(
       // If token is expired or not found, request a new one
       if (!token || TokenService.isTokenExpired()) {
         if (!tokenRefreshPromise) {
-          tokenRefreshPromise = AuthService.getJWT();
+          tokenRefreshPromise = authService.getJWT();
         }
         token = await tokenRefreshPromise;
         tokenRefreshPromise = null;

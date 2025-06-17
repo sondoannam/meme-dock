@@ -50,8 +50,10 @@ export function Component() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname, isAuthenticated, isLoading]);
 
+  if (isLoading) return <PageLoading message="Loading application..." />;
+
   return (
-    <Suspense fallback={<PageLoading message="Loading application..." />}>
+    <Suspense fallback={undefined}>
       <Outlet />
     </Suspense>
   );

@@ -13,13 +13,24 @@ import {
   SidebarSeparator,
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
-import { LayoutDashboardIcon, ImageIcon, UsersIcon, SettingsIcon, LogOutIcon } from 'lucide-react';
+import {
+  LayoutDashboardIcon,
+  ImageIcon,
+  UsersIcon,
+  SettingsIcon,
+  LogOutIcon,
+  PencilRulerIcon,
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ROUTE_PATH } from '@/constants/routes';
+import { toast } from 'sonner';
+import { useRequest } from 'ahooks';
+import { authService } from '@/services/auth';
 
 const sidebarItems = [
   { name: 'Dashboard', icon: LayoutDashboardIcon, path: ROUTE_PATH.DASHBOARD },
-  { name: 'Media', icon: ImageIcon, path: ROUTE_PATH.MEDIA },
+  { name: 'Memes', icon: ImageIcon, path: ROUTE_PATH.MEMES },
+  { name: 'Meme Relations', icon: PencilRulerIcon, path: ROUTE_PATH.RELATIONS },
   { name: 'Users', icon: UsersIcon, path: ROUTE_PATH.USERS },
   { name: 'Settings', icon: SettingsIcon, path: ROUTE_PATH.SETTINGS },
 ];
@@ -27,6 +38,18 @@ const sidebarItems = [
 export function AppSidebar() {
   const location = useLocation();
   const navigate = useNavigate();
+
+  const { run: onClickLogout, loading } = useRequest(authService.logout, {
+    manual: true,
+    onSuccess: () => {
+      toast.success('Logout successful');
+      navigate(ROUTE_PATH.LOGIN);
+    },
+    onError: (error) => {
+      console.error('Logout error:', error);
+      toast.error(`Logout failed: ${error.message}`);
+    },
+  });
 
   return (
     <Sidebar>
@@ -69,15 +92,12 @@ export function AppSidebar() {
         <Button
           variant="outline"
           className="w-full justify-start z-10 relative hover:!bg-destructive transition-colors dark:hover:text-white !py-3 h-auto"
-          onClick={() => {
-            console.log('Logout clicked');
-            // Add your actual logout logic here
-            // For example: authService.logout();
-            alert('Logout functionality will be implemented here');
-          }}
+          onClick={onClickLogout}
           type="button"
+          disabled={loading}
+          loading={loading}
         >
-          <LogOutIcon className="mr-2 size-4" />
+          {!loading && <LogOutIcon className="mr-2 size-4" /> }
           Logout
         </Button>
       </SidebarFooter>

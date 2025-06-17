@@ -18,6 +18,9 @@ router.get('/:collectionId/:documentId', DocumentController.getDocument);
 // POST /api/documents/:collectionId - Create a new document
 router.post('/:collectionId', DocumentController.createDocument);
 
+// POST /api/documents/:collectionId/batch - Create multiple documents
+router.post('/:collectionId/batch', DocumentController.createDocuments);
+
 // PUT /api/documents/:collectionId/:documentId - Update a document
 router.put('/:collectionId/:documentId', DocumentController.updateDocument);
 
