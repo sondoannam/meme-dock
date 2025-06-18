@@ -1,23 +1,6 @@
 import { ImageUploadFormValues } from '@/validators';
-import apiClient from '../api/api-client';
-import { Collection } from '@/types';
-import { documentApi } from './document';
-
-export interface MemeDocument {
-  id: string;
-  title_en: string;
-  title_vi: string;
-  desc_en?: string;
-  desc_vi?: string;
-  type: 'image' | 'gif' | 'video';
-  objectIds: string[];
-  tagIds: string[];
-  moodIds: string[];
-  fileId: string;
-  saved_platform: 'appwrite' | 'imagekit';
-  createdAt: string;
-  updatedAt: string;
-}
+import { documentApi, GetDocumentsParams } from './document';
+import { MemeDocument } from '@/types';
 
 export interface CreateMemeParams {
   title_en: string;
@@ -45,7 +28,7 @@ export const memeApi = {
   },
   
   // Get all meme documents with pagination
-  async getMemes(memeCollectionId: string, params?: { limit?: number; offset?: number }) {
+  async getMemes(memeCollectionId: string, params?: GetDocumentsParams) {
     return documentApi.getDocuments<MemeDocument>(memeCollectionId, params);
   },
   

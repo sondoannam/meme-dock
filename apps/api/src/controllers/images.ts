@@ -22,15 +22,14 @@ export async function uploadImage(req: Request, res: Response, next: NextFunctio
       imagePlatform = ImagePlatform.APPWRITE;
     } else if (platform === 'imagekit') {
       imagePlatform = ImagePlatform.IMAGEKIT;
-    }
-
-    // Extract upload options from request
+    }    // Extract upload options from request
     const options = {
       folder: req.body.folder || req.query.folder,
       tags: req.body.tags ? Array.isArray(req.body.tags) ? req.body.tags : req.body.tags.split(',') : undefined,
       isPrivate: req.body.isPrivate === 'true' || req.body.isPrivate === true,
       useUniqueFileName: req.body.useUniqueFileName !== 'false' && req.body.useUniqueFileName !== false,
       platform: imagePlatform,
+      userId: req.userId, // Add the authenticated user ID
       
       // For backward compatibility
       maxFileSize: req.body.maxFileSize ? parseInt(req.body.maxFileSize, 10) : undefined,
@@ -53,10 +52,11 @@ export async function uploadImage(req: Request, res: Response, next: NextFunctio
         maxWidth: req.body.maxWidth ? parseInt(req.body.maxWidth, 10) : undefined,
         maxHeight: req.body.maxHeight ? parseInt(req.body.maxHeight, 10) : undefined
       }
-    };
-
-    // Upload the image
+    };    // Upload the image
     const result = await imageService.uploadImage(req.file, options);
+
+    // Log the upload with user ID if available
+    console.log(`Image uploaded: ${result.id} by user: ${req.userId || 'anonymous'}`);
 
     res.status(201).json({
       success: true,
@@ -85,15 +85,14 @@ export async function uploadMultipleImages(req: Request, res: Response, next: Ne
       imagePlatform = ImagePlatform.APPWRITE;
     } else if (platform === 'imagekit') {
       imagePlatform = ImagePlatform.IMAGEKIT;
-    }
-
-    // Extract options from request
+    }    // Extract options from request
     const options = {
       folder: req.body.folder || req.query.folder,
       tags: req.body.tags ? Array.isArray(req.body.tags) ? req.body.tags : req.body.tags.split(',') : undefined,
       isPrivate: req.body.isPrivate === 'true' || req.body.isPrivate === true,
       useUniqueFileName: req.body.useUniqueFileName !== 'false' && req.body.useUniqueFileName !== false,
       platform: imagePlatform,
+      userId: req.userId, // Add the authenticated user ID
       
       // For backward compatibility
       maxFileSize: req.body.maxFileSize ? parseInt(req.body.maxFileSize, 10) : undefined,
@@ -116,10 +115,11 @@ export async function uploadMultipleImages(req: Request, res: Response, next: Ne
         maxWidth: req.body.maxWidth ? parseInt(req.body.maxWidth, 10) : undefined,
         maxHeight: req.body.maxHeight ? parseInt(req.body.maxHeight, 10) : undefined
       }
-    };
-
-    // Upload the images
+    };    // Upload the images
     const results = await imageService.uploadMultipleImages(req.files, options);
+
+    // Log the multi-upload with user ID if available
+    console.log(`Multiple images uploaded: ${results.length} images by user: ${req.userId || 'anonymous'}`);
 
     res.status(201).json({
       success: true,
@@ -209,9 +209,10 @@ export async function deleteImage(req: Request, res: Response, next: NextFunctio
       imagePlatform = ImagePlatform.APPWRITE;
     } else if (platform === 'imagekit') {
       imagePlatform = ImagePlatform.IMAGEKIT;
-    }
+    }    await imageService.deleteImage(imageId, imagePlatform);
 
-    await imageService.deleteImage(imageId, imagePlatform);
+    // Log the deletion with user ID if available
+    console.log(`Image deleted: ${imageId} by user: ${req.userId || 'anonymous'}`);
 
     res.status(200).json({
       success: true,

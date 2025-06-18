@@ -13,9 +13,9 @@ export function initRoutes(app: Express): void {
   // Protected routes requiring admin access
   app.use('/api/collections', adminAuth, collectionRoutes);
   app.use('/api/documents', adminAuth, documentRoutes);
-  app.use('/api/files', adminAuth, fileRoutes);
-  app.use('/api/images', adminAuth, imageRoutes);
-  
+  app.use('/api/files', adminAuth, fileRoutes);  // Image routes with their own middleware for granular access control
+  app.use('/api/images', imageRoutes);
+
   // Error handling middleware (should be last)
   app.use(errorHandler);
 }

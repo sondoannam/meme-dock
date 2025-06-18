@@ -10,13 +10,9 @@ import { useRequest } from 'ahooks';
 import { documentApi, GetDocumentsParams } from '@/services/document';
 import { MemeMoodType, MemeObjectType, MemeTagType } from '@/types';
 import { SmallLoading } from '@/components/custom/loading';
+import { EMPTY_LIST } from '@/constants/common';
 
 export type RelationType = 'objects' | 'tags' | 'moods';
-
-const emptyList = {
-  documents: [],
-  total: 0,
-};
 
 export const Component = () => {
   const [activeTab, setActiveTab] = useState<RelationType>('tags');
@@ -31,7 +27,7 @@ export const Component = () => {
     loading: isFetchingTags,
   } = useRequest(
     (params?: GetDocumentsParams) => {
-      if (!tagCollectionId) return Promise.resolve(emptyList);
+      if (!tagCollectionId) return Promise.resolve(EMPTY_LIST);
       return documentApi.getDocuments<MemeTagType>(tagCollectionId, params);
     },
     {
@@ -46,7 +42,7 @@ export const Component = () => {
     loading: isFetchingObjects,
   } = useRequest(
     (params?: GetDocumentsParams) => {
-      if (!objectCollectionId) return Promise.resolve(emptyList);
+      if (!objectCollectionId) return Promise.resolve(EMPTY_LIST);
       return documentApi.getDocuments<MemeObjectType>(objectCollectionId, params);
     },
     {
@@ -61,7 +57,7 @@ export const Component = () => {
     loading: isFetchingMoods,
   } = useRequest(
     (params?: GetDocumentsParams) => {
-      if (!moodCollectionId) return Promise.resolve(emptyList);
+      if (!moodCollectionId) return Promise.resolve(EMPTY_LIST);
       return documentApi.getDocuments<MemeMoodType>(moodCollectionId, params);
     },
     {

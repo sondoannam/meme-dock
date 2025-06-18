@@ -42,3 +42,21 @@ export type Collection = CUCollectionFieldValues & {
   updatedAt: string;
   enabled: boolean;
 }
+
+export interface MemeDocument {
+  id: string;
+  title_en: string;
+  title_vi: string;
+  desc_en?: string;
+  desc_vi?: string;
+  type: 'image' | 'gif' | 'video';
+  objectIds: string[];
+  tagIds: string[];
+  moodIds: string[];
+  fileId: string;
+  filePreview: string | null; // Optional preview URL for the file
+  saved_platform: 'appwrite' | 'imagekit';
+  createdAt: string;
+  updatedAt: string;
+  usageCount: number;
+}

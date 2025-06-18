@@ -40,7 +40,9 @@ This web app is a **collection of internet memes** (image, gif, video) with supp
 - `tagIds`: array<string> — references `tags` collection
 - `moodIds`: array<string> — references `moods` collection
 - `fileId`: string — file in Appwrite Storage or external source
+- `filePreview`: string (optional) — URL for preview image
 - `saved_platform`: enum (`appwrite`, `imagekit`) - platform where meme media is saved
+- `usageCount`: number (optional, for sorting)
 
 ### `tags` Collection
 - `label`: string

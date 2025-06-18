@@ -3,6 +3,14 @@ import { Query } from 'node-appwrite';
 import { DocumentIncreaseTimePeriod, DocumentCountPeriod } from '../models/document-analytics';
 import { DocumentData, DocumentResponse, ListDocumentsResponse } from '../models/document';
 
+export interface GetDocumentsParams {
+  limit?: number;
+  offset?: number;
+  orderBy?: string;
+  orderType?: string;
+  queries?: string[];
+}
+
 /**
  * Result of a batch document creation operation
  */
@@ -48,16 +56,10 @@ function formatDocument(doc: any): DocumentResponse {
  * @param options Query options like limit, offset, ordering, and filters
  * @returns List of matching documents
  */
-export async function getDocuments(
+export async function getDocuments<T>(
   collectionId: string,
-  options: {
-    limit?: number;
-    offset?: number;
-    orderBy?: string;
-    orderType?: string;
-    queries?: string[];
-  } = {},
-): Promise<ListDocumentsResponse> {
+  options: GetDocumentsParams = {},
+): Promise<ListDocumentsResponse<T>> {
   try {
     // Extract options
     const { limit, offset, orderBy, orderType, queries = [] } = options;
@@ -124,7 +126,7 @@ export async function getDocuments(
     const response = await databases.listDocuments(DATABASE_ID, collectionId, parsedQueries);
 
     // Map documents and remove system fields
-    const cleanDocuments = response.documents.map(formatDocument);
+    const cleanDocuments = response.documents.map(formatDocument) as T[];
 
     return {
       total: response.total,
