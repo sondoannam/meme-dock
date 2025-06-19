@@ -1,6 +1,7 @@
 {
   "name": "@meme-dock/api",
   "version": "0.0.1",
+  "main": "src/main.ts",
   "private": true,
   "nx": {
     "targets": {
