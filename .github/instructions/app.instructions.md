@@ -30,7 +30,7 @@ This web app is a **collection of internet memes** (image, gif, video) with supp
 
 ## 🗃️ Database Design (Appwrite)
 
-### `memes` Collection
+### `meme` Collection
 - `title_en`: string (optional)
 - `title_vi`: string (optional)
 - `desc_en`: string
@@ -44,25 +44,43 @@ This web app is a **collection of internet memes** (image, gif, video) with supp
 - `saved_platform`: enum (`appwrite`, `imagekit`) - platform where meme media is saved
 - `usageCount`: number (optional, for sorting)
 
-### `tags` Collection
+### `tag` Collection
 - `label`: string
 - `usageCount`: number (optional, for sorting)
 - `lastUsedAt`: date (optional, for sorting)
 - `trendingScore`: number (optional, for sorting)
 
-### `objects` Collection
+### `object` Collection
 - `label_en`, `label_vi`: string
 - `slug`: string
 - `usageCount`: number (optional, for sorting)
 - `lastUsedAt`: date (optional, for sorting)
 - `trendingScore`: number (optional, for sorting)
 
-### `moods` Collection
+### `mood` Collection
 - `label_en`, `label_vi`: string
 - `slug`: string
 - `usageCount`: number (optional, for sorting)
 - `lastUsedAt`: date (optional, for sorting)
 - `trendingScore`: number (optional, for sorting)
+
+### `tag_usages` Collection
+- `tagId`: string — reference to `tags` collection
+- `memeId`: string — reference to `memes` collection
+- `eventType`: enum (`copy`, `upload`, `download`)
+- `userId`: string (optional) — reference to user who performed the action
+
+### `object_usages` Collection
+- `objectId`: string — reference to `objects` collection
+- `memeId`: string — reference to `memes` collection
+- `eventType`: enum (`copy`, `upload`, `download`)
+- `userId`: string (optional) — reference to user who performed the action
+
+### `mood_usages` Collection
+- `moodId`: string — reference to `moods` collection
+- `memeId`: string — reference to `memes` collection
+- `eventType`: enum (`copy`, `upload`, `download`)
+- `userId`: string (optional) — reference to user who performed the action
 
 ---
 

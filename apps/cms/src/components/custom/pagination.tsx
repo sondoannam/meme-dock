@@ -57,7 +57,7 @@ export function PaginationComponent({
 }: PaginationComponentProps) {
   // Ensure page is within valid bounds (1 to totalPages)
   const [currentPage, setCurrentPage] = useState(page);
-  
+
   // Calculate total number of pages
   const totalPages = useMemo(() => {
     return Math.max(1, Math.ceil(total / pageSize));
@@ -72,17 +72,17 @@ export function PaginationComponent({
   const pageNumbers = useMemo(() => {
     // Always show first and last page
     const result: (number | 'ellipsis')[] = [];
-    
+
     // Determine the range of pages to show around the current page
     const halfButtons = Math.floor(maxPageButtons / 2);
     let startPage = Math.max(1, currentPage - halfButtons);
     const endPage = Math.min(totalPages, startPage + maxPageButtons - 1);
-    
+
     // Adjust the start page if we're near the end
     if (endPage - startPage + 1 < maxPageButtons) {
       startPage = Math.max(1, endPage - maxPageButtons + 1);
     }
-    
+
     // Add first page if not included in range
     if (startPage > 1) {
       result.push(1);
@@ -90,12 +90,12 @@ export function PaginationComponent({
         result.push('ellipsis');
       }
     }
-    
+
     // Add page numbers in range
     for (let i = startPage; i <= endPage; i++) {
       result.push(i);
     }
-    
+
     // Add last page if not included in range
     if (endPage < totalPages) {
       if (endPage < totalPages - 1) {
@@ -103,27 +103,27 @@ export function PaginationComponent({
       }
       result.push(totalPages);
     }
-    
+
     return result;
   }, [currentPage, totalPages, maxPageButtons]);
 
   // Handle page change
   const handleChangePage = (newPage: number) => {
     if (newPage === currentPage || newPage < 1 || newPage > totalPages || disabled) return;
-    
+
     setCurrentPage(newPage);
     onChangePage(newPage);
   };
 
   return (
-    <Pagination className={cn("py-4", className)}>
+    <Pagination className={cn('py-4', className)}>
       <PaginationContent>
         <PaginationItem>
           <PaginationPrevious
             onClick={() => handleChangePage(currentPage - 1)}
             className={cn(
-              "cursor-pointer",
-              (currentPage <= 1 || disabled) && "pointer-events-none opacity-50"
+              'cursor-pointer',
+              (currentPage <= 1 || disabled) && 'pointer-events-none opacity-50',
             )}
           />
         </PaginationItem>
@@ -136,15 +136,19 @@ export function PaginationComponent({
               </PaginationItem>
             );
           }
-          
+
           return (
             <PaginationItem key={pageNumber}>
               <PaginationLink
                 isActive={pageNumber === currentPage}
-                onClick={() => handleChangePage(pageNumber)}
+                onClick={() => {
+                  if (pageNumber === currentPage || disabled) return;
+                  handleChangePage(pageNumber);
+                }}
                 className={cn(
-                  "cursor-pointer",
-                  disabled && "pointer-events-none opacity-50"
+                  'cursor-pointer',
+                  disabled && 'pointer-events-none opacity-50',
+                  pageNumber === currentPage && 'font-bold cursor-default',
                 )}
               >
                 {pageNumber}
@@ -157,8 +161,8 @@ export function PaginationComponent({
           <PaginationNext
             onClick={() => handleChangePage(currentPage + 1)}
             className={cn(
-              "cursor-pointer",
-              (currentPage >= totalPages || disabled) && "pointer-events-none opacity-50"
+              'cursor-pointer',
+              (currentPage >= totalPages || disabled) && 'pointer-events-none opacity-50',
             )}
           />
         </PaginationItem>

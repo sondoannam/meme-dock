@@ -91,7 +91,7 @@ export default function ImagesTab({ relationOptions, onRefreshRelations }: Image
     console.log('Edit meme:', memeId);
     // TODO: Implement edit functionality
   };
-  
+
   const { data, run, refresh, loading, error } = useRequest(
     (params: GetDocumentsParams) => {
       if (!memeCollection) return Promise.resolve(EMPTY_LIST);
@@ -127,6 +127,7 @@ export default function ImagesTab({ relationOptions, onRefreshRelations }: Image
       refreshDeps: [memeCollection, selectedStorage, currentPage, pageSize],
     },
   );
+
   const handleRefresh = () => {
     onRefreshRelations();
     refresh();
@@ -137,6 +138,7 @@ export default function ImagesTab({ relationOptions, onRefreshRelations }: Image
     // The run function will be called automatically through useEffect dependencies
     window.scrollTo({ top: 0, behavior: 'smooth' }); // Scroll to top for better UX
   };
+  
   useEffect(() => {
     if (memeCollection) {
       const platformQuery =
