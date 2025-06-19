@@ -1,4 +1,12 @@
-export default async ({ req, res, log, error }) => {
+export default async ({ req, res, log, error }: any) => {
+  // Why not try the Appwrite SDK?
+  //
+  // Set project and set API key
+  // const client = new Client()
+  //    .setProject(process.env.APPWRITE_FUNCTION_PROJECT_ID)
+  //    .setKey(req.headers['x-appwrite-key']);
+
+  // You can log messages to the console
   log('Hello, Logs!');
 
   // If something goes wrong, log an error
@@ -16,6 +24,6 @@ export default async ({ req, res, log, error }) => {
     motto: 'Build like a team of hundreds!',
     learn: 'https://appwrite.io/docs',
     connect: 'https://appwrite.io/discord',
-    getInspired: 'https://builtwith.appwrite.io'
+    getInspired: 'https://builtwith.appwrite.io',
   });
 };
