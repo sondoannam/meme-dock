@@ -1,4 +1,4 @@
-export default async ({ req, res, log, error }: any) => {
+export default async ({ req, res, log, error }) => {
   log('Hello, Logs!');
 
   // If something goes wrong, log an error
