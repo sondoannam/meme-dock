@@ -13,9 +13,9 @@ export default async ({ req, res, log, error }) => {
 
   // `res.json()` is a handy helper for sending JSON
   return res.json({
-    motto: 'Build like a team of hundreds_ok!',
+    motto: 'Build like a team of hundreds!',
     learn: 'https://appwrite.io/docs',
     connect: 'https://appwrite.io/discord',
-    getInspired: 'https://builtwith.appwrite.io',
+    getInspired: 'https://builtwith.appwrite.io'
   });
 };
