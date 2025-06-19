@@ -3,4 +3,4 @@ export const EMPTY_LIST = {
   total: 0,
 };
 
-export const DEFAULT_MEMES_OFFSET = 0;
+export const DEFAULT_MEMES_OFFSET = 60;

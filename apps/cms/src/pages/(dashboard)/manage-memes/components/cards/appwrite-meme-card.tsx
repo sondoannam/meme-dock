@@ -13,7 +13,7 @@ interface MemeWithImage extends MemeDocument {
   imageUrl?: string;
 }
 
-interface MemeCardProps {
+interface AppwriteMemeCardProps {
   meme: MemeWithImage;
   tagNames?: Record<string, string>;
   objectNames?: Record<string, string>;
@@ -21,13 +21,13 @@ interface MemeCardProps {
   onEdit?: (memeId: string) => void;
 }
 
-export function MemeCard({
+export function AppwriteMemeCard({
   meme,
   tagNames = {},
   objectNames = {},
   moodNames = {},
   onEdit,
-}: MemeCardProps) {
+}: AppwriteMemeCardProps) {
   const [showVietnamese, setShowVietnamese] = useState(false);
 
   const toggleLanguage = () => {
@@ -47,7 +47,7 @@ export function MemeCard({
       : meme.imageUrl;
 
   return (
-    <Card className="overflow-hidden hover:shadow-lg transition-shadow duration-200">
+    <Card className="overflow-hidden hover:shadow-lg transition-shadow duration-200 pt-0 py-0 gap-3">
       <div className="aspect-square relative overflow-hidden group">
         {/* Image */}
         {imageUrl ? (
@@ -76,19 +76,20 @@ export function MemeCard({
         </div>
       </div>
 
-      <CardContent className="p-3 space-y-2">
+      <CardContent className="pb-2 px-3 space-y-2">
         {/* Title with language toggle */}
-        <div className="flex justify-between items-start gap-1">
-          <h3 className="font-medium truncate text-sm flex-1">
+        <div className="flex items-center w-full">
+          <h3 className="font-medium !text-base flex-1 max-w-[75%]">
             {showVietnamese ? meme.title_vi : meme.title_en}
           </h3>
           <Button
-            variant="ghost"
+            variant="outline"
             size="icon"
-            className="h-6 w-6 rounded-full shrink-0"
+            className="float-right py-1 !w-[25%] rounded-md shrink-0"
             onClick={toggleLanguage}
           >
-            <Globe className="h-4 w-4" />
+            {/* <Globe className="h-4 w-4" /> */}
+            <span className="!text-base">{showVietnamese ? 'VI' : 'EN'}</span>
             <span className="sr-only">Toggle language</span>
           </Button>
         </div>
@@ -106,8 +107,12 @@ export function MemeCard({
                   <span>{meme.tagIds.length}</span>
                 </Badge>
               </TooltipTrigger>
-              <TooltipContent className="max-w-[200px]">
-                <p>{meme.tagIds.map((id) => tagNames[id] || id).join(', ')}</p>
+              <TooltipContent className="max-w-[300px] p-2 pb-3 flex flex-wrap gap-1.5">
+                {meme.tagIds.map((id) => (
+                  <Badge variant="secondary" className="flex items-center gap-1 py-2" key={id}>
+                    <span className='leading-[1rem] !text-base'>{tagNames[id] || id}</span>
+                  </Badge>
+                ))}
               </TooltipContent>
             </Tooltip>
           )}
@@ -123,8 +128,12 @@ export function MemeCard({
                   <span>{meme.objectIds.length}</span>
                 </Badge>
               </TooltipTrigger>
-              <TooltipContent className="max-w-[200px]">
-                <p>{meme.objectIds.map((id) => objectNames[id] || id).join(', ')}</p>
+              <TooltipContent className="max-w-[300px] p-2 pb-3 flex flex-wrap gap-1.5">
+                {meme.objectIds.map((id) => (
+                  <Badge variant="secondary" className="flex items-center gap-1 py-2" key={id}>
+                    <span className='leading-[1rem] !text-base'>{objectNames[id] || id}</span>
+                  </Badge>
+                ))}
               </TooltipContent>
             </Tooltip>
           )}
@@ -140,8 +149,12 @@ export function MemeCard({
                   <span>{meme.moodIds.length}</span>
                 </Badge>
               </TooltipTrigger>
-              <TooltipContent className="max-w-[200px]">
-                <p>{meme.moodIds.map((id) => moodNames[id] || id).join(', ')}</p>
+              <TooltipContent className="max-w-[300px] p-2 pb-3 flex flex-wrap gap-1.5">
+                {meme.moodIds.map((id) => (
+                  <Badge variant="secondary" className="flex items-center gap-1 py-2" key={id}>
+                    <span className='leading-[1rem] !text-base'>{moodNames[id] || id}</span>
+                  </Badge>
+                ))}
               </TooltipContent>
             </Tooltip>
           )}

@@ -411,9 +411,9 @@ export class AppwriteImageService implements ImagePlatformService {
       }, []);
 
       // Compute URLs for the different ways to access the file
-      const url = this.getImageViewURL(id);
-      const downloadUrl = this.getImageDownloadURL(id);
-      const thumbnailUrl = this.getImagePreviewURL(id, { width: 200 });
+      const url = `/images/view/${id}`; 
+      const downloadUrl = `/images/download/${id}`;
+      const thumbnailUrl = `/images/preview/${id}`;
 
       // Create a full metadata object including all available information
       return {

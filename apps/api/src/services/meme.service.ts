@@ -1,6 +1,5 @@
-import { databases, DATABASE_ID, ID } from '../config/appwrite';
+import { databases, DATABASE_ID } from '../config/appwrite';
 import { DocumentResponse } from '../models/document';
-import { ImageMetadata } from '../services/image/image-platform.interface';
 import { getDocuments, GetDocumentsParams } from './document.service';
 
 /**

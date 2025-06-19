@@ -100,6 +100,7 @@ export function ImageUploadDialog({ dialog, relationOptions, onSuccess }: ImageU
         fileName,
         tags: data.tags, // Pass tags as additional metadata
       });
+      console.log('Image uploaded successfully:', imageResult);
 
       // Step 2: Create meme document with the uploaded image ID
       const memeParams = memeApi.transformFormToApiParams(data, imageResult.data.id, data.platform);
