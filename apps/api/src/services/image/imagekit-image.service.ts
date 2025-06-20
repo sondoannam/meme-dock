@@ -1,7 +1,7 @@
 import { UploadOptions } from 'imagekit/dist/libs/interfaces';
 import { getImageKit, IMAGEKIT_CONFIG } from '../../config/imagekit';
 import { ConfigError, FileError } from '../../utils/errors';
-import { validateImageFile, DEFAULT_IMAGE_VALIDATION_OPTIONS } from '../../utils/file-validation';
+import { validateImageFile } from '../../utils/file-validation';
 import {
   ImageMetadata,
   ImageUploadOptions,
