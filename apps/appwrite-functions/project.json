@@ -14,6 +14,7 @@
         "format": ["cjs"],
         "bundle": false,
         "main": "apps/appwrite-functions/src/main.js",
+        "tsConfig": "",
         "assets": ["apps/appwrite-functions/src/assets"],
         "esbuildOptions": {
           "sourcemap": true,

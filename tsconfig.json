@@ -11,12 +11,6 @@
     },
     {
       "path": "./apps/api"
-    },
-    {
-      "path": "./apps/appwrite-functions"
-    },
-    {
-      "path": "./appwrite-functions"
     }
   ]
 }
