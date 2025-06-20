@@ -1,4 +1,4 @@
-import { databases } from '../config/appwrite';
+import { databases, APPWRITE_DATABASE_ID as DATABASE_ID } from '../config/appwrite';
 
 /**
  * Function to increase usage count for objects, tags, or moods
@@ -36,7 +36,6 @@ export default async function ({ req, res, log }) {
     }
 
     // Get collection IDs from environment variables
-    const DATABASE_ID = process.env.DATABASE_ID;
     const collectionMap = {
       object: {
         collection: process.env.OBJECT_COLLECTION_ID,

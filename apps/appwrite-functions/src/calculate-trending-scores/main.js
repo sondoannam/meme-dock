@@ -1,4 +1,4 @@
-import { databases } from '../config/appwrite';
+import { databases, APPWRITE_DATABASE_ID } from '../config/appwrite';
 import { Query } from 'node-appwrite';
 
 /**
@@ -12,20 +12,11 @@ import { Query } from 'node-appwrite';
  * - spikeFactor = velocity / averageUsagePerHour (how much more active recently vs. overall average)
  * - averageUsagePerHour = totalUsages / hoursAlive (average usage per hour since creation)
  * 
- * Environment variables:
- * - DATABASE_ID: Appwrite database ID
- * - OBJECT_COLLECTION_ID: Collection ID for objects
- * - TAG_COLLECTION_ID: Collection ID for tags  
- * - MOOD_COLLECTION_ID: Collection ID for moods
- * - OBJECT_USAGES_COLLECTION_ID: Collection ID for object usage records
- * - TAG_USAGES_COLLECTION_ID: Collection ID for tag usage records
- * - MOOD_USAGES_COLLECTION_ID: Collection ID for mood usage records
  */
 export default async function({ req, res, log }) {
   log('Calculate trending scores function started');
 
   try {
-    const DATABASE_ID = process.env.DATABASE_ID;
     // Time window for recent usage (hours)
     const RECENT_HOURS = 24;
     
@@ -54,7 +45,7 @@ export default async function({ req, res, log }) {
           const { collection, usagesCollection, idField } = config;
           
           // Validate configuration
-          if (!DATABASE_ID || !collection || !usagesCollection) {
+          if (!APPWRITE_DATABASE_ID || !collection || !usagesCollection) {
             log(`Missing environment variables for ${type} collections. Skipping.`);
             return {
               type,
@@ -64,7 +55,7 @@ export default async function({ req, res, log }) {
           }
           
           // Get all documents in this collection
-          const documents = await databases.listDocuments(DATABASE_ID, collection);
+          const documents = await databases.listDocuments(APPWRITE_DATABASE_ID, collection);
           log(`Processing ${documents.total} ${type}(s) for trending calculation`);
           
           // Calculate cutoff time for recent usage
@@ -85,7 +76,7 @@ export default async function({ req, res, log }) {
                 
                 // Get recent usages
                 const recentUsages = await databases.listDocuments(
-                  DATABASE_ID,
+                  APPWRITE_DATABASE_ID,
                   usagesCollection,
                   [
                     Query.equal(idField, document.$id),
@@ -109,7 +100,7 @@ export default async function({ req, res, log }) {
                 
                 // Update document with trending score
                 await databases.updateDocument(
-                  DATABASE_ID,
+                  APPWRITE_DATABASE_ID,
                   collection,
                   document.$id,
                   { trendingScore }
