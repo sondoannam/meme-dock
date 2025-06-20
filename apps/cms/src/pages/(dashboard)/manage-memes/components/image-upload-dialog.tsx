@@ -199,10 +199,7 @@ export function ImageUploadDialog({
     // Clean up resources
     if (previewUrl) {
       if (previewUrl.startsWith('blob:')) {
-        console.log('Revoking blob URL:', previewUrl);
         URL.revokeObjectURL(previewUrl);
-      } else {
-        console.log('Not revoking remote URL:', previewUrl);
       }
     }
 

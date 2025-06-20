@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useDebounce, useRequest, useUpdateEffect } from 'ahooks';
 import { Upload, Grid2X2, Grid3X3, LayoutGrid, Loader2, Image as ImageIcon } from 'lucide-react';
 
@@ -55,21 +55,29 @@ export default function ImagesTab({ relationOptions, onRefreshRelations }: Image
   const createUpdateDialog = DialogCustom.useDialog();
 
   // Generate maps for relation lookups
-  const tagMap: Record<string, string> = {};
-  const objectMap: Record<string, string> = {};
-  const moodMap: Record<string, string> = {};
+  const tagMap = useMemo(() => {
+    const map: Record<string, string> = {};
+    relationOptions.tags.forEach((tag) => {
+      map[tag.value] = tag.label;
+    });
+    return map;
+  }, [relationOptions.tags]);
 
-  relationOptions.tags.forEach((tag) => {
-    tagMap[tag.value] = tag.label;
-  });
+  const objectMap = useMemo(() => {
+    const map: Record<string, string> = {};
+    relationOptions.objects.forEach((obj) => {
+      map[obj.value] = obj.label;
+    });
+    return map;
+  }, [relationOptions.objects]);
 
-  relationOptions.objects.forEach((obj) => {
-    objectMap[obj.value] = obj.label;
-  });
-
-  relationOptions.moods.forEach((mood) => {
-    moodMap[mood.value] = mood.label;
-  });
+  const moodMap = useMemo(() => {
+    const map: Record<string, string> = {};
+    relationOptions.moods.forEach((mood) => {
+      map[mood.value] = mood.label;
+    });
+    return map;
+  }, [relationOptions.moods]);
 
   const getGridSizeClass = (): string => {
     switch (gridSize) {
@@ -85,20 +93,17 @@ export default function ImagesTab({ relationOptions, onRefreshRelations }: Image
         return 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3';
     }
   };
-  // Handle edit meme
-  const handleEditMeme = (memeId: string) => {
-    // Find the meme in the data
-    if (!data) return;
 
-    const memeToEdit = data.documents.find((meme) => meme.id === memeId);
-    if (memeToEdit) {
-      setSelectedMeme(memeToEdit);
-      createUpdateDialog.open();
-    }
+  const handleEditMeme = (meme: MemeDocument) => {
+    // Find the meme in the data
+    if (!data?.documents) return;
+
+    setSelectedMeme(meme);
+    createUpdateDialog.open();
   };
 
   const { data, run, refresh, loading, error } = useRequest(
-    (params: GetDocumentsParams) => {
+    async (params: GetDocumentsParams) => {
       if (!memeCollection) return Promise.resolve(EMPTY_LIST);
 
       return memeApi.getMemes(memeCollection.id, params).then((res) => ({
@@ -331,7 +336,7 @@ export default function ImagesTab({ relationOptions, onRefreshRelations }: Image
                       tagNames={tagMap}
                       objectNames={objectMap}
                       moodNames={moodMap}
-                      onEdit={handleEditMeme}
+                      onEdit={() => handleEditMeme(meme)}
                     />
                   ))
                 ) : (

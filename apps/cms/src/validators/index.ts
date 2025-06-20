@@ -143,10 +143,6 @@ export const imageUploadSchema = z.object({
   moods: z.array(z.string()).default([]),
   imageFile: z.instanceof(File).array().optional(), // We'll validate conditionally
   platform: z.enum(['appwrite', 'imagekit']).default('appwrite')
-}).refine((data) => {
-  // If imageFile is empty, we should be in update mode with an existing image
-  // This will be checked programmatically, as the schema doesn't know about mode
-  return true;
 });
 
 export type ImageUploadFormValues = z.infer<typeof imageUploadSchema>;
