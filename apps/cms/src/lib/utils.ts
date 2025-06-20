@@ -19,7 +19,7 @@ export const getAppwriteImageUrl = (fileId: string, type: 'view' | 'preview' | '
   
   if (!endpoint || !projectId || !bucketId) {
     console.error('Missing Appwrite configuration');
-    return '';
+    throw new Error('Missing required Appwrite configuration for image URL generation');
   }
 
   // Construct base URL

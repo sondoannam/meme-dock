@@ -24,6 +24,34 @@ export interface ImageMetadata {
   tags?: string[];
 }
 
+function appendUploadOptions(formData: FormData, options: ImageUploadOptions) {
+  if (options.platform) {
+    formData.append('platform', options.platform);
+  }
+
+  if (options.fileName) {
+    formData.append('fileName', options.fileName);
+  }
+
+  if (options.folder) {
+    formData.append('folder', options.folder);
+  }
+
+  if (options.tags && options.tags.length > 0) {
+    options.tags.forEach((tag) => {
+      formData.append('tags[]', tag);
+    });
+  }
+
+  if (options.useUniqueFileName !== undefined) {
+    formData.append('useUniqueFileName', String(options.useUniqueFileName));
+  }
+
+  if (options.customMetadata) {
+    formData.append('customMetadata', JSON.stringify(options.customMetadata));
+  }
+}
+
 export interface ImageUploadResponse {
   success: boolean;
   data: ImageMetadata;
@@ -36,32 +64,7 @@ export const imageApi = {
     const formData = new FormData();
     formData.append('file', file);
 
-    // Add options to formData
-    if (options.platform) {
-      formData.append('platform', options.platform);
-    }
-
-    if (options.fileName) {
-      formData.append('fileName', options.fileName);
-    }
-
-    if (options.folder) {
-      formData.append('folder', options.folder);
-    }
-
-    if (options.tags && options.tags.length > 0) {
-      options.tags.forEach((tag) => {
-        formData.append('tags[]', tag);
-      });
-    }
-
-    if (options.useUniqueFileName !== undefined) {
-      formData.append('useUniqueFileName', String(options.useUniqueFileName));
-    }
-
-    if (options.customMetadata) {
-      formData.append('customMetadata', JSON.stringify(options.customMetadata));
-    }
+    appendUploadOptions(formData, options);
 
     const response = await apiClient.post<ImageUploadResponse>('/images/', formData, {
       headers: {
@@ -81,32 +84,7 @@ export const imageApi = {
       formData.append('files', files[i]);
     }
 
-    // Add options to formData (same as above)
-    if (options.platform) {
-      formData.append('platform', options.platform);
-    }
-
-    if (options.fileName) {
-      formData.append('fileName', options.fileName);
-    }
-
-    if (options.folder) {
-      formData.append('folder', options.folder);
-    }
-
-    if (options.tags && options.tags.length > 0) {
-      options.tags.forEach((tag) => {
-        formData.append('tags[]', tag);
-      });
-    }
-
-    if (options.useUniqueFileName !== undefined) {
-      formData.append('useUniqueFileName', String(options.useUniqueFileName));
-    }
-
-    if (options.customMetadata) {
-      formData.append('customMetadata', JSON.stringify(options.customMetadata));
-    }
+    appendUploadOptions(formData, options);
 
     const response = await apiClient.post<ImageMetadata[]>('/images/upload-multiple', formData, {
       headers: {

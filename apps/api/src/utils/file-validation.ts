@@ -61,10 +61,10 @@ export const ALL_SUPPORTED_MIME_TYPES = [
  * @param size File size in bytes
  * @param maxSize Maximum allowed size in bytes (defaults to MAX_FILE_SIZE)
  */
-export function validateFileSize(size: number, maxSize = MAX_FILE_SIZE): void {
-  if (size > maxSize) {
+export function validateFileSize(size: number, maxFileSize = MAX_FILE_SIZE): void {
+  if (size > maxFileSize) {
     throw new FileError(
-      `File too large. Maximum size is ${(maxSize / (1024 * 1024)).toFixed(1)}MB`
+      `File too large. Maximum size is ${(maxFileSize / (1024 * 1024)).toFixed(1)}MB`
     );
   }
 }
@@ -111,14 +111,14 @@ export function generateSecureFileId(): string {
 export function validateFile(
   file: Express.Multer.File,
   options: {
-    maxSize?: number;
-    minSize?: number;
+    maxFileSize?: number;
+    minFileSize?: number;
     allowedTypes?: string[];
   } = {}
 ): void {
   const { 
-    maxSize = MAX_FILE_SIZE, 
-    minSize = MIN_FILE_SIZE,
+    maxFileSize = MAX_FILE_SIZE, 
+    minFileSize = MIN_FILE_SIZE,
     allowedTypes = ALL_SUPPORTED_MIME_TYPES 
   } = options;
   
@@ -128,12 +128,12 @@ export function validateFile(
   }
   
   // Validate file size (both min and max)
-  if (file.size < minSize) {
-    throw new FileError(`File too small. Minimum size is ${minSize} bytes`);
+  if (file.size < minFileSize) {
+    throw new FileError(`File too small. Minimum size is ${minFileSize} bytes`);
   }
-  
-  validateFileSize(file.size, maxSize);
-  
+
+  validateFileSize(file.size, maxFileSize);
+
   // Validate MIME type
   validateFileMimeType(file.mimetype, allowedTypes);
   
@@ -160,8 +160,8 @@ export function validateFile(
  * ```
  */
 export interface ImageValidationOptions {
-  maxSize?: number;
-  minSize?: number;
+  maxFileSize?: number;
+  minFileSize?: number;
   allowedTypes?: string[];
   maxWidth?: number;
   maxHeight?: number;
@@ -171,8 +171,8 @@ export interface ImageValidationOptions {
  * Default validation options for images
  */
 export const DEFAULT_IMAGE_VALIDATION_OPTIONS: ImageValidationOptions = {
-  maxSize: IMAGE_MAX_FILE_SIZE,
-  minSize: IMAGE_MIN_FILE_SIZE,
+  maxFileSize: IMAGE_MAX_FILE_SIZE,
+  minFileSize: IMAGE_MIN_FILE_SIZE,
   allowedTypes: SUPPORTED_MIME_TYPES.image,
   maxWidth: IMAGE_MAX_DIMENSIONS.width,
   maxHeight: IMAGE_MAX_DIMENSIONS.height
@@ -189,8 +189,8 @@ export function validateImageFile(
 ): void {
   // Merge options with defaults
   const validationOptions = {
-    maxSize: options.maxSize || DEFAULT_IMAGE_VALIDATION_OPTIONS.maxSize,
-    minSize: options.minSize || DEFAULT_IMAGE_VALIDATION_OPTIONS.minSize,
+    maxFileSize: options.maxFileSize || DEFAULT_IMAGE_VALIDATION_OPTIONS.maxFileSize,
+    minFileSize: options.minFileSize || DEFAULT_IMAGE_VALIDATION_OPTIONS.minFileSize,
     allowedTypes: options.allowedTypes || DEFAULT_IMAGE_VALIDATION_OPTIONS.allowedTypes
   };
   

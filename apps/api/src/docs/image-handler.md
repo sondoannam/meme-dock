@@ -125,19 +125,6 @@ Potential enhancements:
 - Add batch operations for efficiency
 - Support file processing/transformations on upload
 
-# Image Handler Documentation
-
-This document provides information on how to use the image handler service in the MemeVerse API.
-
-## Table of Contents
-- [Overview](#overview)
-- [Architecture](#architecture)
-- [Configuration](#configuration)
-- [Usage Examples](#usage-examples)
-- [Validation Options](#validation-options)
-- [API Endpoints](#api-endpoints)
-- [Platform Support](#platform-support)
-
 ## Overview
 
 The image handler service provides platform-agnostic capabilities for handling image uploads, retrieval, and management. It supports multiple storage platforms (currently Appwrite and ImageKit) and provides a consistent interface for image operations.

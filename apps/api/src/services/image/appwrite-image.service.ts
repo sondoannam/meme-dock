@@ -9,7 +9,6 @@ import { InputFile } from 'node-appwrite/file';
 import { ConfigError, FileError } from '../../utils/errors';
 import {
   validateImageFile,
-  DEFAULT_IMAGE_VALIDATION_OPTIONS,
   generateSecureFileId,
 } from '../../utils/file-validation';
 import {
@@ -20,6 +19,7 @@ import {
   ImagePlatformService,
   ImagePreviewOptions,
 } from './image-platform.interface';
+import { createValidationOptions } from './image.service';
 
 /**
  * Appwrite implementation of the ImagePlatformService
@@ -34,15 +34,7 @@ export class AppwriteImageService implements ImagePlatformService {
   ): Promise<ImageMetadata> {
     try {
       // Create validation options by merging defaults with provided options
-      const validationOptions = {
-        ...DEFAULT_IMAGE_VALIDATION_OPTIONS,
-        // Use consolidated validation options if provided, otherwise fall back to individual properties
-        ...(options.validation || {}),
-        // Legacy individual options for backward compatibility
-        maxSize: options.maxFileSize,
-        allowedTypes: options.allowedTypes,
-        minSize: options.minFileSize,
-      };
+      const validationOptions = createValidationOptions(options);
 
       // Validate the file using our image-specific utility
       validateImageFile(file, validationOptions);
@@ -93,16 +85,9 @@ export class AppwriteImageService implements ImagePlatformService {
       const MAX_FILES = 20;
       if (files.length > MAX_FILES) {
         throw new FileError(`Too many files. Maximum allowed is ${MAX_FILES}`);
-      } // Create validation options by merging defaults with provided options
-      const validationOptions = {
-        ...DEFAULT_IMAGE_VALIDATION_OPTIONS,
-        // Use consolidated validation options if provided, otherwise fall back to individual properties
-        ...(options.validation || {}),
-        // Legacy individual options for backward compatibility
-        maxSize: options.maxFileSize,
-        allowedTypes: options.allowedTypes,
-        minSize: options.minFileSize,
-      };
+      }
+
+      const validationOptions = createValidationOptions(options);
 
       // Validate each file before attempting to upload any
       files.forEach((file) => validateImageFile(file, validationOptions));
@@ -411,7 +396,7 @@ export class AppwriteImageService implements ImagePlatformService {
       }, []);
 
       // Compute URLs for the different ways to access the file
-      const url = `/images/view/${id}`; 
+      const url = `/images/view/${id}`;
       const downloadUrl = `/images/download/${id}`;
       const thumbnailUrl = `/images/preview/${id}`;
 

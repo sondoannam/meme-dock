@@ -3,6 +3,50 @@ import { ImageService, ImagePlatform } from '../services/image/image.service';
 
 // Create a singleton instance of the ImageService
 const imageService = new ImageService();
+  
+function parsePlatform(req: Request): ImagePlatform | undefined {
+  const platform = req.body.platform || req.query.platform;
+  if (platform === 'appwrite') {
+    return ImagePlatform.APPWRITE;
+  } else if (platform === 'imagekit') {
+    return ImagePlatform.IMAGEKIT;
+  }
+  return undefined;
+}
+
+function parseUploadOptions(req: Request, imagePlatform?: ImagePlatform) {
+  return {
+    folder: req.body.folder || req.query.folder,
+    tags: req.body.tags ? Array.isArray(req.body.tags) ? req.body.tags : req.body.tags.split(',') : undefined,
+    isPrivate: req.body.isPrivate === 'true' || req.body.isPrivate === true,
+    useUniqueFileName: req.body.useUniqueFileName !== 'false' && req.body.useUniqueFileName !== false,
+    platform: imagePlatform,
+    userId: req.userId,
+
+    // For backward compatibility
+    maxFileSize: req.body.maxFileSize ? parseInt(req.body.maxFileSize, 10) : undefined,
+    minFileSize: req.body.minFileSize ? parseInt(req.body.minFileSize, 10) : undefined,
+    allowedTypes: req.body.allowedTypes ? 
+      (Array.isArray(req.body.allowedTypes) ? 
+        req.body.allowedTypes : 
+        req.body.allowedTypes.split(',').map((type: string) => type.trim())
+      ) : undefined,
+
+    // Add consolidated validation options
+    validation: {
+      maxFileSize: req.body.maxFileSize ? parseInt(req.body.maxFileSize, 10) : undefined,
+      minFileSize: req.body.minFileSize ? parseInt(req.body.minFileSize, 10) : undefined,
+      allowedTypes: req.body.allowedTypes ? 
+        (Array.isArray(req.body.allowedTypes) ? 
+          req.body.allowedTypes : 
+          req.body.allowedTypes.split(',').map((type: string) => type.trim())
+        ) : undefined,
+      maxWidth: req.body.maxWidth ? parseInt(req.body.maxWidth, 10) : undefined,
+      maxHeight: req.body.maxHeight ? parseInt(req.body.maxHeight, 10) : undefined
+    }
+  };
+}
+
 
 /**
  * Upload a single image
@@ -15,44 +59,12 @@ export async function uploadImage(req: Request, res: Response, next: NextFunctio
     }
 
     // Parse optional platform parameter
-    const platform = req.body.platform || req.query.platform;
-    let imagePlatform: ImagePlatform | undefined;
+    const imagePlatform = parsePlatform(req);
     
-    if (platform === 'appwrite') {
-      imagePlatform = ImagePlatform.APPWRITE;
-    } else if (platform === 'imagekit') {
-      imagePlatform = ImagePlatform.IMAGEKIT;
-    }    // Extract upload options from request
-    const options = {
-      folder: req.body.folder || req.query.folder,
-      tags: req.body.tags ? Array.isArray(req.body.tags) ? req.body.tags : req.body.tags.split(',') : undefined,
-      isPrivate: req.body.isPrivate === 'true' || req.body.isPrivate === true,
-      useUniqueFileName: req.body.useUniqueFileName !== 'false' && req.body.useUniqueFileName !== false,
-      platform: imagePlatform,
-      userId: req.userId, // Add the authenticated user ID
-      
-      // For backward compatibility
-      maxFileSize: req.body.maxFileSize ? parseInt(req.body.maxFileSize, 10) : undefined,
-      minFileSize: req.body.minFileSize ? parseInt(req.body.minFileSize, 10) : undefined,
-      allowedTypes: req.body.allowedTypes ? 
-        (Array.isArray(req.body.allowedTypes) ? 
-          req.body.allowedTypes : 
-          req.body.allowedTypes.split(',').map((type: string) => type.trim())
-        ) : undefined,
-        
-      // Add consolidated validation options
-      validation: {
-        maxFileSize: req.body.maxFileSize ? parseInt(req.body.maxFileSize, 10) : undefined,
-        minFileSize: req.body.minFileSize ? parseInt(req.body.minFileSize, 10) : undefined,
-        allowedTypes: req.body.allowedTypes ? 
-          (Array.isArray(req.body.allowedTypes) ? 
-            req.body.allowedTypes : 
-            req.body.allowedTypes.split(',').map((type: string) => type.trim())
-          ) : undefined,
-        maxWidth: req.body.maxWidth ? parseInt(req.body.maxWidth, 10) : undefined,
-        maxHeight: req.body.maxHeight ? parseInt(req.body.maxHeight, 10) : undefined
-      }
-    };    // Upload the image
+    // Extract upload options from request
+    const options = parseUploadOptions(req, imagePlatform);
+    
+    // Upload the image
     const result = await imageService.uploadImage(req.file, options);
 
     // Log the upload with user ID if available
@@ -78,44 +90,12 @@ export async function uploadMultipleImages(req: Request, res: Response, next: Ne
     }
 
     // Parse optional platform parameter
-    const platform = req.body.platform || req.query.platform;
-    let imagePlatform: ImagePlatform | undefined;
+    const imagePlatform = parsePlatform(req); 
     
-    if (platform === 'appwrite') {
-      imagePlatform = ImagePlatform.APPWRITE;
-    } else if (platform === 'imagekit') {
-      imagePlatform = ImagePlatform.IMAGEKIT;
-    }    // Extract options from request
-    const options = {
-      folder: req.body.folder || req.query.folder,
-      tags: req.body.tags ? Array.isArray(req.body.tags) ? req.body.tags : req.body.tags.split(',') : undefined,
-      isPrivate: req.body.isPrivate === 'true' || req.body.isPrivate === true,
-      useUniqueFileName: req.body.useUniqueFileName !== 'false' && req.body.useUniqueFileName !== false,
-      platform: imagePlatform,
-      userId: req.userId, // Add the authenticated user ID
-      
-      // For backward compatibility
-      maxFileSize: req.body.maxFileSize ? parseInt(req.body.maxFileSize, 10) : undefined,
-      minFileSize: req.body.minFileSize ? parseInt(req.body.minFileSize, 10) : undefined,
-      allowedTypes: req.body.allowedTypes ? 
-        (Array.isArray(req.body.allowedTypes) ? 
-          req.body.allowedTypes : 
-          req.body.allowedTypes.split(',').map((type: string) => type.trim())
-        ) : undefined,
-        
-      // Add consolidated validation options
-      validation: {
-        maxFileSize: req.body.maxFileSize ? parseInt(req.body.maxFileSize, 10) : undefined,
-        minFileSize: req.body.minFileSize ? parseInt(req.body.minFileSize, 10) : undefined,
-        allowedTypes: req.body.allowedTypes ? 
-          (Array.isArray(req.body.allowedTypes) ? 
-            req.body.allowedTypes : 
-            req.body.allowedTypes.split(',').map((type: string) => type.trim())
-          ) : undefined,
-        maxWidth: req.body.maxWidth ? parseInt(req.body.maxWidth, 10) : undefined,
-        maxHeight: req.body.maxHeight ? parseInt(req.body.maxHeight, 10) : undefined
-      }
-    };    // Upload the images
+    // Extract options from request
+    const options = parseUploadOptions(req, imagePlatform);
+    
+    // Upload the images
     const results = await imageService.uploadMultipleImages(req.files, options);
 
     // Log the multi-upload with user ID if available

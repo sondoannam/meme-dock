@@ -11,13 +11,6 @@ const {
   IMAGEKIT_URL_ENDPOINT
 } = process.env;
 
-// Validate required configuration
-if (!IMAGEKIT_PUBLIC_API_KEY || !IMAGEKIT_PRIVATE_API_KEY || !IMAGEKIT_URL_ENDPOINT) {
-  throw new ConfigError(
-    'Missing required ImageKit environment variables: IMAGEKIT_PUBLIC_API_KEY, IMAGEKIT_PRIVATE_API_KEY, IMAGEKIT_URL_ENDPOINT'
-  );
-}
-
 let imagekit: ImageKit | null = null;
 
 /**

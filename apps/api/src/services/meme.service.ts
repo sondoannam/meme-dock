@@ -6,8 +6,9 @@ import { getDocuments, GetDocumentsParams } from './document.service';
  * Meme document structure
  */
 export interface MemeDocument {
-  title_en?: string;
-  title_vi?: string;
+  id: string;
+  title_en: string;
+  title_vi: string;
   desc_en: string;
   desc_vi: string;
   type: 'image' | 'gif' | 'video';
@@ -15,9 +16,11 @@ export interface MemeDocument {
   tagIds: string[];
   moodIds: string[];
   fileId: string;
-  filePreview?: string;
+  filePreview: string | null;
   saved_platform: 'appwrite' | 'imagekit';
-  usageCount?: number;
+  usageCount: number;
+  createdAt: string;
+  updatedAt: string;
 }
 
 /**

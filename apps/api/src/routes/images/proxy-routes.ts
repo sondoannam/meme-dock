@@ -40,10 +40,6 @@ proxyRouter.get('/preview/:id', optionalAuth, async (req, res, next) => {
     // Create an instance of the ImageService with the specified platform
     const imageService = new ImageService(platform);
     
-    if (!imageService) {
-      throw new FileError(`Image storage platform '${platform}' is not supported or configured`);
-    }
-    
     // Generate the preview URL
     const previewUrl = imageService.getImagePreviewURL(id, { width, height, quality, format });
     
@@ -78,10 +74,6 @@ proxyRouter.get('/view/:id', optionalAuth, async (req, res, next) => {
     // Create an instance of the ImageService with the specified platform
     const imageService = new ImageService(platform);
     
-    if (!imageService) {
-      throw new FileError(`Image storage platform '${platform}' is not supported or configured`);
-    }
-    
     // Generate the view URL
     const viewUrl = imageService.getImageViewURL(id);
     
@@ -105,11 +97,7 @@ proxyRouter.get('/download/:id', optionalAuth, async (req, res, next) => {
     
     // Create an instance of the ImageService with the specified platform
     const imageService = new ImageService(platform);
-    
-    if (!imageService) {
-      throw new FileError(`Image storage platform '${platform}' is not supported or configured`);
-    }
-    
+        
     // Generate the download URL
     const downloadUrl = imageService.getImageDownloadURL(id);
     

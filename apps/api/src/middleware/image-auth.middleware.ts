@@ -3,14 +3,9 @@ import { createBaseClient, Teams } from '../config/appwrite';
 import { Account } from 'node-appwrite';
 
 // Environment variables
-const ADMIN_TEAM_ID = process.env.APPWRITE_ADMIN_TEAM_ID;
-const APPWRITE_ENDPOINT = process.env.APPWRITE_ENDPOINT;
-const APPWRITE_PROJECT_ID = process.env.APPWRITE_PROJECT_ID;
+import { APPWRITE_ENDPOINT, APPWRITE_PROJECT_ID } from '../config/appwrite';
 
-// Validation
-if (!APPWRITE_ENDPOINT || !APPWRITE_PROJECT_ID) {
-  console.warn('Missing Appwrite configuration. Optional authentication will be limited.');
-}
+const ADMIN_TEAM_ID = process.env.APPWRITE_ADMIN_TEAM_ID;
 
 /**
  * Optional authentication middleware for routes that can work both authenticated and unauthenticated.
