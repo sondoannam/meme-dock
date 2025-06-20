@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
+import { useDebounce, useRequest, useUpdateEffect } from 'ahooks';
+import { Upload, Grid2X2, Grid3X3, LayoutGrid, Loader2, Image as ImageIcon } from 'lucide-react';
+
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Upload, Grid2X2, Grid3X3, LayoutGrid, Loader2, Image as ImageIcon } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -21,7 +23,6 @@ import { useMemeCollectionStore } from '@/stores/meme-store';
 import memeApi from '@/services/meme';
 import { getAppwriteImageUrl } from '@/lib/utils';
 import { MemeDocument } from '@/types';
-import { useDebounce, useRequest } from 'ahooks';
 import { DEFAULT_MEMES_OFFSET, EMPTY_LIST } from '@/constants/common';
 import { GetDocumentsParams } from '@/services/document';
 
@@ -44,15 +45,14 @@ export default function ImagesTab({ relationOptions, onRefreshRelations }: Image
   const [selectedStorage, setSelectedStorage] = useState<StorageProvider>('appwrite');
   const [gridSize, setGridSize] = useState<GridSize>('3');
   const [searchTerm, setSearchTerm] = useState('');
-  const debouncedSearchTerm = useDebounce(searchTerm, { wait: 500 });
-
-  // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(DEFAULT_MEMES_OFFSET);
+  const [selectedMeme, setSelectedMeme] = useState<MemeDocument | undefined>();
 
   const memeCollection = useMemeCollectionStore((state) => state.memeCollection);
+  const debouncedSearchTerm = useDebounce(searchTerm, { wait: 500 });
 
-  const uploadDialog = DialogCustom.useDialog();
+  const createUpdateDialog = DialogCustom.useDialog();
 
   // Generate maps for relation lookups
   const tagMap: Record<string, string> = {};
@@ -85,11 +85,16 @@ export default function ImagesTab({ relationOptions, onRefreshRelations }: Image
         return 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3';
     }
   };
-
   // Handle edit meme
   const handleEditMeme = (memeId: string) => {
-    console.log('Edit meme:', memeId);
-    // TODO: Implement edit functionality
+    // Find the meme in the data
+    if (!data) return;
+
+    const memeToEdit = data.documents.find((meme) => meme.id === memeId);
+    if (memeToEdit) {
+      setSelectedMeme(memeToEdit);
+      createUpdateDialog.open();
+    }
   };
 
   const { data, run, refresh, loading, error } = useRequest(
@@ -138,7 +143,7 @@ export default function ImagesTab({ relationOptions, onRefreshRelations }: Image
     // The run function will be called automatically through useEffect dependencies
     window.scrollTo({ top: 0, behavior: 'smooth' }); // Scroll to top for better UX
   };
-  
+
   useEffect(() => {
     if (memeCollection) {
       const platformQuery =
@@ -175,6 +180,12 @@ export default function ImagesTab({ relationOptions, onRefreshRelations }: Image
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debouncedSearchTerm, selectedStorage, currentPage, pageSize]);
 
+  useUpdateEffect(() => {
+    if (!createUpdateDialog.isOpen) {
+      setSelectedMeme(undefined);
+    }
+  }, [createUpdateDialog.isOpen]);
+
   return (
     <>
       <Card>
@@ -186,8 +197,13 @@ export default function ImagesTab({ relationOptions, onRefreshRelations }: Image
                 Upload, browse and manage your meme image collection
               </CardDescription>
             </div>
-
-            <Button className="w-full md:w-auto" onClick={() => uploadDialog.open()}>
+            <Button
+              className="w-full md:w-auto"
+              onClick={() => {
+                setSelectedMeme(undefined); // Clear selected meme for create mode
+                createUpdateDialog.open();
+              }}
+            >
               <Upload className="mr-2 h-4 w-4" /> Upload Image
             </Button>
           </div>
@@ -195,7 +211,6 @@ export default function ImagesTab({ relationOptions, onRefreshRelations }: Image
         <CardContent>
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
             <div className="w-full sm:w-auto flex flex-col sm:flex-row gap-4">
-              {' '}
               <StorageProviderSelector
                 selectedStorage={selectedStorage}
                 onSelect={(provider) => {
@@ -209,7 +224,7 @@ export default function ImagesTab({ relationOptions, onRefreshRelations }: Image
                 onChange={setSearchTerm}
                 className="w-full sm:w-64"
               />
-            </div>{' '}
+            </div>
             <div className="flex gap-2">
               <Select value={gridSize} onValueChange={(value) => setGridSize(value as GridSize)}>
                 <SelectTrigger className="w-[140px]">
@@ -322,7 +337,12 @@ export default function ImagesTab({ relationOptions, onRefreshRelations }: Image
                 ) : (
                   <div className="col-span-full min-h-[200px] flex flex-col justify-center items-center gap-4 text-muted-foreground">
                     <p>{searchTerm ? 'No memes found matching your search.' : 'No memes found.'}</p>
-                    <Button onClick={() => uploadDialog.open()}>
+                    <Button
+                      onClick={() => {
+                        setSelectedMeme(undefined);
+                        createUpdateDialog.open();
+                      }}
+                    >
                       <Upload className="mr-2 h-4 w-4" /> Upload Your First Meme
                     </Button>
                   </div>
@@ -345,12 +365,12 @@ export default function ImagesTab({ relationOptions, onRefreshRelations }: Image
           )}
         </CardContent>
       </Card>
-
-      {/* Image Upload Dialog */}
+      {/* Image Upload/Edit Dialog */}
       <ImageUploadDialog
-        dialog={uploadDialog}
+        dialog={createUpdateDialog}
         relationOptions={relationOptions}
         onSuccess={handleRefresh}
+        selectedMeme={selectedMeme}
       />
     </>
   );
