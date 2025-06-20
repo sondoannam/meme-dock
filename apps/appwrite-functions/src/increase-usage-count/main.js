@@ -3,7 +3,7 @@ export default async function ({ req, res, log, error }) {
 
   return res.json({
     success: true,
-    message: 'Usage count increased successfully',
+    message: 'Usage count increased successfully...',
     data: {
       usageCount: 1, // This is a placeholder, replace with actual logic to increase usage count
     },
