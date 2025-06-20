@@ -16,7 +16,7 @@ export const getAppwriteImageUrl = (fileId: string, type: 'view' | 'preview' | '
     : process.env.VITE_APPWRITE_ENDPOINT;
   const projectId = process.env.VITE_APPWRITE_PROJECT_ID;
   const bucketId = process.env.VITE_APPWRITE_BUCKET_ID || 'meme-content';
-  
+
   if (!endpoint || !projectId || !bucketId) {
     console.error('Missing Appwrite configuration');
     throw new Error('Missing required Appwrite configuration for image URL generation');
@@ -24,7 +24,7 @@ export const getAppwriteImageUrl = (fileId: string, type: 'view' | 'preview' | '
 
   // Construct base URL
   let url = `${endpoint}/storage/buckets/${bucketId}/files/${fileId}/${type}?project=${projectId}`;
-  
+
   // Add optional parameters for preview
   if (type === 'preview' && options) {
     if (options.width) url += `&width=${options.width}`;
@@ -32,6 +32,6 @@ export const getAppwriteImageUrl = (fileId: string, type: 'view' | 'preview' | '
     if (options.quality && options.quality >= 0 && options.quality <= 100) url += `&quality=${options.quality}`;
     if (options.format) url += `&output=${options.format}`;
   }
-  
+
   return url;
 };

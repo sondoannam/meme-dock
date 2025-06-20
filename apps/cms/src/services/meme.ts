@@ -12,6 +12,7 @@ export interface CreateMemeParams {
   tagIds: string[];
   moodIds: string[];
   fileId: string;
+  filePreview: string | null;
   saved_platform: 'appwrite' | 'imagekit';
 }
 
@@ -47,6 +48,7 @@ export const memeApi = {
   transformFormToApiParams(
     formValues: ImageUploadFormValues, 
     fileId: string,
+    filePreview: string | null,
     platform: 'appwrite' | 'imagekit'
   ): CreateMemeParams {
     return {
@@ -59,6 +61,7 @@ export const memeApi = {
       tagIds: formValues.tags || [],
       moodIds: formValues.moods || [],
       fileId,
+      filePreview,
       saved_platform: platform
     };
   }

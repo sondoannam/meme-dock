@@ -24,7 +24,7 @@ export const StatsOverview = () => {
   const { data: memesCount, loading: memesCountLoading } = useRequest(
     () => {
       if (!memeCollection) return Promise.resolve(undefined);
-      return documentApi.getDocumentCount(memeCollection.slug);
+      return documentApi.getDocumentCount(memeCollection.id);
     },
     {
       refreshDeps: [memeCollection],
@@ -40,7 +40,7 @@ export const StatsOverview = () => {
       if (!memeCollection) return Promise.resolve(undefined);
 
       return documentApi.getDocumentIncreases({
-        collectionId: memeCollection.slug,
+        collectionId: memeCollection.id,
         duration: chartOptions.duration,
         limit: chartOptions.limit,
       });

@@ -141,7 +141,7 @@ export const imageUploadSchema = z.object({
   tags: z.array(z.string()).default([]),
   objects: z.array(z.string()).default([]),
   moods: z.array(z.string()).default([]),
-  imageFile: z.instanceof(File).array().min(1, { message: "Image is required" }),
+  imageFile: z.instanceof(File).array().optional(), // We'll validate conditionally
   platform: z.enum(['appwrite', 'imagekit']).default('appwrite')
 });
 

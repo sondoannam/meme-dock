@@ -18,7 +18,7 @@ interface AppwriteMemeCardProps {
   tagNames?: Record<string, string>;
   objectNames?: Record<string, string>;
   moodNames?: Record<string, string>;
-  onEdit?: (memeId: string) => void;
+  onEdit: () => void;
 }
 
 export function AppwriteMemeCard({
@@ -68,7 +68,7 @@ export function AppwriteMemeCard({
             size="icon"
             variant="secondary"
             className="h-8 w-8 rounded-full bg-background/80 backdrop-blur-sm hover:bg-background shadow-sm"
-            onClick={() => onEdit && onEdit(meme.id)}
+            onClick={onEdit}
           >
             <Edit className="h-4 w-4" />
             <span className="sr-only">Edit meme</span>

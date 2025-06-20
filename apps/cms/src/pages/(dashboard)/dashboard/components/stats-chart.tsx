@@ -78,16 +78,26 @@ export const StatsChart: React.FC<StatsChartProps> = ({
       count: period.count,
     }));
 
+    // Enhanced chart configuration with app theme colors
     const chartConfig = {
-      primary: { color: 'hsl(var(--primary))' },
-      secondary: { color: 'hsl(var(--secondary))' },
+      primary: { color: 'hsl(var(--chart-1))' },
+      secondary: { color: 'hsl(var(--chart-2))' },
+      accent: { color: 'hsl(var(--chart-3))' },
+      muted: { color: 'hsl(var(--chart-4))' },
+      highlight: { color: 'hsl(var(--chart-5))' },
     };
 
     return (
       <ChartContainer className="h-[300px]" config={chartConfig}>
         {chartType === 'line' ? (
           <LineChart data={chartData}>
-            <CartesianGrid strokeDasharray="3 3" />
+            <defs>
+              <linearGradient id="colorCount" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="var(--color-chart-1)" stopOpacity={0.8} />
+                <stop offset="95%" stopColor="var(--color-chart-1)" stopOpacity={0.2} />
+              </linearGradient>
+            </defs>
+            <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" opacity={0.4} />
             <XAxis
               dataKey="name"
               fontSize={12}
@@ -98,22 +108,49 @@ export const StatsChart: React.FC<StatsChartProps> = ({
                 }
                 return value;
               }}
+              stroke="var(--color-muted-foreground)"
+              tick={{ fill: 'var(--color-foreground)' }}
             />
-            <YAxis fontSize={12} />
-            <Tooltip />
-            <Legend />
+            <YAxis
+              fontSize={12}
+              stroke="var(--color-muted-foreground)"
+              tick={{ fill: 'var(--color-foreground)' }}
+            />
+            <Tooltip
+              contentStyle={{
+                backgroundColor: 'var(--color-popover)',
+                color: 'var(--color-foreground)',
+                border: '1px solid var(--color-border)',
+                borderRadius: '0.5rem',
+                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+              }}
+            />
+            <Legend
+              wrapperStyle={{
+                paddingTop: '10px',
+                fontWeight: 500,
+                color: 'var(--color-foreground)',
+              }}
+            />
             <Line
               type="monotone"
               dataKey="count"
-              stroke="var(--color-primary)"
+              stroke="var(--color-chart-1)"
+              fill="url(#colorCount)"
               name={`${title} Count`}
-              activeDot={{ r: 8 }}
-              strokeWidth={2}
+              activeDot={{ r: 8, fill: 'var(--color-chart-1)', stroke: 'var(--color-background)' }}
+              strokeWidth={3}
             />
           </LineChart>
         ) : (
           <BarChart data={chartData}>
-            <CartesianGrid strokeDasharray="3 3" />
+            <defs>
+              <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="var(--color-chart-1)" stopOpacity={1} />
+                <stop offset="100%" stopColor="var(--color-chart-1)" stopOpacity={0.6} />
+              </linearGradient>
+            </defs>
+            <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" opacity={0.4} />
             <XAxis
               dataKey="name"
               fontSize={12}
@@ -124,13 +161,36 @@ export const StatsChart: React.FC<StatsChartProps> = ({
                 }
                 return value;
               }}
+              stroke="var(--color-muted-foreground)"
+              tick={{ fill: 'var(--color-foreground)' }}
             />
-            <YAxis fontSize={12} />
-            <Tooltip />
-            <Legend />
+            <YAxis
+              fontSize={12}
+              stroke="var(--color-muted-foreground)"
+              tick={{ fill: 'var(--color-foreground)' }}
+            />
+            <Tooltip
+              cursor={{ fill: 'var(--color-accent)', opacity: 0.1 }}
+              contentStyle={{
+                backgroundColor: 'var(--color-popover)',
+                color: 'var(--color-foreground)',
+                border: '1px solid var(--color-border)',
+                borderRadius: '0.5rem',
+                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+              }}
+            />
+            <Legend
+              wrapperStyle={{
+                paddingTop: '10px',
+                fontWeight: 500,
+                color: 'var(--color-foreground)',
+              }}
+            />
             <Bar
               dataKey="count"
-              fill="var(--color-primary)"
+              fill="url(#barGradient)"
+              stroke="var(--color-chart-1)"
+              strokeWidth={1}
               name={`${title} Count`}
               radius={[4, 4, 0, 0]}
             />
@@ -212,10 +272,13 @@ export const DemoStatsChart: React.FC<{ title: string }> = ({ title }) => {
       count: Math.floor(Math.random() * 100) + 10,
     };
   }).reverse();
-
+  // Enhanced chart configuration with app theme colors
   const chartConfig = {
-    primary: { color: 'hsl(var(--primary))' },
-    secondary: { color: 'hsl(var(--secondary))' },
+    primary: { color: 'hsl(var(--chart-1))' },
+    secondary: { color: 'hsl(var(--chart-2))' },
+    accent: { color: 'hsl(var(--chart-3))' },
+    muted: { color: 'hsl(var(--chart-4))' },
+    highlight: { color: 'hsl(var(--chart-5))' },
   };
 
   return (
@@ -244,30 +307,96 @@ export const DemoStatsChart: React.FC<{ title: string }> = ({ title }) => {
         <ChartContainer className="h-[300px]" config={chartConfig}>
           {chartType === 'line' ? (
             <LineChart data={demoData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" fontSize={12} />
-              <YAxis fontSize={12} />
-              <Tooltip />
-              <Legend />
+              <defs>
+                <linearGradient id="colorCountDemo" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="var(--color-chart-2)" stopOpacity={0.8} />
+                  <stop offset="95%" stopColor="var(--color-chart-2)" stopOpacity={0.2} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" opacity={0.4} />
+              <XAxis
+                dataKey="name"
+                fontSize={12}
+                stroke="var(--color-muted-foreground)"
+                tick={{ fill: 'var(--color-foreground)' }}
+              />
+              <YAxis
+                fontSize={12}
+                stroke="var(--color-muted-foreground)"
+                tick={{ fill: 'var(--color-foreground)' }}
+              />
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: 'var(--color-popover)',
+                  color: 'var(--color-foreground)',
+                  border: '1px solid var(--color-border)',
+                  borderRadius: '0.5rem',
+                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+                }}
+              />
+              <Legend
+                wrapperStyle={{
+                  paddingTop: '10px',
+                  fontWeight: 500,
+                  color: 'var(--color-foreground)',
+                }}
+              />
               <Line
                 type="monotone"
                 dataKey="count"
-                stroke="var(--color-primary)"
+                stroke="var(--color-chart-2)"
+                fill="url(#colorCountDemo)"
                 name={`${title} (Demo)`}
-                activeDot={{ r: 8 }}
-                strokeWidth={2}
+                activeDot={{
+                  r: 8,
+                  fill: 'var(--color-chart-2)',
+                  stroke: 'var(--color-background)',
+                }}
+                strokeWidth={3}
               />
             </LineChart>
           ) : (
             <BarChart data={demoData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" fontSize={12} />
-              <YAxis fontSize={12} />
-              <Tooltip />
-              <Legend />
+              <defs>
+                <linearGradient id="barGradientDemo" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="var(--color-chart-2)" stopOpacity={1} />
+                  <stop offset="100%" stopColor="var(--color-chart-2)" stopOpacity={0.6} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" opacity={0.4} />
+              <XAxis
+                dataKey="name"
+                fontSize={12}
+                stroke="var(--color-muted-foreground)"
+                tick={{ fill: 'var(--color-foreground)' }}
+              />
+              <YAxis
+                fontSize={12}
+                stroke="var(--color-muted-foreground)"
+                tick={{ fill: 'var(--color-foreground)' }}
+              />
+              <Tooltip
+                cursor={{ fill: 'var(--color-accent)', opacity: 0.1 }}
+                contentStyle={{
+                  backgroundColor: 'var(--color-popover)',
+                  color: 'var(--color-foreground)',
+                  border: '1px solid var(--color-border)',
+                  borderRadius: '0.5rem',
+                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+                }}
+              />
+              <Legend
+                wrapperStyle={{
+                  paddingTop: '10px',
+                  fontWeight: 500,
+                  color: 'var(--color-foreground)',
+                }}
+              />
               <Bar
                 dataKey="count"
-                fill="var(--color-primary)"
+                fill="url(#barGradientDemo)"
+                stroke="var(--color-chart-2)"
+                strokeWidth={1}
                 name={`${title} (Demo)`}
                 radius={[4, 4, 0, 0]}
               />

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
+import { MemeDocument } from '@/types';
 
 import {
   Form,
@@ -25,10 +26,13 @@ import { FileInput, FileUploader, FileUploaderContent } from '@/components/ui/fi
 
 import { ImageUploadFormValues, imageUploadSchema } from '@/validators';
 import imageApi from '@/services/image';
-import memeApi from '@/services/meme';
+import memeApi, { CreateMemeParams } from '@/services/meme';
 import { useMemeCollectionStore } from '@/stores/meme-store';
 import { Icons } from '@/components/icons';
 import { X } from 'lucide-react';
+import { IMAGE_PLATFORM } from '@/enums';
+import { getAppwriteImageUrl } from '@/lib/utils';
+import { useUpdateEffect } from 'ahooks';
 
 export interface ImageUploadDialogProps {
   dialog: DialogInstance;
@@ -38,6 +42,7 @@ export interface ImageUploadDialogProps {
     moods: SelectOption[];
   };
   onSuccess: () => void;
+  selectedMeme?: MemeDocument; // Optional meme for update mode
 }
 
 // Helper function to convert SelectOption to MultipleSelectorOption
@@ -49,15 +54,22 @@ const convertToMultipleSelectorOptions = (options: SelectOption[]): MultipleSele
   }));
 };
 
-export function ImageUploadDialog({ dialog, relationOptions, onSuccess }: ImageUploadDialogProps) {
+export function ImageUploadDialog({
+  dialog,
+  relationOptions,
+  onSuccess,
+  selectedMeme,
+}: ImageUploadDialogProps) {
   const dialogInstance = DialogCustom.useDialog(dialog);
   const [files, setFiles] = useState<File[] | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string>();
+  const [isUpdateMode, setIsUpdateMode] = useState<boolean>(false);
 
   const memeCollection = useMemeCollectionStore((state) => state.memeCollection);
-
   const form = useForm<ImageUploadFormValues>({
-    resolver: zodResolver(imageUploadSchema) as any,
+    resolver: zodResolver(imageUploadSchema, {
+      async: true,
+    }) as any,
     defaultValues: {
       title_en: '',
       title_vi: '',
@@ -68,6 +80,7 @@ export function ImageUploadDialog({ dialog, relationOptions, onSuccess }: ImageU
       imageFile: [],
       platform: 'appwrite',
     },
+    context: { isUpdateMode: Boolean(selectedMeme) },
   });
 
   const {
@@ -76,49 +89,102 @@ export function ImageUploadDialog({ dialog, relationOptions, onSuccess }: ImageU
     handleSubmit,
     setValue,
   } = form;
+
   const onSubmit = async (data: ImageUploadFormValues) => {
     if (!memeCollection) {
       toast.error('Meme collection not found');
       return;
     }
 
-    if (!files || files.length === 0) {
-      toast.error('No image file selected');
+    // Validate file input based on mode
+    if (!isUpdateMode && (!files || files.length === 0)) {
+      toast.error('Image is required for new memes');
       return;
     }
 
     try {
       // Show loading state
-      toast.loading('Uploading image...');
+      const loadingMessage = isUpdateMode ? 'Updating meme...' : 'Uploading image...';
+      toast.loading(loadingMessage);
+      if (isUpdateMode && selectedMeme) {
+        // Update mode - keep existing file if no new one is uploaded
+        const memeParams: Partial<CreateMemeParams> = {
+          title_en: data.title_en,
+          title_vi: data.title_vi,
+          desc_en: data.description,
+          desc_vi: data.description,
+          tagIds: data.tags || [],
+          objectIds: data.objects || [],
+          moodIds: data.moods || [],
+        };
 
-      // Generate filename from titles
-      const fileName = `${data.title_en}-${data.title_vi}`.replace(/\s+/g, '-').toLowerCase();
+        // Only upload a new image if files are provided
+        if (files && files.length > 0) {
+          const fileName = `${data.title_en}-${data.title_vi}`.replace(/\s+/g, '-').toLowerCase();
+          try {
+            // Upload new image
+            const imageResult = await imageApi.uploadImage(files[0], {
+              platform: data.platform,
+              fileName,
+              tags: data.tags,
+            });
 
-      // Step 1: Upload image to the selected platform
-      const imageResult = await imageApi.uploadImage(files[0], {
-        platform: data.platform,
-        fileName,
-        tags: data.tags, // Pass tags as additional metadata
-      });
-      console.log('Image uploaded successfully:', imageResult);
+            // Update file information
+            memeParams.fileId = imageResult.data.id;
+            memeParams.saved_platform = data.platform;
+          } catch {
+            toast.dismiss();
+            toast.error('Failed to upload the new image. Please try again.');
+            return;
+          }
+        }
 
-      // Step 2: Create meme document with the uploaded image ID
-      const memeParams = memeApi.transformFormToApiParams(data, imageResult.data.id, data.platform);
+        // Update the meme document
+        await memeApi.updateMeme(memeCollection.id, selectedMeme.id, memeParams);
+        toast.dismiss();
+        toast.success('Meme updated successfully!');
+      } else {
+        // Create mode - files are required
+        if (!files || files.length === 0) {
+          toast.dismiss();
+          toast.error('No image file selected');
+          return;
+        }
 
-      await memeApi.createMeme(memeCollection.id, memeParams);
+        // Generate filename from titles
+        const fileName = `${data.title_en}-${data.title_vi}`.replace(/\s+/g, '-').toLowerCase();
 
-      toast.dismiss(); // Remove loading toast
-      toast.success('Meme uploaded successfully!');
+        // Step 1: Upload image to the selected platform
+        const imageResult = await imageApi.uploadImage(files[0], {
+          platform: data.platform,
+          fileName,
+          tags: data.tags, // Pass tags as additional metadata
+        });
+
+        // Step 2: Create meme document with the uploaded image ID
+        const memeParams = memeApi.transformFormToApiParams(
+          data,
+          imageResult.data.id,
+          imageResult.data.thumbnailUrl || null,
+          data.platform,
+        );
+        await memeApi.createMeme(memeCollection.id, memeParams);
+
+        toast.dismiss();
+        toast.success('Meme uploaded successfully!');
+      }
+
       handleClose();
       onSuccess?.();
     } catch (error) {
       toast.dismiss(); // Remove loading toast
-      console.error('Error uploading meme:', error);
+      console.error('Error handling meme:', error);
       toast.error(
-        error instanceof Error ? `Upload failed: ${error.message}` : 'Failed to upload meme',
+        error instanceof Error ? `Operation failed: ${error.message}` : 'Operation failed',
       );
     }
   };
+
   const handleClose = () => {
     form.reset();
     setFiles(null);
@@ -132,30 +198,86 @@ export function ImageUploadDialog({ dialog, relationOptions, onSuccess }: ImageU
 
     // Clean up resources
     if (previewUrl) {
-      URL.revokeObjectURL(previewUrl);
+      if (previewUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(previewUrl);
+      }
     }
 
     // Reset state
     setPreviewUrl(undefined);
     setFiles(null);
-    setValue('imageFile', [], { shouldValidate: true });
+    setValue('imageFile', [], { shouldValidate: false });
   };
 
   useEffect(() => {
+    if (selectedMeme) {
+      setIsUpdateMode(true);
+
+      // Populate form with selected meme data
+      form.reset({
+        title_en: selectedMeme.title_en || '',
+        title_vi: selectedMeme.title_vi || '',
+        description: selectedMeme.desc_en || '',
+        tags: selectedMeme.tagIds || [],
+        objects: selectedMeme.objectIds || [],
+        moods: selectedMeme.moodIds || [],
+        imageFile: [], // Can't populate File objects directly
+        platform: selectedMeme.saved_platform || 'appwrite',
+      });
+      console.log('set selected meme:', selectedMeme.saved_platform === IMAGE_PLATFORM.APPWRITE);
+      if (selectedMeme.saved_platform === IMAGE_PLATFORM.APPWRITE) {
+        setPreviewUrl(
+          getAppwriteImageUrl(selectedMeme.fileId, 'preview', {
+            width: 400,
+            height: 400,
+            quality: 80,
+          }),
+        );
+      }
+    } else {
+      setIsUpdateMode(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedMeme]);
+
+  useEffect(() => {
     if (!files || files.length === 0) return;
+
+    // If we're in update mode and adding a new file, clear the previous preview URL
+    if (isUpdateMode && previewUrl) {
+      // Only revoke if it's an object URL (not a remote URL)
+      if (previewUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(previewUrl);
+      }
+    }
+
     const url = URL.createObjectURL(files[0]);
     setPreviewUrl(url);
+
     return () => URL.revokeObjectURL(url);
   }, [files]);
+
+  useUpdateEffect(() => {
+    if (!dialog.isOpen) {
+      setFiles(null);
+      setPreviewUrl(undefined);
+      setIsUpdateMode(false);
+      form.reset();
+    }
+  }, [dialog.isOpen]);
 
   return (
     <DialogCustom
       dialog={dialog}
       header={
         <div className="space-y-2">
-          <h2 className="text-xl font-semibold tracking-tight">Upload New Meme Image</h2>
+          <h2 className="text-xl font-semibold tracking-tight">
+            {isUpdateMode ? 'Update Meme' : 'Upload New Meme Image'}
+          </h2>
           <p className="text-sm text-muted-foreground">
-            Add a new meme image to your collection with tags, objects and moods.
+            {isUpdateMode
+              ? 'Update meme details or replace the image'
+              : 'Add a new meme image to your collection with tags, objects and moods.'}
           </p>
         </div>
       }
@@ -166,16 +288,17 @@ export function ImageUploadDialog({ dialog, relationOptions, onSuccess }: ImageU
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 p-1">
             {/* Image Dropzone */}
             <div className="space-y-2">
-              <h3 className="text-sm font-medium">Image</h3>{' '}
+              <h3 className="text-sm font-medium">Image</h3>
               <FileUploader
-                key={files ? 'with-file' : 'no-file'} // Force remount when files change
                 value={files}
                 onValueChange={(newFiles: File[] | null) => {
                   setFiles(newFiles);
                   if (newFiles && newFiles.length > 0) {
-                    setValue('imageFile', newFiles, { shouldValidate: true });
+                    setValue('imageFile', newFiles, {
+                      shouldValidate: false, // Set to false to prevent validation loops
+                    });
                   } else {
-                    setValue('imageFile', [], { shouldValidate: true });
+                    setValue('imageFile', [], { shouldValidate: false });
                   }
                 }}
                 dropzoneOptions={{
@@ -185,15 +308,15 @@ export function ImageUploadDialog({ dialog, relationOptions, onSuccess }: ImageU
                   maxFiles: 1,
                   maxSize: 5 * 1024 * 1024, // 5MB
                   multiple: false,
+                  noClick: false, // Always allow clicking the dropzone
                   onDrop: () => {
-                    // This helps ensure the dropzone stays responsive
                     console.log('File dropped');
                   },
                 }}
               >
                 <FileUploaderContent>
-                  <FileInput className="h-[200px] cursor-pointer flex flex-col items-center justify-center border-2 border-dashed rounded-md hover:bg-accent/50 transition-colors">
-                    {files && files.length > 0 ? (
+                  <FileInput className="h-[200px] cursor-pointer flex flex-col items-center justify-center border-2 border-dashed rounded-md hover:bg-accent/50 transition-colors relative">
+                    {(files && files.length > 0) || (previewUrl && isUpdateMode) ? (
                       <div className="relative w-full h-full">
                         <img
                           src={previewUrl}
@@ -229,6 +352,9 @@ export function ImageUploadDialog({ dialog, relationOptions, onSuccess }: ImageU
               {errors.imageFile && (
                 <p className="text-sm text-destructive">{errors.imageFile.message}</p>
               )}
+              {!isUpdateMode && !files && !previewUrl && (
+                <p className="text-sm text-amber-500">Image is required for new memes</p>
+              )}
             </div>
             {/* Title fields */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -237,7 +363,7 @@ export function ImageUploadDialog({ dialog, relationOptions, onSuccess }: ImageU
                 name="title_en"
                 label="English Title"
                 placeholder="Funny Cat"
-              />{' '}
+              />
               <InputText
                 control={control}
                 name="title_vi"
@@ -378,8 +504,15 @@ export function ImageUploadDialog({ dialog, relationOptions, onSuccess }: ImageU
               <Button type="button" variant="outline" onClick={handleClose}>
                 Cancel
               </Button>
+
               <Button type="submit" disabled={isSubmitting} loading={isSubmitting}>
-                {isSubmitting ? 'Uploading...' : 'Upload Image'}
+                {isSubmitting
+                  ? isUpdateMode
+                    ? 'Updating...'
+                    : 'Uploading...'
+                  : isUpdateMode
+                  ? 'Update Meme'
+                  : 'Upload Image'}
               </Button>
             </div>
           </form>
