@@ -39,4 +39,4 @@ if (!MEME_BUCKET_ID) {
 const createBaseClient = () =>
   new Client().setEndpoint(APPWRITE_ENDPOINT).setProject(APPWRITE_PROJECT_ID);
 
-export { client, databases, storage, DATABASE_ID, MEME_BUCKET_ID, ID, Permission, Role, Teams, createBaseClient };
+export { client, databases, storage, DATABASE_ID, MEME_BUCKET_ID, ID, Permission, Role, Teams, createBaseClient, APPWRITE_ENDPOINT, APPWRITE_PROJECT_ID };

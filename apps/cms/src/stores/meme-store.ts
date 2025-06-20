@@ -15,25 +15,53 @@ type MemeCollectionAction = {
   setMoodCollection: (collection: Collection | null) => void;
 };
 
+// Helper function for localStorage operations
+const persistToStorage = (key: string, value: any) => {
+  if (typeof window !== 'undefined') {
+    try {
+      localStorage.setItem(key, JSON.stringify(value));
+    } catch (error) {
+      console.warn(`Failed to persist ${key} to localStorage:`, error);
+    }
+  }
+};
+
+const getFromStorage = (key: string) => {
+  if (typeof window !== 'undefined') {
+    try {
+      const stored = localStorage.getItem(key);
+      return stored ? JSON.parse(stored) : null;
+    } catch (error) {
+      console.warn(`Failed to retrieve ${key} from localStorage:`, error);
+      return null;
+    }
+  }
+  return null;
+};
+
 export const useMemeCollectionStore = create<MemeCollectionState & MemeCollectionAction>((set) => ({
-  memeCollection: null,
-  objectCollection: null,
-  tagCollection: null,
-  moodCollection: null,
+  memeCollection: getFromStorage('memeCollection'),
+  objectCollection: getFromStorage('objectCollection'),
+  tagCollection: getFromStorage('tagCollection'),
+  moodCollection: getFromStorage('moodCollection'),
   setMemeCollection: (collection) =>
-    set(() => ({
-      memeCollection: collection,
-    })),
+    set(() => {
+      persistToStorage('memeCollection', collection);
+      return { memeCollection: collection };
+    }),
   setObjectCollection: (collection) =>
-    set(() => ({
-      objectCollection: collection,
-    })),
+    set(() => {
+      persistToStorage('objectCollection', collection);
+      return { objectCollection: collection };
+    }),
   setTagCollection: (collection) =>
-    set(() => ({
-      tagCollection: collection,
-    })),
+    set(() => {
+      persistToStorage('tagCollection', collection);
+      return { tagCollection: collection };
+    }),
   setMoodCollection: (collection) =>
-    set(() => ({
-      moodCollection: collection,
-    })),
+    set(() => {
+      persistToStorage('moodCollection', collection);
+      return { moodCollection: collection };
+    }),
 }));

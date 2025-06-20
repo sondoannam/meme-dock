@@ -1,20 +1,34 @@
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
 
+import {
+  Form,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormControl,
+  FormMessage,
+} from '@/components/ui/form';
 import { Button } from '@/components/ui/button';
-import { Form } from '@/components/ui/form';
-import { FileUploader, FileUploaderContent, FileInput } from '@/components/ui/file-upload-dropzone';
-import MultipleSelector, { Option as SelectOption } from '@/components/ui/multiple-selector';
-
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { InputText } from '@/components/custom/form-field/input-text';
-import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-
+import { InputSimpleSelect } from '@/components/custom/form-field/input-simple-select';
+import MultipleSelector, {
+  Option as MultipleSelectorOption,
+} from '@/components/ui/multiple-selector';
+import { SelectOption } from '@/components/custom/basic-select';
 import { DialogCustom } from '@/components/custom/dialog-custom';
 import { DialogInstance } from '@/components/custom/dialog-custom/use-dialog';
+import { FileInput, FileUploader, FileUploaderContent } from '@/components/ui/file-upload-dropzone';
+
 import { ImageUploadFormValues, imageUploadSchema } from '@/validators';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import imageApi from '@/services/image';
+import memeApi from '@/services/meme';
+import { useMemeCollectionStore } from '@/stores/meme-store';
+import { Icons } from '@/components/icons';
+import { X } from 'lucide-react';
 
 export interface ImageUploadDialogProps {
   dialog: DialogInstance;
@@ -26,10 +40,21 @@ export interface ImageUploadDialogProps {
   onSuccess: () => void;
 }
 
+// Helper function to convert SelectOption to MultipleSelectorOption
+const convertToMultipleSelectorOptions = (options: SelectOption[]): MultipleSelectorOption[] => {
+  return options.map((option) => ({
+    value: option.value,
+    label: option.label,
+    id: option.id,
+  }));
+};
+
 export function ImageUploadDialog({ dialog, relationOptions, onSuccess }: ImageUploadDialogProps) {
   const dialogInstance = DialogCustom.useDialog(dialog);
   const [files, setFiles] = useState<File[] | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string>();
+
+  const memeCollection = useMemeCollectionStore((state) => state.memeCollection);
 
   const form = useForm<ImageUploadFormValues>({
     resolver: zodResolver(imageUploadSchema) as any,
@@ -41,6 +66,7 @@ export function ImageUploadDialog({ dialog, relationOptions, onSuccess }: ImageU
       objects: [],
       moods: [],
       imageFile: [],
+      platform: 'appwrite',
     },
   });
 
@@ -50,28 +76,69 @@ export function ImageUploadDialog({ dialog, relationOptions, onSuccess }: ImageU
     handleSubmit,
     setValue,
   } = form;
-
   const onSubmit = async (data: ImageUploadFormValues) => {
+    if (!memeCollection) {
+      toast.error('Meme collection not found');
+      return;
+    }
+
+    if (!files || files.length === 0) {
+      toast.error('No image file selected');
+      return;
+    }
+
     try {
-      // Mock API call - would be replaced with actual API
-      console.log('Form data submitted:', data);
+      // Show loading state
+      toast.loading('Uploading image...');
 
-      // Simulate API delay
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      // Generate filename from titles
+      const fileName = `${data.title_en}-${data.title_vi}`.replace(/\s+/g, '-').toLowerCase();
 
-      toast.success('Image uploaded successfully!');
+      // Step 1: Upload image to the selected platform
+      const imageResult = await imageApi.uploadImage(files[0], {
+        platform: data.platform,
+        fileName,
+        tags: data.tags, // Pass tags as additional metadata
+      });
+      console.log('Image uploaded successfully:', imageResult);
+
+      // Step 2: Create meme document with the uploaded image ID
+      const memeParams = memeApi.transformFormToApiParams(data, imageResult.data.id, data.platform);
+
+      await memeApi.createMeme(memeCollection.id, memeParams);
+
+      toast.dismiss(); // Remove loading toast
+      toast.success('Meme uploaded successfully!');
       handleClose();
       onSuccess?.();
     } catch (error) {
-      console.error('Error uploading image:', error);
-      toast.error('Failed to upload image');
+      toast.dismiss(); // Remove loading toast
+      console.error('Error uploading meme:', error);
+      toast.error(
+        error instanceof Error ? `Upload failed: ${error.message}` : 'Failed to upload meme',
+      );
     }
   };
-
   const handleClose = () => {
     form.reset();
     setFiles(null);
     dialogInstance.close();
+  };
+
+  // Handle image removal with proper cleanup
+  const handleImageRemove = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent triggering the file input
+    e.preventDefault(); // Prevent any default behavior
+
+    // Clean up resources
+    if (previewUrl) {
+      URL.revokeObjectURL(previewUrl);
+    }
+
+    // Reset state
+    setPreviewUrl(undefined);
+    setFiles(null);
+    setValue('imageFile', [], { shouldValidate: true });
   };
 
   useEffect(() => {
@@ -99,10 +166,11 @@ export function ImageUploadDialog({ dialog, relationOptions, onSuccess }: ImageU
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 p-1">
             {/* Image Dropzone */}
             <div className="space-y-2">
-              <h3 className="text-sm font-medium">Image</h3>
+              <h3 className="text-sm font-medium">Image</h3>{' '}
               <FileUploader
+                key={files ? 'with-file' : 'no-file'} // Force remount when files change
                 value={files}
-                onValueChange={(newFiles) => {
+                onValueChange={(newFiles: File[] | null) => {
                   setFiles(newFiles);
                   if (newFiles && newFiles.length > 0) {
                     setValue('imageFile', newFiles, { shouldValidate: true });
@@ -117,6 +185,10 @@ export function ImageUploadDialog({ dialog, relationOptions, onSuccess }: ImageU
                   maxFiles: 1,
                   maxSize: 5 * 1024 * 1024, // 5MB
                   multiple: false,
+                  onDrop: () => {
+                    // This helps ensure the dropzone stays responsive
+                    console.log('File dropped');
+                  },
                 }}
               >
                 <FileUploaderContent>
@@ -127,24 +199,24 @@ export function ImageUploadDialog({ dialog, relationOptions, onSuccess }: ImageU
                           src={previewUrl}
                           alt="Preview"
                           className="object-contain w-full h-full"
+                          style={{ pointerEvents: 'none' }} // Prevent image from capturing clicks
                         />
+                        <div className="absolute top-2 right-2 z-50">
+                          <Button
+                            type="button"
+                            variant="destructive"
+                            size="icon"
+                            className="h-8 w-8 rounded-full shadow-sm !bg-destructive hover:!bg-destructive/90 text-destructive-foreground"
+                            onClick={handleImageRemove}
+                          >
+                            <X className="!h-4 !w-4" />
+                            <span className="sr-only">Remove image</span>
+                          </Button>
+                        </div>
                       </div>
                     ) : (
                       <div className="flex flex-col items-center justify-center text-center p-5">
-                        <svg
-                          className="h-10 w-10 text-muted-foreground mb-2"
-                          xmlns="http://www.w3.org/2000/svg"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-                          />
-                        </svg>
+                        <Icons.Image className="!h-10 !w-10 text-muted-foreground mb-2" />
                         <p className="text-sm font-medium text-muted-foreground">
                           Drag & drop image here or click to browse
                         </p>
@@ -165,12 +237,22 @@ export function ImageUploadDialog({ dialog, relationOptions, onSuccess }: ImageU
                 name="title_en"
                 label="English Title"
                 placeholder="Funny Cat"
-              />
+              />{' '}
               <InputText
                 control={control}
                 name="title_vi"
                 label="Vietnamese Title"
                 placeholder="Mèo Hài Hước"
+              />
+              <InputSimpleSelect
+                control={control}
+                name="platform"
+                label="Storage Platform"
+                options={[
+                  { id: '1', value: 'appwrite', label: 'Appwrite' },
+                  { id: '2', value: 'imagekit', label: 'ImageKit' },
+                ]}
+                description="Select the platform to store the image"
               />
             </div>
 
@@ -192,7 +274,7 @@ export function ImageUploadDialog({ dialog, relationOptions, onSuccess }: ImageU
                     <FormLabel>Tags</FormLabel>
                     <FormControl>
                       <MultipleSelector
-                        defaultOptions={relationOptions.tags}
+                        defaultOptions={convertToMultipleSelectorOptions(relationOptions.tags)}
                         placeholder="Select tags"
                         value={
                           field.value
@@ -200,12 +282,16 @@ export function ImageUploadDialog({ dialog, relationOptions, onSuccess }: ImageU
                                 const option = relationOptions.tags.find(
                                   (tag) => tag.value === tagId,
                                 );
-                                return option || { value: tagId, label: tagId };
+                                return option
+                                  ? { value: option.value, label: option.label }
+                                  : { value: tagId, label: tagId };
                               })
                             : []
                         }
-                        onChange={(options) => {
-                          field.onChange(options.map((option) => option.value));
+                        onChange={(options: MultipleSelectorOption[]) => {
+                          field.onChange(
+                            options.map((option: MultipleSelectorOption) => option.value),
+                          );
                         }}
                         badgeClassName="bg-primary/10 text-primary hover:bg-primary/20"
                       />
@@ -224,7 +310,7 @@ export function ImageUploadDialog({ dialog, relationOptions, onSuccess }: ImageU
                     <FormLabel>Objects</FormLabel>
                     <FormControl>
                       <MultipleSelector
-                        defaultOptions={relationOptions.objects}
+                        defaultOptions={convertToMultipleSelectorOptions(relationOptions.objects)}
                         placeholder="Select objects"
                         value={
                           field.value
@@ -232,14 +318,18 @@ export function ImageUploadDialog({ dialog, relationOptions, onSuccess }: ImageU
                                 const option = relationOptions.objects.find(
                                   (obj) => obj.value === objectId,
                                 );
-                                return option || { value: objectId, label: objectId };
+                                return option
+                                  ? { value: option.value, label: option.label }
+                                  : { value: objectId, label: objectId };
                               })
                             : []
                         }
-                        onChange={(options) => {
-                          field.onChange(options.map((option) => option.value));
+                        onChange={(options: MultipleSelectorOption[]) => {
+                          field.onChange(
+                            options.map((option: MultipleSelectorOption) => option.value),
+                          );
                         }}
-                        badgeClassName="bg-secondary/10 text-secondary hover:bg-secondary/20"
+                        badgeClassName="bg-secondary text-primary hover:bg-secondary/20 !py-2"
                       />
                     </FormControl>
                     <FormMessage />
@@ -256,7 +346,7 @@ export function ImageUploadDialog({ dialog, relationOptions, onSuccess }: ImageU
                     <FormLabel>Moods</FormLabel>
                     <FormControl>
                       <MultipleSelector
-                        defaultOptions={relationOptions.moods}
+                        defaultOptions={convertToMultipleSelectorOptions(relationOptions.moods)}
                         placeholder="Select moods"
                         value={
                           field.value
@@ -264,12 +354,16 @@ export function ImageUploadDialog({ dialog, relationOptions, onSuccess }: ImageU
                                 const option = relationOptions.moods.find(
                                   (mood) => mood.value === moodId,
                                 );
-                                return option || { value: moodId, label: moodId };
+                                return option
+                                  ? { value: option.value, label: option.label }
+                                  : { value: moodId, label: moodId };
                               })
                             : []
                         }
-                        onChange={(options) => {
-                          field.onChange(options.map((option) => option.value));
+                        onChange={(options: MultipleSelectorOption[]) => {
+                          field.onChange(
+                            options.map((option: MultipleSelectorOption) => option.value),
+                          );
                         }}
                         badgeClassName="bg-accent/20 text-accent-foreground hover:bg-accent/30"
                       />

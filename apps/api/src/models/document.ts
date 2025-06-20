@@ -12,7 +12,7 @@ export interface DocumentResponse {
   [key: string]: any;
 }
 
-export interface ListDocumentsResponse {
+export interface ListDocumentsResponse<T = DocumentResponse> {
   total: number;
-  documents: DocumentResponse[];
+  documents: T[];
 }

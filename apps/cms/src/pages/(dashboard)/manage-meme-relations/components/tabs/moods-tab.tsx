@@ -254,6 +254,7 @@ export function MoodsTabView({ moodCollectionId, moods, onRefresh }: MoodsViewPr
         onSubmit={onSubmit}
         submitText={selectedMood ? 'Save Changes' : 'Add Mood'}
         onClose={handleCloseCUDialog}
+        isSubmitting={form.formState.isSubmitting}
       >
         <div className="grid gap-4 py-4">
           <InputText

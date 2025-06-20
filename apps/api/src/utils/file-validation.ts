@@ -8,6 +8,11 @@ export const MAX_FILE_SIZE = 2 * 1024 * 1024;
 // Minimum allowed file size (10 bytes to avoid empty files)
 export const MIN_FILE_SIZE = 10;
 
+// Image-specific validation constants
+export const IMAGE_MAX_FILE_SIZE = 5 * 1024 * 1024;  // 5MB max for images
+export const IMAGE_MIN_FILE_SIZE = 100;              // 100 bytes min for images
+export const IMAGE_MAX_DIMENSIONS = { width: 4000, height: 4000 }; // Max dimensions
+
 // Supported mime types for various content
 export const SUPPORTED_MIME_TYPES = {
   // Images
@@ -56,10 +61,10 @@ export const ALL_SUPPORTED_MIME_TYPES = [
  * @param size File size in bytes
  * @param maxSize Maximum allowed size in bytes (defaults to MAX_FILE_SIZE)
  */
-export function validateFileSize(size: number, maxSize = MAX_FILE_SIZE): void {
-  if (size > maxSize) {
+export function validateFileSize(size: number, maxFileSize = MAX_FILE_SIZE): void {
+  if (size > maxFileSize) {
     throw new FileError(
-      `File too large. Maximum size is ${(maxSize / (1024 * 1024)).toFixed(1)}MB`
+      `File too large. Maximum size is ${(maxFileSize / (1024 * 1024)).toFixed(1)}MB`
     );
   }
 }
@@ -106,14 +111,14 @@ export function generateSecureFileId(): string {
 export function validateFile(
   file: Express.Multer.File,
   options: {
-    maxSize?: number;
-    minSize?: number;
+    maxFileSize?: number;
+    minFileSize?: number;
     allowedTypes?: string[];
   } = {}
 ): void {
   const { 
-    maxSize = MAX_FILE_SIZE, 
-    minSize = MIN_FILE_SIZE,
+    maxFileSize = MAX_FILE_SIZE, 
+    minFileSize = MIN_FILE_SIZE,
     allowedTypes = ALL_SUPPORTED_MIME_TYPES 
   } = options;
   
@@ -123,15 +128,76 @@ export function validateFile(
   }
   
   // Validate file size (both min and max)
-  if (file.size < minSize) {
-    throw new FileError(`File too small. Minimum size is ${minSize} bytes`);
+  if (file.size < minFileSize) {
+    throw new FileError(`File too small. Minimum size is ${minFileSize} bytes`);
   }
-  
-  validateFileSize(file.size, maxSize);
-  
+
+  validateFileSize(file.size, maxFileSize);
+
   // Validate MIME type
   validateFileMimeType(file.mimetype, allowedTypes);
   
   // Validate file extension
   validateFileExtension(file.originalname);
+}
+
+/**
+ * Image-specific validation options provide a way to configure how 
+ * image files should be validated. These are used by the validateImageFile 
+ * function to apply more specific constraints to image files.
+ * 
+ * Usage example:
+ * 
+ * ```typescript
+ * // Using the default image validation settings
+ * validateImageFile(file);
+ * 
+ * // Or with custom options
+ * validateImageFile(file, {
+ *   maxSize: 8 * 1024 * 1024, // 8MB
+ *   allowedTypes: ['image/jpeg', 'image/png']
+ * });
+ * ```
+ */
+export interface ImageValidationOptions {
+  maxFileSize?: number;
+  minFileSize?: number;
+  allowedTypes?: string[];
+  maxWidth?: number;
+  maxHeight?: number;
+}
+
+/**
+ * Default validation options for images
+ */
+export const DEFAULT_IMAGE_VALIDATION_OPTIONS: ImageValidationOptions = {
+  maxFileSize: IMAGE_MAX_FILE_SIZE,
+  minFileSize: IMAGE_MIN_FILE_SIZE,
+  allowedTypes: SUPPORTED_MIME_TYPES.image,
+  maxWidth: IMAGE_MAX_DIMENSIONS.width,
+  maxHeight: IMAGE_MAX_DIMENSIONS.height
+};
+
+/**
+ * Validate an image file with image-specific validation logic
+ * @param file Express Multer file object
+ * @param options Image validation options
+ */
+export function validateImageFile(
+  file: Express.Multer.File,
+  options: ImageValidationOptions = {}
+): void {
+  // Merge options with defaults
+  const validationOptions = {
+    maxFileSize: options.maxFileSize || DEFAULT_IMAGE_VALIDATION_OPTIONS.maxFileSize,
+    minFileSize: options.minFileSize || DEFAULT_IMAGE_VALIDATION_OPTIONS.minFileSize,
+    allowedTypes: options.allowedTypes || DEFAULT_IMAGE_VALIDATION_OPTIONS.allowedTypes
+  };
+  
+  // Validate using general file validation
+  validateFile(file, validationOptions);
+  
+  // Further image-specific validation could be added here
+  // For example, checking image dimensions, aspect ratio, etc.
+  // This would require additional processing of the image buffer
 }

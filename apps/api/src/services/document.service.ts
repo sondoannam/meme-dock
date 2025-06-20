@@ -3,6 +3,14 @@ import { Query } from 'node-appwrite';
 import { DocumentIncreaseTimePeriod, DocumentCountPeriod } from '../models/document-analytics';
 import { DocumentData, DocumentResponse, ListDocumentsResponse } from '../models/document';
 
+export interface GetDocumentsParams {
+  limit?: number;
+  offset?: number;
+  orderBy?: string;
+  orderType?: string;
+  queries?: string[];
+}
+
 /**
  * Result of a batch document creation operation
  */
@@ -25,6 +33,13 @@ function formatDocument(doc: any): DocumentResponse {
   // Extract values we want to keep
   const { $id, $createdAt, $updatedAt, $collectionId, ...restOfDoc } = doc;
 
+  // remove other variables starting with $
+  Object.keys(restOfDoc).forEach((key) => {
+    if (key.startsWith('$')) {
+      delete restOfDoc[key];
+    }
+  });
+
   // Return cleaned object with renamed fields
   return {
     ...restOfDoc,
@@ -41,16 +56,10 @@ function formatDocument(doc: any): DocumentResponse {
  * @param options Query options like limit, offset, ordering, and filters
  * @returns List of matching documents
  */
-export async function getDocuments(
+export async function getDocuments<T>(
   collectionId: string,
-  options: {
-    limit?: number;
-    offset?: number;
-    orderBy?: string;
-    orderType?: string;
-    queries?: string[];
-  } = {},
-): Promise<ListDocumentsResponse> {
+  options: GetDocumentsParams = {},
+): Promise<ListDocumentsResponse<T>> {
   try {
     // Extract options
     const { limit, offset, orderBy, orderType, queries = [] } = options;
@@ -117,7 +126,7 @@ export async function getDocuments(
     const response = await databases.listDocuments(DATABASE_ID, collectionId, parsedQueries);
 
     // Map documents and remove system fields
-    const cleanDocuments = response.documents.map(formatDocument);
+    const cleanDocuments = response.documents.map(formatDocument) as T[];
 
     return {
       total: response.total,
@@ -294,6 +303,7 @@ export async function createDocument(
       // Ensure slug is unique by checking existing documents
       const existingDocs = await databases.listDocuments(DATABASE_ID, collectionId, [
         Query.equal('slug', data.slug),
+        Query.limit(1),
       ]);
 
       if (existingDocs.total > 0) {

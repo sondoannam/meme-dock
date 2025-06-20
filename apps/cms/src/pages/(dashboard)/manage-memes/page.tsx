@@ -25,26 +25,32 @@ export const Component = () => {
         });
       }
 
-      const tagPromise = documentApi.getDocuments<MemeTagType>(tagCollectionId).then((res) => {
-        return res.documents.map((tag) => ({
-          label: `#${tag.label}`,
-          value: tag.id,
-        })) as SelectOption[];
-      });
+      const tagPromise = documentApi
+        .getDocuments<MemeTagType>(tagCollectionId, { limit: 1000 })
+        .then((res) => {
+          return res.documents.map((tag) => ({
+            label: `#${tag.label}`,
+            value: tag.id,
+          })) as SelectOption[];
+        });
 
-      const objectPromise = documentApi.getDocuments<MemeObjectType>(objectCollectionId).then((res) => {
-        return res.documents.map((object) => ({
-          label: `${object.label_en}-(${object.label_vi})`,
-          value: object.id,
-        })) as SelectOption[];
-      });
+      const objectPromise = documentApi
+        .getDocuments<MemeObjectType>(objectCollectionId, { limit: 1000 })
+        .then((res) => {
+          return res.documents.map((object) => ({
+            label: `${object.label_en}-(${object.label_vi})`,
+            value: object.id,
+          })) as SelectOption[];
+        });
 
-      const moodPromise = documentApi.getDocuments<MemeObjectType>(moodCollectionId).then((res) => {
-        return res.documents.map((mood) => ({
-          label: `${mood.label_en}-(${mood.label_vi})`,
-          value: mood.id,
-        })) as SelectOption[];
-      });
+      const moodPromise = documentApi
+        .getDocuments<MemeObjectType>(moodCollectionId, { limit: 1000 })
+        .then((res) => {
+          return res.documents.map((mood) => ({
+            label: `${mood.label_en}-(${mood.label_vi})`,
+            value: mood.id,
+          })) as SelectOption[];
+        });
 
       return Promise.all([tagPromise, objectPromise, moodPromise]).then(
         ([tags, objects, moods]) => ({
