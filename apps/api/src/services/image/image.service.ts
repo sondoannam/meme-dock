@@ -10,6 +10,7 @@ import {
 import { AppwriteImageService } from './appwrite-image.service';
 import { ImageKitImageService } from './imagekit-image.service';
 import { DEFAULT_IMAGE_VALIDATION_OPTIONS } from '../../utils/file-validation';
+import { createServiceLogger } from '../../utils/logger-utils';
 
 /**
  * Platform options for image storage
@@ -39,6 +40,7 @@ export class ImageService implements ImagePlatformService {
   private appwriteService: AppwriteImageService;
   private imageKitService: ImageKitImageService;
   private defaultPlatform: ImagePlatform;
+  private logger = createServiceLogger('ImageService');
 
   /**
    * Create a new ImageService instance
@@ -47,12 +49,14 @@ export class ImageService implements ImagePlatformService {
   constructor(defaultPlatform: ImagePlatform = ImagePlatform.AUTO) {
     this.appwriteService = new AppwriteImageService();
     this.imageKitService = new ImageKitImageService();
-    this.defaultPlatform = defaultPlatform;
-
-    // Validate that at least one platform is configured
+    this.defaultPlatform = defaultPlatform; // Validate that at least one platform is configured
     if (!this.appwriteService.isConfigured() && !this.imageKitService.isConfigured()) {
-      console.warn(
+      this.logger.warn(
         'No image storage platform is properly configured. Please check your environment variables.',
+        {
+          appwriteConfigured: this.appwriteService.isConfigured(),
+          imageKitConfigured: this.imageKitService.isConfigured(),
+        },
       );
     }
   }

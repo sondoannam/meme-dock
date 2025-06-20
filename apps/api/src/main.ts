@@ -3,6 +3,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import { initRoutes } from './routes';
 import { defaultLimiter } from './middleware/rate-limit.middleware';
+import logger, { requestLogger } from './utils/logger';
 
 // Load environment variables
 dotenv.config();
@@ -25,6 +26,9 @@ app.use(
 // Apply rate limiting to all API routes
 app.use('/api', defaultLimiter);
 
+// Apply request logging middleware
+app.use(requestLogger);
+
 // Routes
 app.get('/health', (req, res) => {
   res.status(200).send({ status: 'ok', service: 'meme-dock-api' });
@@ -43,22 +47,29 @@ app.use((req, res) => {
   res.status(404).json({
     success: false,
     message: `Route not found: ${req.method} ${req.originalUrl}`,
-    code: 'RouteNotFound'
+    code: 'RouteNotFound',
   });
 });
 
 // Global error handlers for uncaught exceptions
+// Winston will handle these through the exception/rejection handlers
 process.on('uncaughtException', (error) => {
-  console.error('Uncaught Exception:', error);
+  logger.error('Uncaught Exception', { error: error.message, stack: error.stack });
   // In production, you might want to perform graceful shutdown or notification
 });
 
-process.on('unhandledRejection', (reason, promise) => {
-  console.error('Unhandled Promise Rejection:', reason);
+process.on('unhandledRejection', (reason: Error | unknown, promise) => {
+  logger.error('Unhandled Promise Rejection', {
+    reason: reason instanceof Error ? reason.message : reason,
+    stack: reason instanceof Error ? reason.stack : undefined,
+  });
 });
 
 // Start the server
 app.listen(port, host, () => {
-  console.log(`[ ready ] http://${host}:${port}`);
-  console.log(`[ test ] File upload test page: http://${host}:${port}/upload-test`);
+  logger.info(`Server started successfully`, {
+    url: `http://${host}:${port}`,
+    testPage: `http://${host}:${port}/upload-test`,
+    environment: process.env.NODE_ENV || 'development',
+  });
 });

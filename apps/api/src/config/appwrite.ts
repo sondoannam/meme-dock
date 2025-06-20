@@ -1,5 +1,8 @@
 import dotenv from 'dotenv';
 import { Client, Databases, ID, Permission, Role, Teams, Storage } from 'node-appwrite';
+import { createServiceLogger } from '../utils/logger-utils';
+
+const logger = createServiceLogger('AppwriteConfig');
 
 // Load environment variables
 dotenv.config();
@@ -32,7 +35,7 @@ const DATABASE_ID = APPWRITE_DATABASE_ID ?? 'default';
 const MEME_BUCKET_ID = APPWRITE_MEME_BUCKET_ID ?? '';
 
 if (!MEME_BUCKET_ID) {
-  console.warn('APPWRITE_MEME_BUCKET_ID is not set. File upload/download will not work properly.');
+  logger.warn('APPWRITE_MEME_BUCKET_ID is not set. File upload/download will not work properly.');
 }
 
 // Only export a factory so every consumer gets an isolated client

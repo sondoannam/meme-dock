@@ -20,11 +20,13 @@ import {
   ImagePreviewOptions,
 } from './image-platform.interface';
 import { createValidationOptions } from './image.service';
+import { createServiceLogger } from '../../utils/logger-utils';
 
 /**
  * Appwrite implementation of the ImagePlatformService
  */
 export class AppwriteImageService implements ImagePlatformService {
+  private logger = createServiceLogger('AppwriteImageService');
   /**
    * Upload a single image file to Appwrite Storage
    */
@@ -58,7 +60,15 @@ export class AppwriteImageService implements ImagePlatformService {
       // Map Appwrite result to our standardized ImageMetadata
       return this.mapAppwriteResultToImageMetadata(result);
     } catch (error) {
-      console.error('Error uploading image to Appwrite:', error);
+      this.logger.error('Error uploading image to Appwrite', {
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+        fileInfo: { 
+          originalname: file.originalname,
+          mimetype: file.mimetype,
+          size: file.size
+        }
+      });
 
       // Rethrow AppErrors as is, wrap other errors
       if (error instanceof ConfigError || error instanceof FileError) {
@@ -96,7 +106,11 @@ export class AppwriteImageService implements ImagePlatformService {
       const uploadPromises = files.map((file) => this.uploadImage(file, options));
       return Promise.all(uploadPromises);
     } catch (error) {
-      console.error('Error uploading multiple files to Appwrite:', error);
+      this.logger.error('Error uploading multiple files to Appwrite', {
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+        filesCount: files.length
+      });
 
       // Rethrow AppErrors as is, wrap other errors
       if (error instanceof ConfigError || error instanceof FileError) {
@@ -124,8 +138,11 @@ export class AppwriteImageService implements ImagePlatformService {
 
       const file = await storage.getFile(MEME_BUCKET_ID, imageId);
       return this.mapAppwriteResultToImageMetadata(file);
-    } catch (error) {
-      console.error('Error getting file metadata from Appwrite:', error);
+    } catch (error) {      this.logger.error('Error getting file metadata from Appwrite', {
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+        imageId
+      });
 
       // Rethrow AppErrors as is, wrap other errors
       if (error instanceof ConfigError || error instanceof FileError) {
@@ -182,7 +199,11 @@ export class AppwriteImageService implements ImagePlatformService {
         hasMore: end !== undefined && end < files.total,
       };
     } catch (error) {
-      console.error('Error listing files from Appwrite:', error);
+      this.logger.error('Error listing files from Appwrite', {
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+        options
+      });
 
       // Rethrow AppErrors as is, wrap other errors
       if (error instanceof ConfigError || error instanceof FileError) {
@@ -212,7 +233,11 @@ export class AppwriteImageService implements ImagePlatformService {
 
       await storage.deleteFile(MEME_BUCKET_ID, imageId);
     } catch (error) {
-      console.error('Error deleting image from Appwrite:', error);
+      this.logger.error('Error deleting image from Appwrite', {
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+        imageId
+      });
 
       // Rethrow AppErrors as is, wrap other errors
       if (error instanceof ConfigError || error instanceof FileError) {
@@ -247,7 +272,11 @@ export class AppwriteImageService implements ImagePlatformService {
         : APPWRITE_ENDPOINT;
       return `${endpoint}/storage/buckets/${MEME_BUCKET_ID}/files/${imageId}/download?project=${APPWRITE_PROJECT_ID}`;
     } catch (error) {
-      console.error('Error constructing download URL for Appwrite file:', error);
+      this.logger.error('Error constructing download URL for Appwrite file', {
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+        imageId
+      });
 
       // Rethrow AppErrors as is, wrap other errors
       if (error instanceof ConfigError || error instanceof FileError) {
@@ -300,7 +329,12 @@ export class AppwriteImageService implements ImagePlatformService {
 
       return url;
     } catch (error) {
-      console.error('Error constructing preview URL for Appwrite file:', error);
+      this.logger.error('Error constructing preview URL for Appwrite file', {
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+        imageId,
+        options
+      });
 
       // Rethrow AppErrors as is, wrap other errors
       if (error instanceof ConfigError || error instanceof FileError) {
@@ -335,7 +369,11 @@ export class AppwriteImageService implements ImagePlatformService {
         : APPWRITE_ENDPOINT;
       return `${endpoint}/storage/buckets/${MEME_BUCKET_ID}/files/${imageId}/view?project=${APPWRITE_PROJECT_ID}`;
     } catch (error) {
-      console.error('Error constructing view URL for Appwrite file:', error);
+      this.logger.error('Error constructing view URL for Appwrite file', {
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+        imageId
+      });
 
       // Rethrow AppErrors as is, wrap other errors
       if (error instanceof ConfigError || error instanceof FileError) {
@@ -421,8 +459,11 @@ export class AppwriteImageService implements ImagePlatformService {
         // Additional useful metadata for client applications
         uploadProgress: chunksTotal > 0 ? Math.round((chunksUploaded / chunksTotal) * 100) : 100,
       };
-    } catch (error) {
-      console.error('Error mapping Appwrite file to ImageMetadata:', error);
+    } catch (error) {      this.logger.error('Error mapping Appwrite file to ImageMetadata', {
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+        fileData: fileData ? { id: fileData.$id } : 'undefined'
+      });
 
       // Fallback with minimal information if mapping fails
       const id = typeof fileData.$id === 'string' ? fileData.$id : '';

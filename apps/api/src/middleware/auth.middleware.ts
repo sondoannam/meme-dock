@@ -2,6 +2,10 @@
 import { Request, Response, NextFunction } from 'express';
 import { client, createBaseClient, Teams } from '../config/appwrite';
 import { Account } from 'node-appwrite';
+import { createServiceLogger } from '../utils/logger-utils';
+
+// Create a logger for the auth middleware
+const logger = createServiceLogger('AuthMiddleware');
 
 // Environment variables
 const ADMIN_TEAM_ID = process.env.APPWRITE_ADMIN_TEAM_ID;
@@ -10,11 +14,11 @@ const APPWRITE_PROJECT_ID = process.env.APPWRITE_PROJECT_ID;
 
 // Validation
 if (!ADMIN_TEAM_ID) {
-  console.warn('APPWRITE_ADMIN_TEAM_ID is not set. Admin authentication will not work properly.');
+  logger.warn('APPWRITE_ADMIN_TEAM_ID is not set. Admin authentication will not work properly.');
 }
 
 if (!APPWRITE_ENDPOINT || !APPWRITE_PROJECT_ID) {
-  console.warn('Missing Appwrite configuration. Authentication will not work properly.');
+  logger.warn('Missing Appwrite configuration. Authentication will not work properly.');
 }
 
 /**
@@ -56,9 +60,12 @@ export async function adminAuth(req: Request, res: Response, next: NextFunction)
 
       if (!userId) {
         return res.status(401).json({ message: 'Invalid token' });
-      }
-    } catch (verifyError) {
-      console.error('Token verification failed:', verifyError);
+      }    } catch (verifyError) {
+      logger.error('Token verification failed', {
+        error: verifyError instanceof Error ? verifyError.message : String(verifyError),
+        stack: verifyError instanceof Error ? verifyError.stack : undefined,
+        ipAddress: req.ip
+      });
       return res.status(401).json({ message: 'Invalid or expired token' });
     }
 
@@ -87,9 +94,12 @@ export async function adminAuth(req: Request, res: Response, next: NextFunction)
       return res.status(500).json({
         message: 'Server configuration error: Admin team not configured',
       });
-    }
-  } catch (error) {
-    console.error('Authentication error:', error);
+    }  } catch (error) {
+    logger.error('Authentication error', {
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      ipAddress: req.ip
+    });
     return res.status(500).json({
       message: 'Authentication error',
       error: error instanceof Error ? error.message : 'Unknown error',

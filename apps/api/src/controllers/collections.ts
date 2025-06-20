@@ -1,6 +1,9 @@
 import { Request, Response } from 'express';
 import { CollectionService } from '../services';
 import { CUCollectionReq } from '../models/collection-schema';
+import { createServiceLogger } from '../utils/logger-utils';
+
+const logger = createServiceLogger('CollectionsController');
 
 /**
  * Get all collections
@@ -10,7 +13,10 @@ export const getCollections = async (req: Request, res: Response): Promise<void>
     const collections = await CollectionService.getCollections();
     res.status(200).json(collections);
   } catch (error) {
-    console.error('Error fetching collections:', error);
+    logger.error('Error fetching collections', {
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined
+    });
     res.status(500).json({
       message: 'Failed to fetch collections',
       error: error instanceof Error ? error.message : 'Unknown error',
@@ -33,7 +39,11 @@ export const createCollection = async (req: Request, res: Response): Promise<voi
     const collection = await CollectionService.createCollection(collectionData);
     res.status(201).json(collection);
   } catch (error) {
-    console.error('Error creating collection:', error);
+    logger.error('Error creating collection', {
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      collectionData: req.body
+    });
     res.status(500).json({
       message: 'Failed to create collection',
       error: error instanceof Error ? error.message : 'Unknown error',
@@ -64,7 +74,11 @@ export const updateCollection = async (req: Request, res: Response): Promise<voi
       const updatedCollection = await CollectionService.updateCollection(id, collectionData);
       res.status(200).json(updatedCollection);
     } catch (error) {
-      console.error(`Error updating collection with ID ${id}:`, error);
+      logger.error('Error updating collection by ID', {
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+        collectionId: id
+      });
       if (error instanceof Error && error.message.includes('not found')) {
         res.status(404).json({ message: `Collection with ID ${id} not found` });
       } else {
@@ -72,7 +86,10 @@ export const updateCollection = async (req: Request, res: Response): Promise<voi
       }
     }
   } catch (error) {
-    console.error('Error updating collection:', error);
+    logger.error('Error updating collection', {
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined
+    });
     res.status(500).json({
       message: 'Failed to update collection',
       error: error instanceof Error ? error.message : 'Unknown error',
@@ -97,7 +114,11 @@ export const createCollections = async (req: Request, res: Response): Promise<vo
     const collections = await CollectionService.createCollections(collectionsData);
     res.status(201).json(collections);
   } catch (error) {
-    console.error('Error creating collections in batch:', error);
+    logger.error('Error creating collections in batch', {
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      collectionsCount: req.body.length || 0
+    });
     res.status(500).json({
       message: 'Failed to create collections',
       error: error instanceof Error ? error.message : 'Unknown error',
@@ -120,7 +141,11 @@ export const deleteCollection = async (req: Request, res: Response): Promise<voi
     await CollectionService.deleteCollection(id);
     res.status(204).end();
   } catch (error) {
-    console.error('Error deleting collection:', error);
+    logger.error('Error deleting collection', {
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      collectionId: req.params.id
+    });
     res.status(500).json({
       message: 'Failed to delete collection',
       error: error instanceof Error ? error.message : 'Unknown error',

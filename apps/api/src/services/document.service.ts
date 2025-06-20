@@ -2,6 +2,10 @@ import { databases, DATABASE_ID, Permission, Role, ID } from '../config/appwrite
 import { Query } from 'node-appwrite';
 import { DocumentIncreaseTimePeriod, DocumentCountPeriod } from '../models/document-analytics';
 import { DocumentData, DocumentResponse, ListDocumentsResponse } from '../models/document';
+import { createServiceLogger } from '../utils/logger-utils';
+
+// Create a logger for the document service
+const logger = createServiceLogger('DocumentService');
 
 export interface GetDocumentsParams {
   limit?: number;
@@ -29,9 +33,15 @@ export interface BatchDocumentsResult {
  * @param doc Raw document from Appwrite
  * @returns Clean document with renamed system fields
  */
-function formatDocument(doc: any): DocumentResponse {
+function formatDocument(doc: Record<string, unknown>): DocumentResponse {
   // Extract values we want to keep
-  const { $id, $createdAt, $updatedAt, $collectionId, ...restOfDoc } = doc;
+  const { $id, $createdAt, $updatedAt, $collectionId, ...restOfDoc } = doc as {
+    $id: string;
+    $createdAt: string;
+    $updatedAt: string;
+    $collectionId: string;
+    [key: string]: unknown;
+  };
 
   // remove other variables starting with $
   Object.keys(restOfDoc).forEach((key) => {
@@ -122,7 +132,6 @@ export async function getDocuments<T>(
       if (offset < 0) throw new Error('offset cannot be negative');
       parsedQueries.push(Query.offset(offset));
     }
-
     const response = await databases.listDocuments(DATABASE_ID, collectionId, parsedQueries);
 
     // Map documents and remove system fields
@@ -133,7 +142,12 @@ export async function getDocuments<T>(
       documents: cleanDocuments,
     };
   } catch (error) {
-    console.error(`Error fetching documents from collection ${collectionId}:`, error);
+    logger.error(`Error fetching documents from collection ${collectionId}`, {
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      collectionId,
+      options,
+    });
     throw error;
   }
 }
@@ -251,7 +265,13 @@ export async function getDocumentIncreaseOverTime(
         });
       } catch (error) {
         // If querying a specific period fails, add it with 0 count
-        console.error(`Error querying period ${period.label}:`, error);
+        logger.warn(`Error querying period ${period.label}`, {
+          error: error instanceof Error ? error.message : String(error),
+          collectionId,
+          period: period.label,
+          startDate: period.start.toISOString(),
+          endDate: period.end.toISOString(),
+        });
         result.push({
           period: period.label,
           count: 0,
@@ -259,12 +279,16 @@ export async function getDocumentIncreaseOverTime(
           periodEndDate: period.end.toISOString(),
         });
       }
-    }
-
-    // Reverse the results to get chronological order (oldest to newest)
+    } // Reverse the results to get chronological order (oldest to newest)
     return result.reverse();
   } catch (error) {
-    console.error(`Error fetching document increases for collection ${collectionId}:`, error);
+    logger.error(`Error fetching document increases for collection ${collectionId}`, {
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      collectionId,
+      duration,
+      limit,
+    });
     throw error;
   }
 }
@@ -283,7 +307,12 @@ export async function getDocument(
     const doc = await databases.getDocument(DATABASE_ID, collectionId, documentId);
     return formatDocument(doc);
   } catch (error) {
-    console.error(`Error fetching document ${documentId} from collection ${collectionId}:`, error);
+    logger.error(`Error fetching document ${documentId} from collection ${collectionId}`, {
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      collectionId,
+      documentId,
+    });
     throw error;
   }
 }
@@ -322,10 +351,14 @@ export async function createDocument(
         Permission.write(Role.team('admin')), // Admin team write access
       ],
     );
-
     return formatDocument(createdDocument);
   } catch (error) {
-    console.error(`Error creating document in collection ${collectionId}:`, error);
+    logger.error(`Error creating document in collection ${collectionId}`, {
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      collectionId,
+      documentData: { ...data, ...(data.slug && { slug: data.slug }) },
+    });
     throw error;
   }
 }
@@ -365,7 +398,13 @@ export async function updateDocument(
 
     return formatDocument(updatedDocument);
   } catch (error) {
-    console.error(`Error updating document ${documentId} in collection ${collectionId}:`, error);
+    logger.error(`Error updating document ${documentId} in collection ${collectionId}`, {
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      collectionId,
+      documentId,
+      documentData: { ...data, ...(data.slug && { slug: data.slug }) },
+    });
     throw error;
   }
 }
@@ -379,7 +418,12 @@ export async function deleteDocument(collectionId: string, documentId: string): 
   try {
     await databases.deleteDocument(DATABASE_ID, collectionId, documentId);
   } catch (error) {
-    console.error(`Error deleting document ${documentId} from collection ${collectionId}:`, error);
+    logger.error(`Error deleting document ${documentId} from collection ${collectionId}`, {
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      collectionId,
+      documentId,
+    });
     throw error;
   }
 }
@@ -427,7 +471,11 @@ export async function createDocuments(
         existingSlugs = existingSlugs.concat(foundSlugs);
       }
     } catch (error) {
-      console.error(`Error checking for duplicate slugs in collection ${collectionId}:`, error);
+      logger.warn(`Error checking for duplicate slugs in collection ${collectionId}`, {
+        error: error instanceof Error ? error.message : String(error),
+        collectionId,
+        slugsChecked: slugsToCheck.length,
+      });
       // Continue with the operation, but note we couldn't verify duplicates
     }
   }
@@ -442,12 +490,14 @@ export async function createDocuments(
       }
       seenSlugs.add(data.slug);
     }
-
     try {
       // Skip if slug exists and skipDuplicateSlugs is true
       if (data.slug && existingSlugs.includes(data.slug)) {
         if (skipDuplicateSlugs) {
-          console.log(`Skipping document with duplicate slug "${data.slug}"`);
+          logger.info(`Skipping document with duplicate slug "${data.slug}"`, {
+            collectionId,
+            slug: data.slug,
+          });
           result.failed.push({
             data,
             error: `Document with slug "${data.slug}" already exists`,
@@ -473,11 +523,18 @@ export async function createDocuments(
 
       // Format document using the helper function
       const formattedDocument = formatDocument(createdDocument);
-
       result.successful.push(formattedDocument);
       result.totalSuccessful++;
     } catch (error) {
-      console.error(`Error creating document in collection ${collectionId}:`, error);
+      logger.error(`Error creating document in collection ${collectionId}`, {
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+        collectionId,
+        documentData: {
+          ...data,
+          ...(data.slug && { slug: data.slug }),
+        },
+      });
       result.failed.push({
         data,
         error: error instanceof Error ? error.message : 'Unknown error',

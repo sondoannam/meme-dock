@@ -72,7 +72,8 @@
     "imagekit": "^6.0.0",
     "jsonwebtoken": "^9.0.2",
     "multer": "^2.0.1",
-    "node-appwrite": "^17.0.0"
+    "node-appwrite": "^17.0.0",
+    "winston": "^3.17.0"
   },
   "devDependencies": {
     "@types/cors": "^2.8.19",
