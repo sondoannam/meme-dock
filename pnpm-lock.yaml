@@ -191,6 +191,8 @@ importers:
         specifier: ^9.0.9
         version: 9.0.9
 
+  apps/appwrite-functions: {}
+
   apps/client:
     dependencies:
       next:

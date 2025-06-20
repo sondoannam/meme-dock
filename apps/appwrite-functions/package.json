@@ -1,7 +1,0 @@
-{
-  "name": "@meme-dock/appwrite-functions",
-  "version": "0.0.1",
-  "main": "src/main.js",
-  "private": true,
-  "type": "module"
-}
