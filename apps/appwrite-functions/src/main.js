@@ -1,4 +1,4 @@
-export default async ({ req, res, log, error }) => {
+export default async ({ req, res, log, error }: any) => {
   // Why not try the Appwrite SDK?
   //
   // Set project and set API key

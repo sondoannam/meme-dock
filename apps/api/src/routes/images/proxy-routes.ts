@@ -1,5 +1,4 @@
 import { Router } from 'express';
-import { FileError } from '../../utils/errors';
 import { ImageService, ImagePlatform } from '../../services/image/image.service';
 import { optionalAuth } from '../../middleware/image-auth.middleware';
 
