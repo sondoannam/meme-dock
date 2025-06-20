@@ -1,0 +1,183 @@
+import { Client, Functions } from 'node-appwrite';
+
+/**
+ * Interface for the meme document data received from the event
+ */
+interface MemeDocument {
+  $id: string;
+  objectIds?: string[];
+  tagIds?: string[];
+  moodIds?: string[];
+  [key: string]: any;
+}
+
+/**
+ * Interface for the function response
+ */
+interface FunctionResponse {
+  success: boolean;
+  message: string;
+  data?: {
+    memeId: string;
+    results: Array<{
+      type: 'object' | 'tag' | 'mood';
+      execution: string;
+      count: number;
+    }>;
+  };
+  error?: string;
+}
+
+/**
+ * Interface for the execution result
+ */
+interface ExecutionResult {
+  $id: string;
+  [key: string]: any;
+}
+
+/**
+ * Handle the creation of a new meme document by updating usage counts
+ * for related objects, tags, and moods.
+ * 
+ * This function is designed to be triggered by a database event
+ * when a new meme document is created.
+ */
+export default async function(context: any): Promise<any> {
+  const { req, res, log, env } = context;
+  
+  log('Meme creation handler started');
+  
+  try {
+    // Extract the event data from request body
+    const eventData = req.body as MemeDocument;
+    log('Event data:', eventData);
+    
+    // Check if this is a meme document creation event
+    if (!eventData || !eventData.$id) {
+      return res.json({
+        success: false,
+        message: 'Invalid event data or not a meme document creation event'
+      }, 400);
+    }
+    
+    // Extract meme ID and relation IDs
+    const memeId = eventData.$id;
+    const objectIds = eventData.objectIds || [];
+    const tagIds = eventData.tagIds || [];
+    const moodIds = eventData.moodIds || [];
+    
+    // Check if we have any IDs to process
+    if (objectIds.length === 0 && tagIds.length === 0 && moodIds.length === 0) {
+      log('No relation IDs found in the meme document');
+      return res.json({
+        success: false,
+        message: 'No relation IDs found in the meme document'
+      });
+    }
+    
+    // Get the increase-usage-count function ID
+    const increaseUsageCountFunctionId = env.APPWRITE_FUNCTION_ID;
+    if (!increaseUsageCountFunctionId) {
+      return res.json({
+        success: false,
+        message: 'Missing APPWRITE_FUNCTION_ID environment variable'
+      }, 500);
+    }
+    
+    // Initialize Appwrite client
+    const client = new Client()
+      .setEndpoint(env.APPWRITE_ENDPOINT)
+      .setProject(env.APPWRITE_PROJECT_ID)
+      .setKey(env.APPWRITE_API_KEY);
+    
+    const functions = new Functions(client);
+    const results: Array<{
+      type: 'object' | 'tag' | 'mood';
+      execution: string;
+      count: number;
+    }> = [];
+    
+    // Process objectIds if there are any
+    if (objectIds.length > 0) {
+      log(`Processing ${objectIds.length} objectIds`);
+      const objectResult = await functions.createExecution(
+        increaseUsageCountFunctionId,
+        JSON.stringify({
+          collectionType: 'object',
+          ids: objectIds,
+          memeId,
+          eventType: 'upload'
+        }),
+        false
+      ) as ExecutionResult;
+      
+      results.push({
+        type: 'object',
+        execution: objectResult.$id,
+        count: objectIds.length
+      });
+    }
+    
+    // Process tagIds if there are any
+    if (tagIds.length > 0) {
+      log(`Processing ${tagIds.length} tagIds`);
+      const tagResult = await functions.createExecution(
+        increaseUsageCountFunctionId,
+        JSON.stringify({
+          collectionType: 'tag',
+          ids: tagIds,
+          memeId,
+          eventType: 'upload'
+        }),
+        false
+      ) as ExecutionResult;
+      
+      results.push({
+        type: 'tag',
+        execution: tagResult.$id,
+        count: tagIds.length
+      });
+    }
+    
+    // Process moodIds if there are any
+    if (moodIds.length > 0) {
+      log(`Processing ${moodIds.length} moodIds`);
+      const moodResult = await functions.createExecution(
+        increaseUsageCountFunctionId,
+        JSON.stringify({
+          collectionType: 'mood',
+          ids: moodIds,
+          memeId,
+          eventType: 'upload'
+        }),
+        false
+      ) as ExecutionResult;
+      
+      results.push({
+        type: 'mood',
+        execution: moodResult.$id,
+        count: moodIds.length
+      });
+    }
+    
+    const response: FunctionResponse = {
+      success: true,
+      message: 'Usage counts update initiated successfully',
+      data: {
+        memeId,
+        results
+      }
+    };
+    
+    return res.json(response);
+    
+  } catch (err: any) {
+    log('Error in meme creation handler:', err);
+    return res.json({
+      success: false,
+      message: 'Error processing meme creation event',
+      error: err.message
+    }, 500);
+  }
+}

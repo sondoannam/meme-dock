@@ -1,16 +1,58 @@
 import { databases } from '../config/appwrite';
 
 /**
+ * Request body interface for the increase usage count function
+ */
+interface IncreaseUsageCountRequest {
+  /** Type of collection to update ('object', 'tag', or 'mood') */
+  collectionType: 'object' | 'tag' | 'mood';
+  
+  /** Array of document IDs to update */
+  ids: string[];
+  
+  /** Optional meme ID related to this usage event */
+  memeId?: string;
+  
+  /** Type of event that triggered the usage count increase */
+  eventType?: 'upload' | 'copy' | 'download';
+  
+  /** Optional user ID who performed the action */
+  userId?: string;
+}
+
+/**
+ * Result of a single document update operation
+ */
+interface UpdateResult {
+  /** Document ID that was updated (or attempted to update) */
+  id: string;
+  
+  /** Whether the update was successful */
+  success: boolean;
+  
+  /** New usage count (if successful) */
+  newCount?: number;
+  
+  /** Error message (if not successful) */
+  error?: string;
+}
+
+/**
+ * Collection mapping configuration
+ */
+interface CollectionConfig {
+  /** Collection ID where the main documents are stored */
+  collection: string;
+  
+  /** Collection ID where usage records are stored */
+  usagesCollection: string;
+  
+  /** Field name for entity ID in the usage records */
+  idField: string;
+}
+
+/**
  * Function to increase usage count for objects, tags, or moods
- * 
- * Expected request body:
- * {
- *   collectionType: 'object' | 'tag' | 'mood',
- *   ids: string[],
- *   memeId?: string,
- *   eventType?: 'upload' | 'copy' | 'download',
- *   userId?: string
- * }
  * 
  * Environment variables:
  * - DATABASE_ID: Appwrite database ID
@@ -21,7 +63,13 @@ import { databases } from '../config/appwrite';
  * - TAG_USAGES_COLLECTION_ID: Collection ID for tag usage records
  * - MOOD_USAGES_COLLECTION_ID: Collection ID for mood usage records
  */
-export default async function ({ req, res, log }) {
+export default async function({ req, res, log }: { 
+  req: { body: IncreaseUsageCountRequest }, 
+  res: { 
+    json: (data: any, status?: number) => any 
+  }, 
+  log: (...args: any[]) => void
+}) {
   log('Increase usage count function started');
 
   try {
@@ -37,20 +85,20 @@ export default async function ({ req, res, log }) {
 
     // Get collection IDs from environment variables
     const DATABASE_ID = process.env.DATABASE_ID;
-    const collectionMap = {
+    const collectionMap: Record<string, CollectionConfig> = {
       object: {
-        collection: process.env.OBJECT_COLLECTION_ID,
-        usagesCollection: process.env.OBJECT_USAGES_COLLECTION_ID,
+        collection: process.env.OBJECT_COLLECTION_ID || '',
+        usagesCollection: process.env.OBJECT_USAGES_COLLECTION_ID || '',
         idField: 'objectId'
       },
       tag: {
-        collection: process.env.TAG_COLLECTION_ID,
-        usagesCollection: process.env.TAG_USAGES_COLLECTION_ID,
+        collection: process.env.TAG_COLLECTION_ID || '',
+        usagesCollection: process.env.TAG_USAGES_COLLECTION_ID || '',
         idField: 'tagId'
       },
       mood: {
-        collection: process.env.MOOD_COLLECTION_ID,
-        usagesCollection: process.env.MOOD_USAGES_COLLECTION_ID,
+        collection: process.env.MOOD_COLLECTION_ID || '',
+        usagesCollection: process.env.MOOD_USAGES_COLLECTION_ID || '',
         idField: 'moodId'
       }
     };
@@ -78,12 +126,13 @@ export default async function ({ req, res, log }) {
     const currentDate = new Date().toISOString();
     
     // Process each ID in parallel
-    const results = await Promise.all(
+    const results: UpdateResult[] = await Promise.all(
       ids.map(async (id) => {
         try {
           // 1. Get the current document
           const document = await databases.getDocument(DATABASE_ID, collection, id);
-            // 2. Increment usage count and update lastUsedAt
+          
+          // 2. Increment usage count and update lastUsedAt
           const currentCount = document.usageCount || 0;
           await databases.updateDocument(
             DATABASE_ID,
@@ -97,7 +146,7 @@ export default async function ({ req, res, log }) {
           
           // 3. Add usage record if memeId is provided
           if (memeId && usagesCollection) {
-            const usageRecord = {
+            const usageRecord: Record<string, any> = {
               [idField]: id,
               memeId,
               eventType,
@@ -122,7 +171,7 @@ export default async function ({ req, res, log }) {
             success: true,
             newCount: currentCount + 1
           };
-        } catch (err) {
+        } catch (err: any) {
           log(`Error updating ${collectionType} with ID ${id}:`, err);
           return {
             id,
@@ -148,7 +197,7 @@ export default async function ({ req, res, log }) {
       },
     });
     
-  } catch (err) {
+  } catch (err: any) {
     log('Error in increase usage count function:', err);
     return res.json({
       success: false,

@@ -191,7 +191,14 @@ importers:
         specifier: ^9.0.9
         version: 9.0.9
 
-  apps/appwrite-functions: {}
+  apps/appwrite-functions:
+    dependencies:
+      dotenv:
+        specifier: ^16.5.0
+        version: 16.5.0
+      node-appwrite:
+        specifier: ^17.0.0
+        version: 17.0.0
 
   apps/client:
     dependencies:
@@ -13784,7 +13791,7 @@ snapshots:
 
   dotenv-expand@11.0.7:
     dependencies:
-      dotenv: 16.4.7
+      dotenv: 16.5.0
 
   dotenv@16.4.7: {}
 
