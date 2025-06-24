@@ -7,10 +7,7 @@ import {
 } from '../../config/appwrite';
 import { InputFile } from 'node-appwrite/file';
 import { ConfigError, FileError } from '../../utils/errors';
-import {
-  validateImageFile,
-  generateSecureFileId,
-} from '../../utils/file-validation';
+import { validateImageFile, generateSecureFileId } from '../../utils/file-validation';
 import {
   ImageMetadata,
   ImageUploadOptions,
@@ -63,11 +60,11 @@ export class AppwriteImageService implements ImagePlatformService {
       this.logger.error('Error uploading image to Appwrite', {
         error: error instanceof Error ? error.message : String(error),
         stack: error instanceof Error ? error.stack : undefined,
-        fileInfo: { 
+        fileInfo: {
           originalname: file.originalname,
           mimetype: file.mimetype,
-          size: file.size
-        }
+          size: file.size,
+        },
       });
 
       // Rethrow AppErrors as is, wrap other errors
@@ -109,7 +106,7 @@ export class AppwriteImageService implements ImagePlatformService {
       this.logger.error('Error uploading multiple files to Appwrite', {
         error: error instanceof Error ? error.message : String(error),
         stack: error instanceof Error ? error.stack : undefined,
-        filesCount: files.length
+        filesCount: files.length,
       });
 
       // Rethrow AppErrors as is, wrap other errors
@@ -138,10 +135,11 @@ export class AppwriteImageService implements ImagePlatformService {
 
       const file = await storage.getFile(MEME_BUCKET_ID, imageId);
       return this.mapAppwriteResultToImageMetadata(file);
-    } catch (error) {      this.logger.error('Error getting file metadata from Appwrite', {
+    } catch (error) {
+      this.logger.error('Error getting file metadata from Appwrite', {
         error: error instanceof Error ? error.message : String(error),
         stack: error instanceof Error ? error.stack : undefined,
-        imageId
+        imageId,
       });
 
       // Rethrow AppErrors as is, wrap other errors
@@ -202,7 +200,7 @@ export class AppwriteImageService implements ImagePlatformService {
       this.logger.error('Error listing files from Appwrite', {
         error: error instanceof Error ? error.message : String(error),
         stack: error instanceof Error ? error.stack : undefined,
-        options
+        options,
       });
 
       // Rethrow AppErrors as is, wrap other errors
@@ -236,7 +234,7 @@ export class AppwriteImageService implements ImagePlatformService {
       this.logger.error('Error deleting image from Appwrite', {
         error: error instanceof Error ? error.message : String(error),
         stack: error instanceof Error ? error.stack : undefined,
-        imageId
+        imageId,
       });
 
       // Rethrow AppErrors as is, wrap other errors
@@ -275,7 +273,7 @@ export class AppwriteImageService implements ImagePlatformService {
       this.logger.error('Error constructing download URL for Appwrite file', {
         error: error instanceof Error ? error.message : String(error),
         stack: error instanceof Error ? error.stack : undefined,
-        imageId
+        imageId,
       });
 
       // Rethrow AppErrors as is, wrap other errors
@@ -333,7 +331,7 @@ export class AppwriteImageService implements ImagePlatformService {
         error: error instanceof Error ? error.message : String(error),
         stack: error instanceof Error ? error.stack : undefined,
         imageId,
-        options
+        options,
       });
 
       // Rethrow AppErrors as is, wrap other errors
@@ -372,7 +370,7 @@ export class AppwriteImageService implements ImagePlatformService {
       this.logger.error('Error constructing view URL for Appwrite file', {
         error: error instanceof Error ? error.message : String(error),
         stack: error instanceof Error ? error.stack : undefined,
-        imageId
+        imageId,
       });
 
       // Rethrow AppErrors as is, wrap other errors
@@ -459,10 +457,11 @@ export class AppwriteImageService implements ImagePlatformService {
         // Additional useful metadata for client applications
         uploadProgress: chunksTotal > 0 ? Math.round((chunksUploaded / chunksTotal) * 100) : 100,
       };
-    } catch (error) {      this.logger.error('Error mapping Appwrite file to ImageMetadata', {
+    } catch (error) {
+      this.logger.error('Error mapping Appwrite file to ImageMetadata', {
         error: error instanceof Error ? error.message : String(error),
         stack: error instanceof Error ? error.stack : undefined,
-        fileData: fileData ? { id: fileData.$id } : 'undefined'
+        fileData: fileData ? { id: fileData.$id } : 'undefined',
       });
 
       // Fallback with minimal information if mapping fails

@@ -60,11 +60,12 @@ export async function adminAuth(req: Request, res: Response, next: NextFunction)
 
       if (!userId) {
         return res.status(401).json({ message: 'Invalid token' });
-      }    } catch (verifyError) {
+      }
+    } catch (verifyError) {
       logger.error('Token verification failed', {
         error: verifyError instanceof Error ? verifyError.message : String(verifyError),
         stack: verifyError instanceof Error ? verifyError.stack : undefined,
-        ipAddress: req.ip
+        ipAddress: req.ip,
       });
       return res.status(401).json({ message: 'Invalid or expired token' });
     }
@@ -94,11 +95,12 @@ export async function adminAuth(req: Request, res: Response, next: NextFunction)
       return res.status(500).json({
         message: 'Server configuration error: Admin team not configured',
       });
-    }  } catch (error) {
+    }
+  } catch (error) {
     logger.error('Authentication error', {
       error: error instanceof Error ? error.message : String(error),
       stack: error instanceof Error ? error.stack : undefined,
-      ipAddress: req.ip
+      ipAddress: req.ip,
     });
     return res.status(500).json({
       message: 'Authentication error',

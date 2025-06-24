@@ -54,7 +54,7 @@ export const getDocumentIncreaseOverTime = async (req: Request, res: Response): 
       stack: error instanceof Error ? error.stack : undefined,
       collectionId: req.params.collectionId,
       duration: req.query.duration,
-      limit: req.query.limit
+      limit: req.query.limit,
     });
     res.status(500).json({
       message: 'Failed to fetch document increases',
@@ -90,7 +90,7 @@ export const getDocuments = async (req: Request, res: Response): Promise<void> =
       error: error instanceof Error ? error.message : String(error),
       stack: error instanceof Error ? error.stack : undefined,
       collectionId: req.params.collectionId,
-      query: req.query
+      query: req.query,
     });
     res.status(500).json({
       message: 'Failed to fetch documents',
@@ -118,7 +118,7 @@ export const getDocument = async (req: Request, res: Response): Promise<void> =>
       error: error instanceof Error ? error.message : String(error),
       stack: error instanceof Error ? error.stack : undefined,
       collectionId: req.params.collectionId,
-      documentId: req.params.documentId
+      documentId: req.params.documentId,
     });
     res.status(500).json({
       message: 'Failed to fetch document',
@@ -146,7 +146,7 @@ export const createDocument = async (req: Request, res: Response): Promise<void>
     logger.error('Error creating document', {
       error: error instanceof Error ? error.message : String(error),
       stack: error instanceof Error ? error.stack : undefined,
-      collectionId: req.params.collectionId
+      collectionId: req.params.collectionId,
     });
     res.status(500).json({
       message: 'Failed to create document',
@@ -164,31 +164,31 @@ export const createDocuments = async (req: Request, res: Response): Promise<void
     const { documents, skipDuplicateSlugs = true } = req.body;
 
     if (!collectionId || !Array.isArray(documents) || documents.length === 0) {
-      res.status(400).json({ 
+      res.status(400).json({
         message: 'Collection ID and documents array are required',
         format: {
           documents: 'Array of document objects',
-          skipDuplicateSlugs: 'Boolean (optional, default: true)'
-        }
+          skipDuplicateSlugs: 'Boolean (optional, default: true)',
+        },
       });
       return;
     }
 
     const result = await DocumentService.createDocuments(
-      collectionId, 
-      documents, 
-      skipDuplicateSlugs
+      collectionId,
+      documents,
+      skipDuplicateSlugs,
     );
-    
+
     res.status(207).json({
       message: `Created ${result.totalSuccessful} documents, failed to create ${result.totalFailed} documents`,
-      ...result
+      ...result,
     });
   } catch (error) {
     logger.error('Error creating documents in batch', {
       error: error instanceof Error ? error.message : String(error),
       stack: error instanceof Error ? error.stack : undefined,
-      collectionId: req.params.collectionId
+      collectionId: req.params.collectionId,
     });
     res.status(500).json({
       message: 'Failed to create documents in batch',
@@ -219,7 +219,7 @@ export const updateDocument = async (req: Request, res: Response): Promise<void>
       error: error instanceof Error ? error.message : String(error),
       stack: error instanceof Error ? error.stack : undefined,
       collectionId: req.params.collectionId,
-      documentId: req.params.documentId
+      documentId: req.params.documentId,
     });
     res.status(500).json({
       message: 'Failed to update document',
@@ -247,7 +247,7 @@ export const deleteDocument = async (req: Request, res: Response): Promise<void>
       error: error instanceof Error ? error.message : String(error),
       stack: error instanceof Error ? error.stack : undefined,
       collectionId: req.params.collectionId,
-      documentId: req.params.documentId
+      documentId: req.params.documentId,
     });
     res.status(500).json({
       message: 'Failed to delete document',
@@ -281,7 +281,7 @@ export const getDocumentCount = async (req: Request, res: Response): Promise<voi
     logger.error('Error fetching document count', {
       error: error instanceof Error ? error.message : String(error),
       stack: error instanceof Error ? error.stack : undefined,
-      collectionId: req.params.collectionId
+      collectionId: req.params.collectionId,
     });
     res.status(500).json({
       message: 'Failed to fetch document count',

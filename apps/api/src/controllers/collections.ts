@@ -15,7 +15,7 @@ export const getCollections = async (req: Request, res: Response): Promise<void>
   } catch (error) {
     logger.error('Error fetching collections', {
       error: error instanceof Error ? error.message : String(error),
-      stack: error instanceof Error ? error.stack : undefined
+      stack: error instanceof Error ? error.stack : undefined,
     });
     res.status(500).json({
       message: 'Failed to fetch collections',
@@ -42,7 +42,7 @@ export const createCollection = async (req: Request, res: Response): Promise<voi
     logger.error('Error creating collection', {
       error: error instanceof Error ? error.message : String(error),
       stack: error instanceof Error ? error.stack : undefined,
-      collectionData: req.body
+      collectionData: req.body,
     });
     res.status(500).json({
       message: 'Failed to create collection',
@@ -77,7 +77,7 @@ export const updateCollection = async (req: Request, res: Response): Promise<voi
       logger.error('Error updating collection by ID', {
         error: error instanceof Error ? error.message : String(error),
         stack: error instanceof Error ? error.stack : undefined,
-        collectionId: id
+        collectionId: id,
       });
       if (error instanceof Error && error.message.includes('not found')) {
         res.status(404).json({ message: `Collection with ID ${id} not found` });
@@ -88,7 +88,7 @@ export const updateCollection = async (req: Request, res: Response): Promise<voi
   } catch (error) {
     logger.error('Error updating collection', {
       error: error instanceof Error ? error.message : String(error),
-      stack: error instanceof Error ? error.stack : undefined
+      stack: error instanceof Error ? error.stack : undefined,
     });
     res.status(500).json({
       message: 'Failed to update collection',
@@ -117,7 +117,7 @@ export const createCollections = async (req: Request, res: Response): Promise<vo
     logger.error('Error creating collections in batch', {
       error: error instanceof Error ? error.message : String(error),
       stack: error instanceof Error ? error.stack : undefined,
-      collectionsCount: req.body.length || 0
+      collectionsCount: req.body.length || 0,
     });
     res.status(500).json({
       message: 'Failed to create collections',
@@ -144,7 +144,7 @@ export const deleteCollection = async (req: Request, res: Response): Promise<voi
     logger.error('Error deleting collection', {
       error: error instanceof Error ? error.message : String(error),
       stack: error instanceof Error ? error.stack : undefined,
-      collectionId: req.params.id
+      collectionId: req.params.id,
     });
     res.status(500).json({
       message: 'Failed to delete collection',

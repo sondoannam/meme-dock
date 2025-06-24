@@ -36,11 +36,13 @@ export async function uploadFile(req: Request, res: Response): Promise<Response>
     logger.error('Error in uploadFile controller', {
       error: error instanceof Error ? error.message : String(error),
       stack: error instanceof Error ? error.stack : undefined,
-      file: req.file ? {
-        originalname: req.file.originalname,
-        mimetype: req.file.mimetype,
-        size: req.file.size
-      } : 'no file'
+      file: req.file
+        ? {
+            originalname: req.file.originalname,
+            mimetype: req.file.mimetype,
+            size: req.file.size,
+          }
+        : 'no file',
     });
 
     // Handle our custom errors
@@ -85,7 +87,7 @@ export async function uploadMultipleFiles(req: Request, res: Response): Promise<
     logger.error('Error in uploadMultipleFiles controller', {
       error: error instanceof Error ? error.message : String(error),
       stack: error instanceof Error ? error.stack : undefined,
-      filesCount: req.files?.length || 0
+      filesCount: req.files?.length || 0,
     });
     return res.status(500).json({
       success: false,
@@ -120,7 +122,7 @@ export async function getFileMetadata(req: Request, res: Response): Promise<Resp
     logger.error('Error in getFileMetadata controller', {
       error: error instanceof Error ? error.message : String(error),
       stack: error instanceof Error ? error.stack : undefined,
-      fileId: req.params.id
+      fileId: req.params.id,
     });
     return res.status(500).json({
       success: false,
@@ -156,7 +158,7 @@ export async function getFileDownload(req: Request, res: Response): Promise<Resp
     logger.error('Error in getFileDownload controller', {
       error: error instanceof Error ? error.message : String(error),
       stack: error instanceof Error ? error.stack : undefined,
-      fileId: req.params.id
+      fileId: req.params.id,
     });
     return res.status(500).json({
       success: false,
@@ -201,7 +203,7 @@ export async function getFilePreview(req: Request, res: Response): Promise<Respo
       error: error instanceof Error ? error.message : String(error),
       stack: error instanceof Error ? error.stack : undefined,
       fileId: req.params.id,
-      options: req.query
+      options: req.query,
     });
     return res.status(500).json({
       success: false,
@@ -237,7 +239,7 @@ export async function getFileView(req: Request, res: Response): Promise<Response
     logger.error('Error in getFileView controller', {
       error: error instanceof Error ? error.message : String(error),
       stack: error instanceof Error ? error.stack : undefined,
-      fileId: req.params.id
+      fileId: req.params.id,
     });
     return res.status(500).json({
       success: false,
@@ -274,7 +276,7 @@ export async function listFiles(req: Request, res: Response): Promise<Response> 
     logger.error('Error in listFiles controller', {
       error: error instanceof Error ? error.message : String(error),
       stack: error instanceof Error ? error.stack : undefined,
-      query: req.query
+      query: req.query,
     });
     return res.status(500).json({
       success: false,
@@ -309,7 +311,7 @@ export async function deleteFile(req: Request, res: Response): Promise<Response>
     logger.error('Error in deleteFile controller', {
       error: error instanceof Error ? error.message : String(error),
       stack: error instanceof Error ? error.stack : undefined,
-      fileId: req.params.id
+      fileId: req.params.id,
     });
     return res.status(500).json({
       success: false,

@@ -175,9 +175,9 @@ export async function getCollections(): Promise<CollectionRes[]> {
 
     return collections;
   } catch (error) {
-    logger.error('Error fetching collections', { 
+    logger.error('Error fetching collections', {
       error: error instanceof Error ? error.message : String(error),
-      stack: error instanceof Error ? error.stack : undefined
+      stack: error instanceof Error ? error.stack : undefined,
     });
     throw error;
   }
@@ -188,9 +188,7 @@ export async function getCollections(): Promise<CollectionRes[]> {
  * @param collection Collection schema to create
  * @returns Created collection schema
  */
-export async function createCollection(
-  collection: CUCollectionReq,
-): Promise<CollectionRes> {
+export async function createCollection(collection: CUCollectionReq): Promise<CollectionRes> {
   try {
     // Create collection in Appwrite
     const createdCollection = await databases.createCollection(
@@ -215,10 +213,10 @@ export async function createCollection(
       enabled: createdCollection.enabled,
     };
   } catch (error) {
-    logger.error(`Error creating collection`, { 
+    logger.error(`Error creating collection`, {
       error: error instanceof Error ? error.message : String(error),
       stack: error instanceof Error ? error.stack : undefined,
-      collectionName: collection.name
+      collectionName: collection.name,
     });
     throw error;
   }
@@ -265,7 +263,7 @@ export async function updateCollection(
         if (existingAttributesMap.has(field.name)) {
           logger.info(`Field already exists, skipping modification`, {
             fieldName: field.name,
-            collectionId
+            collectionId,
           });
         } else {
           // Add new field
@@ -283,10 +281,10 @@ export async function updateCollection(
       enabled: existingCollection.enabled,
     };
   } catch (error) {
-    logger.error(`Error updating collection`, { 
+    logger.error(`Error updating collection`, {
       error: error instanceof Error ? error.message : String(error),
       stack: error instanceof Error ? error.stack : undefined,
-      collectionId
+      collectionId,
     });
     throw error;
   }
@@ -297,9 +295,7 @@ export async function updateCollection(
  * @param collections Array of collection schemas to create
  * @returns Array of created collection schemas
  */
-export async function createCollections(
-  collections: CUCollectionReq[],
-): Promise<CollectionRes[]> {
+export async function createCollections(collections: CUCollectionReq[]): Promise<CollectionRes[]> {
   try {
     const createdCollections = [];
 
@@ -310,10 +306,10 @@ export async function createCollections(
 
     return createdCollections;
   } catch (error) {
-    logger.error('Error creating multiple collections', { 
+    logger.error('Error creating multiple collections', {
       error: error instanceof Error ? error.message : String(error),
       stack: error instanceof Error ? error.stack : undefined,
-      collectionsCount: collections.length
+      collectionsCount: collections.length,
     });
     throw error;
   }
@@ -327,10 +323,10 @@ export async function deleteCollection(collectionId: string): Promise<void> {
   try {
     await databases.deleteCollection(DATABASE_ID, collectionId);
   } catch (error) {
-    logger.error(`Error deleting collection`, { 
+    logger.error(`Error deleting collection`, {
       error: error instanceof Error ? error.message : String(error),
       stack: error instanceof Error ? error.stack : undefined,
-      collectionId
+      collectionId,
     });
     throw error;
   }

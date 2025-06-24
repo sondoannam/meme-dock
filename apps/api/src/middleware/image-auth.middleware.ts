@@ -49,15 +49,16 @@ export async function optionalAuth(req: Request, res: Response, next: NextFuncti
         try {
           const teams = new Teams(clientJWT);
           const membershipsList = await teams.listMemberships(ADMIN_TEAM_ID);
-          
+
           // Check if user ID exists in admin team memberships
           req.isAdmin = membershipsList.memberships.some(
             (membership) => membership.userId === user.$id,
           );
-        } catch (error) {          logger.error('Error checking admin status', {
+        } catch (error) {
+          logger.error('Error checking admin status', {
             error: error instanceof Error ? error.message : String(error),
             stack: error instanceof Error ? error.stack : undefined,
-            userId: user.$id
+            userId: user.$id,
           });
           req.isAdmin = false;
         }
@@ -66,7 +67,7 @@ export async function optionalAuth(req: Request, res: Response, next: NextFuncti
       // Token verification failed, continue as unauthenticated
       logger.debug('Optional auth token verification failed', {
         error: verifyError instanceof Error ? verifyError.message : String(verifyError),
-        stack: verifyError instanceof Error ? verifyError.stack : undefined
+        stack: verifyError instanceof Error ? verifyError.stack : undefined,
       });
     }
 
@@ -76,7 +77,7 @@ export async function optionalAuth(req: Request, res: Response, next: NextFuncti
     logger.error('Optional authentication error', {
       error: error instanceof Error ? error.message : String(error),
       stack: error instanceof Error ? error.stack : undefined,
-      ipAddress: req.ip
+      ipAddress: req.ip,
     });
     // Continue rather than blocking the request on auth errors
     return next();
@@ -119,15 +120,16 @@ export async function readAuth(req: Request, res: Response, next: NextFunction) 
       // For now, continue even if token verification fails
       logger.debug('Token verification failed but continuing', {
         error: verifyError instanceof Error ? verifyError.message : String(verifyError),
-        stack: verifyError instanceof Error ? verifyError.stack : undefined
+        stack: verifyError instanceof Error ? verifyError.stack : undefined,
       });
     }
 
-    return next();  } catch (error) {
+    return next();
+  } catch (error) {
     logger.error('Authentication error', {
       error: error instanceof Error ? error.message : String(error),
       stack: error instanceof Error ? error.stack : undefined,
-      ipAddress: req.ip
+      ipAddress: req.ip,
     });
     // Continue rather than blocking on auth errors
     return next();
@@ -167,18 +169,20 @@ export async function writeAuth(req: Request, res: Response, next: NextFunction)
       req.userId = user.$id;
 
       // Continue - user is authenticated (doesn't need to be admin)
-      return next();    } catch (verifyError) {
+      return next();
+    } catch (verifyError) {
       logger.error('Token verification failed', {
         error: verifyError instanceof Error ? verifyError.message : String(verifyError),
         stack: verifyError instanceof Error ? verifyError.stack : undefined,
-        ipAddress: req.ip
+        ipAddress: req.ip,
       });
       return res.status(401).json({ message: 'Invalid or expired token' });
-    }  } catch (error) {
+    }
+  } catch (error) {
     logger.error('Authentication error', {
       error: error instanceof Error ? error.message : String(error),
       stack: error instanceof Error ? error.stack : undefined,
-      ipAddress: req.ip
+      ipAddress: req.ip,
     });
     return res.status(500).json({
       message: 'Authentication error',
