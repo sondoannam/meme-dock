@@ -48,12 +48,20 @@ winston.addColors(colors);
 const developmentFormat = winston.format.combine(
   winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
   winston.format.colorize({ all: true }),
-  winston.format.printf(
-    (info) =>
-      `${info.timestamp} [${info.level}]: ${info.message}${
-        info.splat !== undefined ? info.splat : ''
-      }${info.meta ? ` | ${JSON.stringify(info.meta)}` : ''}`,
-  ),
+  winston.format.printf((info) => {
+    // Extract known properties to exclude from metadata
+    const { timestamp, level, message, splat, stack, ...meta } = info;
+    
+    // Check if there's any metadata to print
+    const metadataStr = Object.keys(meta).length 
+      ? ` | ${JSON.stringify(meta)}`
+      : '';
+    
+    // Include stack trace if available
+    const stackStr = stack ? `\n${stack}` : '';
+    
+    return `${timestamp} [${level}]: ${message}${stackStr}${metadataStr}`;
+  }),
 );
 
 const productionFormat = winston.format.combine(
@@ -219,11 +227,11 @@ export const requestLogger = (req: Request, res: Response, next: () => void) => 
 
     // Log requests based on status code
     if (res.statusCode >= 500) {
-      logger.error(`${req.method} ${req.url} ${res.statusCode}`, { meta });
+      logger.error(`${req.method} ${req.url} ${res.statusCode}`, meta);
     } else if (res.statusCode >= 400) {
-      logger.warn(`${req.method} ${req.url} ${res.statusCode}`, { meta });
+      logger.warn(`${req.method} ${req.url} ${res.statusCode}`, meta);
     } else {
-      logger.http(`${req.method} ${req.url} ${res.statusCode}`, { meta });
+      logger.http(`${req.method} ${req.url} ${res.statusCode}`, meta);
     }
   });
 

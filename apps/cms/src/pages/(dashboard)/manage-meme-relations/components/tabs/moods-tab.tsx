@@ -8,15 +8,17 @@ import {
   CardFooter,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Plus, Pencil, Trash2 } from 'lucide-react';
+import { Plus, Pencil, Trash2, Sparkles } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { DialogCustom } from '@/components/custom/dialog-custom';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { InputText } from '@/components/custom/form-field/input-text';
 import { useRequest } from 'ahooks';
 import { toast } from 'sonner';
+import { libreTranslateApi } from '@/services/translate';
 // import { Slider } from '@/components/ui/slider';
 
 import { memeMoodSchema, MemeMoodFormValues } from '@/validators';
@@ -53,6 +55,41 @@ export function MoodsTabView({ moodCollectionId, moods, onRefresh }: MoodsViewPr
   const cuDialog = DialogCustom.useDialog();
   const deleteDialog = DialogCustom.useDialog();
 
+  // Translation hooks
+  const { run: translateToVietnamese, loading: translatingToVi } = useRequest(
+    async (text: string) => {
+      const translated = await libreTranslateApi.translate(text, 'en', 'vi');
+      return translated;
+    },
+    {
+      manual: true,
+      onSuccess: (result) => {
+        form.setValue('label_vi', result);
+        toast.success('Translated to Vietnamese successfully');
+      },
+      onError: (error) => {
+        toast.error(`Translation failed: ${error.message}`);
+      },
+    },
+  );
+
+  const { run: translateToEnglish, loading: translatingToEn } = useRequest(
+    async (text: string) => {
+      const translated = await libreTranslateApi.translate(text, 'vi', 'en');
+      return translated;
+    },
+    {
+      manual: true,
+      onSuccess: (result) => {
+        form.setValue('label_en', result);
+        toast.success('Translated to English successfully');
+      },
+      onError: (error) => {
+        toast.error(`Translation failed: ${error.message}`);
+      },
+    },
+  );
+
   const form = useForm<MemeMoodFormValues>({
     resolver: zodResolver(memeMoodSchema),
     defaultValues: {
@@ -62,10 +99,28 @@ export function MoodsTabView({ moodCollectionId, moods, onRefresh }: MoodsViewPr
     },
   });
 
+  // Watch the form fields to show/hide translation buttons
+  const labelEn = useWatch({
+    control: form.control,
+    name: 'label_en',
+    defaultValue: selectedMood?.label_en || '',
+  });
+
+  const labelVi = useWatch({
+    control: form.control,
+    name: 'label_vi',
+    defaultValue: selectedMood?.label_vi || '',
+  });
+
   const handleOpenCreate = () => {
     setSelectedMood(null);
+    form.reset({
+      label_en: '',
+      label_vi: '',
+      slug: '',
+    });
     cuDialog.open();
-  }
+  };
 
   const handleOpenUpdate = (mood: MemeMoodType) => {
     setSelectedMood(mood);
@@ -91,7 +146,7 @@ export function MoodsTabView({ moodCollectionId, moods, onRefresh }: MoodsViewPr
   const handleCloseDelete = () => {
     deleteDialog.close();
     setSelectedMood(null);
-  }
+  };
 
   const createOrUpdateMood = async (data: MemeMoodFormValues) => {
     const defaultPayload: Partial<MemeMoodType> = {
@@ -160,14 +215,15 @@ export function MoodsTabView({ moodCollectionId, moods, onRefresh }: MoodsViewPr
 
   return (
     <div className="space-y-6 p-1">
-      <div className="flex flex-col gap-4 md:flex-row justify-between items-start md:items-center">        <Input
+      <div className="flex flex-col gap-4 md:flex-row justify-between items-start md:items-center">
+        {' '}
+        <Input
           className="max-w-sm"
           placeholder="Search moods..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
         />
-
-        <div className="flex gap-2">          
+        <div className="flex gap-2">
           {/* One-time batch creation button - Delete or comment out after use */}
           {/* {moods.length === 0 && (
             <MoodsBatchCreation 
@@ -262,13 +318,71 @@ export function MoodsTabView({ moodCollectionId, moods, onRefresh }: MoodsViewPr
             label="English Label"
             placeholder="e.g. Happy"
             control={form.control}
+            suffixPosition="outside"
+            suffix={
+              labelVi ? (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        className="h-10 transition-colors hover:bg-slate-100 hover:text-primary"
+                        onClick={() => translateToEnglish(labelVi)}
+                        disabled={translatingToEn || !labelVi}
+                      >
+                        {translatingToEn ? (
+                          <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                        ) : (
+                          <Sparkles className="h-4 w-4" />
+                        )}
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Translate from Vietnamese to English</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              ) : undefined
+            }
           />
+
           <InputText
             name="label_vi"
             label="Vietnamese Label"
             placeholder="e.g. Vui vẻ"
             control={form.control}
+            suffixPosition="outside"
+            suffix={
+              labelEn ? (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        className="h-10 transition-colors hover:bg-slate-100 hover:text-primary"
+                        onClick={() => translateToVietnamese(labelEn)}
+                        disabled={translatingToVi || !labelEn}
+                      >
+                        {translatingToVi ? (
+                          <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                        ) : (
+                          <Sparkles className="h-4 w-4" />
+                        )}
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Translate from English to Vietnamese</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              ) : undefined
+            }
           />
+
           <InputText name="slug" label="Slug" placeholder="e.g. happy" control={form.control} />
           {/* <div className="space-y-2">
             <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
