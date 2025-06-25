@@ -1,0 +1,25 @@
+{
+    "projectId": "684035d400037fae4fa7",
+    "functions": [
+        {
+            "$id": "685ba00b001acf6ea94d",
+            "name": "clear-usages-count",
+            "runtime": "node-22",
+            "specification": "s-1vcpu-512mb",
+            "execute": [
+                "any"
+            ],
+            "events": [],
+            "scopes": [
+                "users.read"
+            ],
+            "schedule": "",
+            "timeout": 15,
+            "enabled": true,
+            "logging": true,
+            "entrypoint": "./main.js",
+            "commands": "pnpm install",
+            "path": "src/functions/clear-usages-count"
+        }
+    ]
+}
