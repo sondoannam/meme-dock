@@ -110,13 +110,13 @@ export function InputText<TFieldValues extends FieldValues>({
       return (
         <div className="relative">
           {prefix && prefixPosition === 'inside' && (
-            <div className="absolute left-3 top-1/2 -translate-y-1/2 flex items-center pointer-events-none">
+            <div className="absolute left-3 top-1/2 -translate-y-1/2 flex items-center">
               {prefix}
             </div>
           )}
           {inputElement}
           {suffix && suffixPosition === 'inside' && (
-            <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center pointer-events-none">
+            <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center">
               {suffix}
             </div>
           )}
@@ -136,13 +136,17 @@ export function InputText<TFieldValues extends FieldValues>({
           <FormLabel>{label}</FormLabel>
           <div className="flex items-center gap-2">
             {prefix && prefixPosition === 'outside' && (
-              <div className={cn('!w-10', addonWidth && `!w-[${addonWidth}px]`)}>{prefix}</div>
+              <div className="w-10 h-full" style={addonWidth ? { width: `${addonWidth}px` } : undefined}>
+                {prefix}
+              </div>
             )}
 
             <FormControl className="flex-1">{renderInput(field, error)}</FormControl>
 
             {suffix && suffixPosition === 'outside' && (
-              <div className={cn('!w-10', addonWidth && `!w-[${addonWidth}px]`)}>{suffix}</div>
+              <div className="w-10 h-full" style={addonWidth ? { width: `${addonWidth}px` } : undefined}>
+                {suffix}
+              </div>
             )}
           </div>
           {description && (

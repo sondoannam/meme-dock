@@ -1,4 +1,7 @@
 import { useState, useMemo } from 'react';
+import { toast } from 'sonner';
+import { useDebounceEffect, useRequest } from 'ahooks';
+
 import {
   Card,
   CardContent,
@@ -8,23 +11,21 @@ import {
   CardFooter,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Plus, Pencil, Trash2, Sparkles } from 'lucide-react';
+import { Plus, Pencil, Trash2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { DialogCustom } from '@/components/custom/dialog-custom';
 import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { InputText } from '@/components/custom/form-field/input-text';
-import { useRequest } from 'ahooks';
-import { toast } from 'sonner';
-import { libreTranslateApi } from '@/services/translate';
+import { FormDialog } from '@/components/custom/form-dialog';
 // import { Slider } from '@/components/ui/slider';
 
+import { translationApi } from '@/services/translate';
 import { memeMoodSchema, MemeMoodFormValues } from '@/validators';
-import { FormDialog } from '@/components/custom/form-dialog';
 import { documentApi, GetDocumentsParams } from '@/services/document';
 import { MemeMoodType } from '@/types';
+import { InputWithTranslation } from '../input-with-translation';
 // import { MoodsBatchCreation } from '@/components/custom/MoodsBatchCreation';
 
 // Trending score color categories
@@ -55,41 +56,6 @@ export function MoodsTabView({ moodCollectionId, moods, onRefresh }: MoodsViewPr
   const cuDialog = DialogCustom.useDialog();
   const deleteDialog = DialogCustom.useDialog();
 
-  // Translation hooks
-  const { run: translateToVietnamese, loading: translatingToVi } = useRequest(
-    async (text: string) => {
-      const translated = await libreTranslateApi.translate(text, 'en', 'vi');
-      return translated;
-    },
-    {
-      manual: true,
-      onSuccess: (result) => {
-        form.setValue('label_vi', result);
-        toast.success('Translated to Vietnamese successfully');
-      },
-      onError: (error) => {
-        toast.error(`Translation failed: ${error.message}`);
-      },
-    },
-  );
-
-  const { run: translateToEnglish, loading: translatingToEn } = useRequest(
-    async (text: string) => {
-      const translated = await libreTranslateApi.translate(text, 'vi', 'en');
-      return translated;
-    },
-    {
-      manual: true,
-      onSuccess: (result) => {
-        form.setValue('label_en', result);
-        toast.success('Translated to English successfully');
-      },
-      onError: (error) => {
-        toast.error(`Translation failed: ${error.message}`);
-      },
-    },
-  );
-
   const form = useForm<MemeMoodFormValues>({
     resolver: zodResolver(memeMoodSchema),
     defaultValues: {
@@ -99,32 +65,58 @@ export function MoodsTabView({ moodCollectionId, moods, onRefresh }: MoodsViewPr
     },
   });
 
+  const { control, setValue, reset } = form;
+
   // Watch the form fields to show/hide translation buttons
   const labelEn = useWatch({
-    control: form.control,
+    control,
     name: 'label_en',
     defaultValue: selectedMood?.label_en || '',
   });
 
   const labelVi = useWatch({
-    control: form.control,
+    control,
     name: 'label_vi',
     defaultValue: selectedMood?.label_vi || '',
   });
 
+  const { run: translateLabel, loading: isTranslating } = useRequest(
+    async (text: string, labelToTranslate: 'en' | 'vi') => {
+      if (!text) {
+        toast.error('No text to translate');
+        throw new Error('No text to translate');
+      }
+
+      const translatedLabel = labelToTranslate === 'en' ? 'vi' : 'en';
+
+      return translationApi.translateSimple({
+        text,
+        from: labelToTranslate,
+        to: translatedLabel,
+      });
+    },
+    {
+      manual: true,
+      onSuccess: (result, params) => {
+        const labelToTranslate = params[1] === 'en' ? 'label_vi' : 'label_en';
+        setValue(labelToTranslate, result, { shouldValidate: true });
+        toast.success('Translated successfully');
+      },
+      onError: (error) => {
+        toast.error(`Translation failed: ${error.message}`);
+      },
+    },
+  );
+
   const handleOpenCreate = () => {
     setSelectedMood(null);
-    form.reset({
-      label_en: '',
-      label_vi: '',
-      slug: '',
-    });
+    reset();
     cuDialog.open();
   };
 
   const handleOpenUpdate = (mood: MemeMoodType) => {
     setSelectedMood(mood);
-    form.reset({
+    reset({
       label_en: mood.label_en,
       label_vi: mood.label_vi,
       slug: mood.slug,
@@ -135,7 +127,7 @@ export function MoodsTabView({ moodCollectionId, moods, onRefresh }: MoodsViewPr
   const handleCloseCUDialog = () => {
     cuDialog.close();
     setSelectedMood(null);
-    form.reset();
+    reset();
   };
 
   const handleOpenDelete = (mood: MemeMoodType) => {
@@ -213,10 +205,20 @@ export function MoodsTabView({ moodCollectionId, moods, onRefresh }: MoodsViewPr
     [moods, searchQuery],
   );
 
+  useDebounceEffect(
+    () => {
+      const formattedLabel = labelEn.trim().toLowerCase().replace(/\s+/g, '-');
+      setValue('slug', formattedLabel);
+    },
+    [labelEn],
+    {
+      wait: 500,
+    },
+  );
+
   return (
     <div className="space-y-6 p-1">
       <div className="flex flex-col gap-4 md:flex-row justify-between items-start md:items-center">
-        {' '}
         <Input
           className="max-w-sm"
           placeholder="Search moods..."
@@ -238,7 +240,7 @@ export function MoodsTabView({ moodCollectionId, moods, onRefresh }: MoodsViewPr
           </Button>
         </div>
       </div>
-      {/* Grid of moods */}{' '}
+      {/* Grid of moods */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-4">
         {filteredMoods.map((mood) => (
           <Card key={mood.id} className="overflow-hidden hover:shadow-md transition-all">
@@ -310,80 +312,31 @@ export function MoodsTabView({ moodCollectionId, moods, onRefresh }: MoodsViewPr
         onSubmit={onSubmit}
         submitText={selectedMood ? 'Save Changes' : 'Add Mood'}
         onClose={handleCloseCUDialog}
-        isSubmitting={form.formState.isSubmitting}
       >
         <div className="grid gap-4 py-4">
-          <InputText
+          <InputWithTranslation
             name="label_en"
             label="English Label"
             placeholder="e.g. Happy"
-            control={form.control}
-            suffixPosition="outside"
-            suffix={
-              labelVi ? (
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="icon"
-                        className="h-10 transition-colors hover:bg-slate-100 hover:text-primary"
-                        onClick={() => translateToEnglish(labelVi)}
-                        disabled={translatingToEn || !labelVi}
-                      >
-                        {translatingToEn ? (
-                          <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-                        ) : (
-                          <Sparkles className="h-4 w-4" />
-                        )}
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Translate from Vietnamese to English</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              ) : undefined
-            }
+            control={control}
+            appear={!!labelVi}
+            translateFn={() => translateLabel(labelVi, 'vi')}
+            isTranslating={isTranslating}
+            tooltipContent="Translate from Vietnamese to English"
           />
 
-          <InputText
+          <InputWithTranslation
             name="label_vi"
             label="Vietnamese Label"
             placeholder="e.g. Vui vẻ"
-            control={form.control}
-            suffixPosition="outside"
-            suffix={
-              labelEn ? (
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="icon"
-                        className="h-10 transition-colors hover:bg-slate-100 hover:text-primary"
-                        onClick={() => translateToVietnamese(labelEn)}
-                        disabled={translatingToVi || !labelEn}
-                      >
-                        {translatingToVi ? (
-                          <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-                        ) : (
-                          <Sparkles className="h-4 w-4" />
-                        )}
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Translate from English to Vietnamese</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              ) : undefined
-            }
+            control={control}
+            appear={!!labelEn}
+            translateFn={() => translateLabel(labelEn, 'en')}
+            isTranslating={isTranslating}
+            tooltipContent="Translate from English to Vietnamese"
           />
 
-          <InputText name="slug" label="Slug" placeholder="e.g. happy" control={form.control} />
+          <InputText name="slug" label="Slug" placeholder="e.g. happy" control={control} />
           {/* <div className="space-y-2">
             <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
               Intensity: {intensityValue}/10
@@ -401,7 +354,7 @@ export function MoodsTabView({ moodCollectionId, moods, onRefresh }: MoodsViewPr
             </p>
           </div> */}
         </div>
-      </FormDialog>{' '}
+      </FormDialog>
       {/* Delete Confirmation Dialog */}
       <DialogCustom
         dialog={deleteDialog}

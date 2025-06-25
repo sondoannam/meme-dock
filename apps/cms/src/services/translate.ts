@@ -1,24 +1,24 @@
-export const libreTranslateApi = {
-  async translate(text: string, sourceLang: string, targetLang: string): Promise<string> {
-    const response = await fetch('https://libretranslate.com/translate', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        q: text,
-        source: sourceLang,
-        target: targetLang,
-        format: 'text',
-        alternatives: 2,
-      }),
-    });
+import apiClient from '../api/api-client';
+import { Language, TranslationParams, TranslationResponse } from '@/types';
 
-    if (!response.ok) {
-      throw new Error('Translation failed');
-    }
+/**
+ * Translation service for converting text between languages
+ * Uses the backend /api/simple-translate endpoint which implements Google Translate
+ */
+export const translationApi = {
+  async translateSimple(params: TranslationParams): Promise<string> {
+    const response = await apiClient.post<TranslationResponse>('/simple-translate', params);
 
-    const data = await response.json();
-    return data.translatedText;
+    return response.data.translatedText;
+  },
+
+  /**
+   * Get list of supported languages
+   * @returns Array of language objects { code, name }
+   */
+  async getSupportedLanguages(): Promise<Language[]> {
+    const response = await apiClient.get<Language[]>('/translate/simple-languages');
+
+    return response.data;
   },
 };
