@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { toast } from 'sonner';
 import { useDebounceEffect, useRequest } from 'ahooks';
+import { multiFieldSearch } from '@/lib/utils';
 
 import {
   Card,
@@ -193,14 +194,15 @@ export function MoodsTabView({ moodCollectionId, moods, onRefresh }: MoodsViewPr
     }
   }; // Handle delete is now directly passed to DialogCustom component through onConfirmDelete
 
-  // Filter moods based on search query
+  // Filter moods based on search query using the enhanced multi-field search
   const filteredMoods = useMemo(
     () =>
-      moods.filter(
-        (mood) =>
-          mood.label_en.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          mood.label_vi.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          mood.slug.toLowerCase().includes(searchQuery.toLowerCase()),
+      moods.filter((mood) =>
+        searchQuery
+          ? multiFieldSearch(mood, searchQuery, ['label_en', 'label_vi', 'slug'], {
+              normalizeAccents: true, // Helps with Vietnamese diacritics
+            })
+          : true
       ),
     [moods, searchQuery],
   );

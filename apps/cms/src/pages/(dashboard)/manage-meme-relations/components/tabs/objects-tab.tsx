@@ -25,6 +25,7 @@ import { documentApi, GetDocumentsParams } from '@/services/document';
 import { MemeObjectType } from '@/types';
 import { translationApi } from '@/services/translate';
 import { InputWithTranslation } from '../input-with-translation';
+import { multiFieldSearch } from '@/lib/utils';
 
 // Trending score color categories
 const getTrendingColor = (score: number) => {
@@ -185,11 +186,12 @@ export function ObjectsTabView({ objectCollectionId, objects, onRefresh }: Objec
   // Filter objects based on search query
   const filteredObjects = useMemo(
     () =>
-      objects.filter(
-        (object) =>
-          object.label_en.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          object.label_vi.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          object.slug.toLowerCase().includes(searchQuery.toLowerCase()),
+      objects.filter((object) =>
+        searchQuery
+          ? multiFieldSearch(object, searchQuery, ['label_en', 'label_vi', 'slug'], {
+              normalizeAccents: true, // Helps with Vietnamese diacritics
+            })
+          : true,
       ),
     [objects, searchQuery],
   );
