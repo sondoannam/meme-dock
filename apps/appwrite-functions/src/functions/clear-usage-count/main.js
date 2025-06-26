@@ -1,5 +1,6 @@
 import { Client, Users } from 'node-appwrite';
 
+// This function is just a placeholder for clearing usage counts for now
 export default async ({ req, res, log, error }) => {
   const KEY = req.headers['x-appwrite-key'];
 

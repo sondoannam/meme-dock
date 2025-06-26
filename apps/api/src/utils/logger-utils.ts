@@ -40,6 +40,11 @@ export function sanitizeObject(
 ): Record<string, unknown> | unknown {
   if (!obj || typeof obj !== 'object') return obj;
 
+  // Handle arrays
+  if (Array.isArray(obj)) {
+    return obj.map(item => sanitizeObject(item));
+  }
+
   // Create a copy to avoid modifying the original
   const sanitized: Record<string, unknown> = { ...(obj as Record<string, unknown>) };
 

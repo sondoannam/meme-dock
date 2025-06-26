@@ -50,7 +50,7 @@ export function errorHandler(err: Error, req: Request, res: Response, next: Next
  * Middleware to catch async errors in routes
  */
 // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
-export const catchAsync = (fn: Function) =>
+export const catchAsync = (fn: (req: Request, res: Response, next: NextFunction) => Promise<void>) =>
   (req: Request, res: Response, next: NextFunction): void => {
     Promise.resolve(fn(req, res, next)).catch(next);
   };

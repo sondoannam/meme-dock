@@ -122,7 +122,7 @@ export async function getFileMetadata(req: Request, res: Response): Promise<Resp
     logger.error('Error in getFileMetadata controller', {
       error: error instanceof Error ? error.message : String(error),
       stack: error instanceof Error ? error.stack : undefined,
-      fileId: req.params.id,
+      fileId: req.params.fileId,
     });
     return res.status(500).json({
       success: false,

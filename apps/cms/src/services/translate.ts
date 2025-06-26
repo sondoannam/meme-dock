@@ -17,7 +17,7 @@ export const translationApi = {
    * @returns Array of language objects { code, name }
    */
   async getSupportedLanguages(): Promise<Language[]> {
-    const response = await apiClient.get<Language[]>('/translate/simple-languages');
+    const response = await apiClient.get<Language[]>('/simple-translate/languages');
 
     return response.data;
   },
