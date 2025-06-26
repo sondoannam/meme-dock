@@ -1,9 +1,12 @@
 import { Request, Response, NextFunction } from 'express';
 import { createBaseClient, Teams } from '../config/appwrite';
 import { Account } from 'node-appwrite';
+import { createServiceLogger } from '../utils/logger-utils';
 
 // Environment variables
 import { APPWRITE_ENDPOINT, APPWRITE_PROJECT_ID } from '../config/appwrite';
+
+const logger = createServiceLogger('ImageAuthMiddleware');
 
 const ADMIN_TEAM_ID = process.env.APPWRITE_ADMIN_TEAM_ID;
 
@@ -46,25 +49,36 @@ export async function optionalAuth(req: Request, res: Response, next: NextFuncti
         try {
           const teams = new Teams(clientJWT);
           const membershipsList = await teams.listMemberships(ADMIN_TEAM_ID);
-          
+
           // Check if user ID exists in admin team memberships
           req.isAdmin = membershipsList.memberships.some(
             (membership) => membership.userId === user.$id,
           );
         } catch (error) {
-          console.error('Error checking admin status:', error);
+          logger.error('Error checking admin status', {
+            error: error instanceof Error ? error.message : String(error),
+            stack: error instanceof Error ? error.stack : undefined,
+            userId: user.$id,
+          });
           req.isAdmin = false;
         }
       }
     } catch (verifyError) {
       // Token verification failed, continue as unauthenticated
-      console.debug('Optional auth token verification failed:', verifyError);
+      logger.debug('Optional auth token verification failed', {
+        error: verifyError instanceof Error ? verifyError.message : String(verifyError),
+        stack: verifyError instanceof Error ? verifyError.stack : undefined,
+      });
     }
 
     // Continue with the request, authenticated or not
     return next();
   } catch (error) {
-    console.error('Optional authentication error:', error);
+    logger.error('Optional authentication error', {
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      ipAddress: req.ip,
+    });
     // Continue rather than blocking the request on auth errors
     return next();
   }
@@ -104,12 +118,19 @@ export async function readAuth(req: Request, res: Response, next: NextFunction) 
       req.userId = user.$id;
     } catch (verifyError) {
       // For now, continue even if token verification fails
-      console.debug('Token verification failed but continuing:', verifyError);
+      logger.debug('Token verification failed but continuing', {
+        error: verifyError instanceof Error ? verifyError.message : String(verifyError),
+        stack: verifyError instanceof Error ? verifyError.stack : undefined,
+      });
     }
 
     return next();
   } catch (error) {
-    console.error('Authentication error:', error);
+    logger.error('Authentication error', {
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      ipAddress: req.ip,
+    });
     // Continue rather than blocking on auth errors
     return next();
   }
@@ -150,11 +171,19 @@ export async function writeAuth(req: Request, res: Response, next: NextFunction)
       // Continue - user is authenticated (doesn't need to be admin)
       return next();
     } catch (verifyError) {
-      console.error('Token verification failed:', verifyError);
+      logger.error('Token verification failed', {
+        error: verifyError instanceof Error ? verifyError.message : String(verifyError),
+        stack: verifyError instanceof Error ? verifyError.stack : undefined,
+        ipAddress: req.ip,
+      });
       return res.status(401).json({ message: 'Invalid or expired token' });
     }
   } catch (error) {
-    console.error('Authentication error:', error);
+    logger.error('Authentication error', {
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      ipAddress: req.ip,
+    });
     return res.status(500).json({
       message: 'Authentication error',
       error: error instanceof Error ? error.message : 'Unknown error',

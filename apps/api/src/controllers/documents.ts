@@ -1,6 +1,9 @@
 import { Request, Response } from 'express';
 import { DocumentService } from '../services';
 import { DocumentIncreaseTimePeriod } from '../models/document-analytics';
+import { createServiceLogger } from '../utils/logger-utils';
+
+const logger = createServiceLogger('DocumentsController');
 
 /**
  * Get document count increases over time
@@ -46,7 +49,13 @@ export const getDocumentIncreaseOverTime = async (req: Request, res: Response): 
       periods: increases,
     });
   } catch (error) {
-    console.error('Error fetching document increases:', error);
+    logger.error('Error fetching document increases', {
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      collectionId: req.params.collectionId,
+      duration: req.query.duration,
+      limit: req.query.limit,
+    });
     res.status(500).json({
       message: 'Failed to fetch document increases',
       error: error instanceof Error ? error.message : 'Unknown error',
@@ -77,7 +86,12 @@ export const getDocuments = async (req: Request, res: Response): Promise<void> =
 
     res.status(200).json(documents);
   } catch (error) {
-    console.error('Error fetching documents:', error);
+    logger.error('Error fetching documents', {
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      collectionId: req.params.collectionId,
+      query: req.query,
+    });
     res.status(500).json({
       message: 'Failed to fetch documents',
       error: error instanceof Error ? error.message : 'Unknown error',
@@ -100,7 +114,12 @@ export const getDocument = async (req: Request, res: Response): Promise<void> =>
     const document = await DocumentService.getDocument(collectionId, documentId);
     res.status(200).json(document);
   } catch (error) {
-    console.error('Error fetching document:', error);
+    logger.error('Error fetching document', {
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      collectionId: req.params.collectionId,
+      documentId: req.params.documentId,
+    });
     res.status(500).json({
       message: 'Failed to fetch document',
       error: error instanceof Error ? error.message : 'Unknown error',
@@ -124,7 +143,11 @@ export const createDocument = async (req: Request, res: Response): Promise<void>
     const document = await DocumentService.createDocument(collectionId, documentData);
     res.status(201).json(document);
   } catch (error) {
-    console.error('Error creating document:', error);
+    logger.error('Error creating document', {
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      collectionId: req.params.collectionId,
+    });
     res.status(500).json({
       message: 'Failed to create document',
       error: error instanceof Error ? error.message : 'Unknown error',
@@ -141,28 +164,32 @@ export const createDocuments = async (req: Request, res: Response): Promise<void
     const { documents, skipDuplicateSlugs = true } = req.body;
 
     if (!collectionId || !Array.isArray(documents) || documents.length === 0) {
-      res.status(400).json({ 
+      res.status(400).json({
         message: 'Collection ID and documents array are required',
         format: {
           documents: 'Array of document objects',
-          skipDuplicateSlugs: 'Boolean (optional, default: true)'
-        }
+          skipDuplicateSlugs: 'Boolean (optional, default: true)',
+        },
       });
       return;
     }
 
     const result = await DocumentService.createDocuments(
-      collectionId, 
-      documents, 
-      skipDuplicateSlugs
+      collectionId,
+      documents,
+      skipDuplicateSlugs,
     );
-    
+
     res.status(207).json({
       message: `Created ${result.totalSuccessful} documents, failed to create ${result.totalFailed} documents`,
-      ...result
+      ...result,
     });
   } catch (error) {
-    console.error('Error creating documents in batch:', error);
+    logger.error('Error creating documents in batch', {
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      collectionId: req.params.collectionId,
+    });
     res.status(500).json({
       message: 'Failed to create documents in batch',
       error: error instanceof Error ? error.message : 'Unknown error',
@@ -188,7 +215,12 @@ export const updateDocument = async (req: Request, res: Response): Promise<void>
     const document = await DocumentService.updateDocument(collectionId, documentId, documentData);
     res.status(200).json(document);
   } catch (error) {
-    console.error('Error updating document:', error);
+    logger.error('Error updating document', {
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      collectionId: req.params.collectionId,
+      documentId: req.params.documentId,
+    });
     res.status(500).json({
       message: 'Failed to update document',
       error: error instanceof Error ? error.message : 'Unknown error',
@@ -211,7 +243,12 @@ export const deleteDocument = async (req: Request, res: Response): Promise<void>
     await DocumentService.deleteDocument(collectionId, documentId);
     res.status(204).end();
   } catch (error) {
-    console.error('Error deleting document:', error);
+    logger.error('Error deleting document', {
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      collectionId: req.params.collectionId,
+      documentId: req.params.documentId,
+    });
     res.status(500).json({
       message: 'Failed to delete document',
       error: error instanceof Error ? error.message : 'Unknown error',
@@ -241,7 +278,11 @@ export const getDocumentCount = async (req: Request, res: Response): Promise<voi
       total: documents.total,
     });
   } catch (error) {
-    console.error('Error fetching document count:', error);
+    logger.error('Error fetching document count', {
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      collectionId: req.params.collectionId,
+    });
     res.status(500).json({
       message: 'Failed to fetch document count',
       error: error instanceof Error ? error.message : 'Unknown error',

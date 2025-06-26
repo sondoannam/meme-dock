@@ -11,6 +11,7 @@ import {
   ImagePreviewOptions,
 } from './image-platform.interface';
 import { createValidationOptions } from './image.service';
+import { createServiceLogger } from '../../utils/logger-utils';
 
 /**
  * Type definition for generic ImageKit file data (common properties across different responses)
@@ -31,6 +32,7 @@ import { createValidationOptions } from './image.service';
  * ImageKit implementation of the ImagePlatformService
  */
 export class ImageKitImageService implements ImagePlatformService {
+  private logger = createServiceLogger('ImageKitImageService');
   /**
    * Upload a single image file to ImageKit
    */
@@ -84,7 +86,15 @@ export class ImageKitImageService implements ImagePlatformService {
       // This is necessary because ImageKit types don't include index signature
       return this.mapImageKitResultToImageMetadata(result as unknown as Record<string, unknown>);
     } catch (error) {
-      console.error('Error uploading image to ImageKit:', error);
+      this.logger.error('Error uploading image to ImageKit', {
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+        fileInfo: {
+          originalname: file.originalname,
+          mimetype: file.mimetype,
+          size: file.size,
+        },
+      });
 
       // Rethrow AppErrors as is, wrap other errors
       if (error instanceof ConfigError || error instanceof FileError) {
@@ -111,8 +121,8 @@ export class ImageKitImageService implements ImagePlatformService {
       const MAX_FILES = 20;
       if (files.length > MAX_FILES) {
         throw new FileError(`Too many files. Maximum allowed is ${MAX_FILES}`);
-      } 
-      
+      }
+
       // Create validation options by merging defaults with provided options
       const validationOptions = createValidationOptions(options);
 
@@ -123,7 +133,11 @@ export class ImageKitImageService implements ImagePlatformService {
       const uploadPromises = files.map((file) => this.uploadImage(file, options));
       return Promise.all(uploadPromises);
     } catch (error) {
-      console.error('Error uploading multiple files to ImageKit:', error);
+      this.logger.error('Error uploading multiple files to ImageKit', {
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+        filesCount: files.length,
+      });
 
       // Rethrow AppErrors as is, wrap other errors
       if (error instanceof ConfigError || error instanceof FileError) {
@@ -155,7 +169,11 @@ export class ImageKitImageService implements ImagePlatformService {
         fileDetails as unknown as Record<string, unknown>,
       );
     } catch (error) {
-      console.error('Error getting image metadata from ImageKit:', error);
+      this.logger.error('Error getting image metadata from ImageKit', {
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+        imageId,
+      });
 
       // Rethrow AppErrors as is, wrap other errors
       if (error instanceof ConfigError || error instanceof FileError) {
@@ -215,7 +233,11 @@ export class ImageKitImageService implements ImagePlatformService {
         hasMore: false, // ImageKit API doesn't provide this information directly
       };
     } catch (error) {
-      console.error('Error listing files from ImageKit:', error);
+      this.logger.error('Error listing files from ImageKit', {
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+        options,
+      });
 
       // Rethrow AppErrors as is, wrap other errors
       if (error instanceof ConfigError || error instanceof FileError) {
@@ -246,7 +268,11 @@ export class ImageKitImageService implements ImagePlatformService {
       const imagekit = getImageKit();
       await imagekit.deleteFile(imageId);
     } catch (error) {
-      console.error('Error deleting image from ImageKit:', error);
+      this.logger.error('Error deleting image from ImageKit', {
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+        imageId,
+      });
 
       // Rethrow AppErrors as is, wrap other errors
       if (error instanceof ConfigError || error instanceof FileError) {
@@ -278,7 +304,11 @@ export class ImageKitImageService implements ImagePlatformService {
       // We'll use the URL endpoint from config and the file ID
       return `${IMAGEKIT_CONFIG.urlEndpoint}/${imageId}?download=true`;
     } catch (error) {
-      console.error('Error getting image download URL from ImageKit:', error);
+      this.logger.error('Error getting image download URL from ImageKit', {
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+        imageId,
+      });
 
       // Rethrow AppErrors as is, wrap other errors
       if (error instanceof ConfigError || error instanceof FileError) {
@@ -347,7 +377,12 @@ export class ImageKitImageService implements ImagePlatformService {
         transformation: transformation.length > 0 ? transformation : undefined,
       });
     } catch (error) {
-      console.error('Error getting image preview URL from ImageKit:', error);
+      this.logger.error('Error getting image preview URL from ImageKit', {
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+        imageId,
+        options,
+      });
 
       // Rethrow AppErrors as is, wrap other errors
       if (error instanceof ConfigError || error instanceof FileError) {
@@ -382,7 +417,11 @@ export class ImageKitImageService implements ImagePlatformService {
         path: imageId,
       });
     } catch (error) {
-      console.error('Error getting image view URL from ImageKit:', error);
+      this.logger.error('Error getting image view URL from ImageKit', {
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+        imageId,
+      });
 
       // Rethrow AppErrors as is, wrap other errors
       if (error instanceof ConfigError || error instanceof FileError) {

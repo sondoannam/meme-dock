@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
-import { useForm } from 'react-hook-form';
-import { useRequest } from 'ahooks';
+import { useForm, useWatch } from 'react-hook-form';
+import { useDebounceEffect, useRequest } from 'ahooks';
 import { toast } from 'sonner';
 
 import {
@@ -23,6 +23,9 @@ import { FormDialog } from '@/components/custom/form-dialog';
 import { memeObjectSchema, MemeObjectFormValues } from '@/validators';
 import { documentApi, GetDocumentsParams } from '@/services/document';
 import { MemeObjectType } from '@/types';
+import { translationApi } from '@/services/translate';
+import { InputWithTranslation } from '../input-with-translation';
+import { multiFieldSearch } from '@/lib/utils';
 
 // Trending score color categories
 const getTrendingColor = (score: number) => {
@@ -54,14 +57,57 @@ export function ObjectsTabView({ objectCollectionId, objects, onRefresh }: Objec
     },
   });
 
+  const { control, setValue, reset } = form;
+
+  const labelEn = useWatch({
+    control,
+    name: 'label_en',
+    defaultValue: selectedObject?.label_en || '',
+  });
+
+  const labelVi = useWatch({
+    control,
+    name: 'label_vi',
+    defaultValue: selectedObject?.label_vi || '',
+  });
+
+  const { run: translateLabel, loading: isTranslating } = useRequest(
+    async (text: string, labelToTranslate: 'en' | 'vi') => {
+      if (!text) {
+        toast.error('No text to translate');
+        throw new Error('No text to translate');
+      }
+
+      const translatedLabel = labelToTranslate === 'en' ? 'vi' : 'en';
+
+      return translationApi.translateSimple({
+        text,
+        from: labelToTranslate,
+        to: translatedLabel,
+      });
+    },
+    {
+      manual: true,
+      onSuccess: (result, params) => {
+        const labelToTranslate = params[1] === 'en' ? 'label_vi' : 'label_en';
+        setValue(labelToTranslate, result);
+        toast.success('Translated successfully');
+      },
+      onError: (error) => {
+        toast.error(`Translation failed: ${error.message}`);
+      },
+    },
+  );
+
   const handleOpenCreate = () => {
     setSelectedObject(null);
+    reset();
     cuDialog.open();
   };
 
   const handleOpenUpdate = (object: MemeObjectType) => {
     setSelectedObject(object);
-    form.reset({
+    reset({
       label_en: object.label_en,
       label_vi: object.label_vi,
       slug: object.slug,
@@ -77,6 +123,7 @@ export function ObjectsTabView({ objectCollectionId, objects, onRefresh }: Objec
   const handleCloseCUDialog = () => {
     cuDialog.close();
     setSelectedObject(null);
+    reset();
   };
 
   const handleCloseDeleteDialog = () => {
@@ -139,13 +186,25 @@ export function ObjectsTabView({ objectCollectionId, objects, onRefresh }: Objec
   // Filter objects based on search query
   const filteredObjects = useMemo(
     () =>
-      objects.filter(
-        (object) =>
-          object.label_en.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          object.label_vi.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          object.slug.toLowerCase().includes(searchQuery.toLowerCase()),
+      objects.filter((object) =>
+        searchQuery
+          ? multiFieldSearch(object, searchQuery, ['label_en', 'label_vi', 'slug'], {
+              normalizeAccents: true, // Helps with Vietnamese diacritics
+            })
+          : true,
       ),
     [objects, searchQuery],
+  );
+
+  useDebounceEffect(
+    () => {
+      const formattedLabel = labelEn.trim().toLowerCase().replace(/\s+/g, '-');
+      setValue('slug', formattedLabel);
+    },
+    [labelEn],
+    {
+      wait: 500,
+    },
   );
 
   return (
@@ -225,23 +284,31 @@ export function ObjectsTabView({ objectCollectionId, objects, onRefresh }: Objec
         dialog={cuDialog}
         header={selectedObject ? 'Edit Object' : 'Add New Object'}
         onSubmit={onSubmit}
-        isSubmitting={form.formState.isSubmitting}
         submitText={selectedObject ? 'Save Changes' : 'Add Object'}
         onClose={handleCloseCUDialog}
       >
         <div className="grid gap-4 py-4">
-          <InputText
+          <InputWithTranslation
             name="label_en"
             label="English Label"
             placeholder="e.g. Person"
-            control={form.control}
+            control={control}
+            appear={!!labelVi}
+            translateFn={() => translateLabel(labelVi, 'vi')}
+            isTranslating={isTranslating}
+            tooltipContent="Translate from Vietnamese to English"
           />
-          <InputText
+          <InputWithTranslation
             name="label_vi"
             label="Vietnamese Label"
             placeholder="e.g. Người"
-            control={form.control}
+            control={control}
+            appear={!!labelEn}
+            translateFn={() => translateLabel(labelEn, 'en')}
+            isTranslating={isTranslating}
+            tooltipContent="Translate from English to Vietnamese"
           />
+
           <InputText name="slug" label="Slug" placeholder="e.g. person" control={form.control} />
         </div>
       </FormDialog>

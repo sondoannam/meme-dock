@@ -1,6 +1,9 @@
 import { databases, DATABASE_ID, ID } from '../config/appwrite';
 import { RelationshipType } from 'node-appwrite';
 import { CollectionFieldType, CollectionRes, CUCollectionReq } from '../models/collection-schema';
+import { createServiceLogger } from '../utils/logger-utils';
+
+const logger = createServiceLogger('CollectionService');
 
 /**
  * Helper to map our field schema to Appwrite attributes
@@ -172,7 +175,10 @@ export async function getCollections(): Promise<CollectionRes[]> {
 
     return collections;
   } catch (error) {
-    console.error('Error fetching collections:', error);
+    logger.error('Error fetching collections', {
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+    });
     throw error;
   }
 }
@@ -182,9 +188,7 @@ export async function getCollections(): Promise<CollectionRes[]> {
  * @param collection Collection schema to create
  * @returns Created collection schema
  */
-export async function createCollection(
-  collection: CUCollectionReq,
-): Promise<CollectionRes> {
+export async function createCollection(collection: CUCollectionReq): Promise<CollectionRes> {
   try {
     // Create collection in Appwrite
     const createdCollection = await databases.createCollection(
@@ -209,7 +213,11 @@ export async function createCollection(
       enabled: createdCollection.enabled,
     };
   } catch (error) {
-    console.error(`Error creating collection ${collection.name}:`, error);
+    logger.error(`Error creating collection`, {
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      collectionName: collection.name,
+    });
     throw error;
   }
 }
@@ -253,7 +261,10 @@ export async function updateCollection(
       for (const field of collection.fields) {
         // If field already exists, skip it
         if (existingAttributesMap.has(field.name)) {
-          console.log(`Field ${field.name} already exists, skipping modification`);
+          logger.info(`Field already exists, skipping modification`, {
+            fieldName: field.name,
+            collectionId,
+          });
         } else {
           // Add new field
           await mapFieldToAttribute(field, collectionId);
@@ -270,7 +281,11 @@ export async function updateCollection(
       enabled: existingCollection.enabled,
     };
   } catch (error) {
-    console.error(`Error updating collection ${collectionId}:`, error);
+    logger.error(`Error updating collection`, {
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      collectionId,
+    });
     throw error;
   }
 }
@@ -280,9 +295,7 @@ export async function updateCollection(
  * @param collections Array of collection schemas to create
  * @returns Array of created collection schemas
  */
-export async function createCollections(
-  collections: CUCollectionReq[],
-): Promise<CollectionRes[]> {
+export async function createCollections(collections: CUCollectionReq[]): Promise<CollectionRes[]> {
   try {
     const createdCollections = [];
 
@@ -293,7 +306,11 @@ export async function createCollections(
 
     return createdCollections;
   } catch (error) {
-    console.error('Error creating multiple collections:', error);
+    logger.error('Error creating multiple collections', {
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      collectionsCount: collections.length,
+    });
     throw error;
   }
 }
@@ -306,7 +323,11 @@ export async function deleteCollection(collectionId: string): Promise<void> {
   try {
     await databases.deleteCollection(DATABASE_ID, collectionId);
   } catch (error) {
-    console.error(`Error deleting collection ${collectionId}:`, error);
+    logger.error(`Error deleting collection`, {
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      collectionId,
+    });
     throw error;
   }
 }

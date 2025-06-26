@@ -60,3 +60,24 @@ export interface MemeDocument {
   updatedAt: string;
   usageCount: number;
 }
+
+/**
+ * Translation related types
+ */
+export interface Language {
+  code: string;
+  name: string;
+}
+
+export interface TranslationParams {
+  text: string;
+  from?: string;
+  to: string;
+}
+
+export interface TranslationResponse {
+  originalText: string;
+  translatedText: string;
+  fromLanguage: string;
+  toLanguage: string;
+}

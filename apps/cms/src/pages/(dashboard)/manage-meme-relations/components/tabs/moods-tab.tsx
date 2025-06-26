@@ -1,4 +1,8 @@
 import { useState, useMemo } from 'react';
+import { toast } from 'sonner';
+import { useDebounceEffect, useRequest } from 'ahooks';
+import { multiFieldSearch } from '@/lib/utils';
+
 import {
   Card,
   CardContent,
@@ -12,17 +16,17 @@ import { Plus, Pencil, Trash2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { DialogCustom } from '@/components/custom/dialog-custom';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { InputText } from '@/components/custom/form-field/input-text';
-import { useRequest } from 'ahooks';
-import { toast } from 'sonner';
+import { FormDialog } from '@/components/custom/form-dialog';
 // import { Slider } from '@/components/ui/slider';
 
+import { translationApi } from '@/services/translate';
 import { memeMoodSchema, MemeMoodFormValues } from '@/validators';
-import { FormDialog } from '@/components/custom/form-dialog';
 import { documentApi, GetDocumentsParams } from '@/services/document';
 import { MemeMoodType } from '@/types';
+import { InputWithTranslation } from '../input-with-translation';
 // import { MoodsBatchCreation } from '@/components/custom/MoodsBatchCreation';
 
 // Trending score color categories
@@ -62,14 +66,58 @@ export function MoodsTabView({ moodCollectionId, moods, onRefresh }: MoodsViewPr
     },
   });
 
+  const { control, setValue, reset } = form;
+
+  // Watch the form fields to show/hide translation buttons
+  const labelEn = useWatch({
+    control,
+    name: 'label_en',
+    defaultValue: selectedMood?.label_en || '',
+  });
+
+  const labelVi = useWatch({
+    control,
+    name: 'label_vi',
+    defaultValue: selectedMood?.label_vi || '',
+  });
+
+  const { run: translateLabel, loading: isTranslating } = useRequest(
+    async (text: string, labelToTranslate: 'en' | 'vi') => {
+      if (!text) {
+        toast.error('No text to translate');
+        throw new Error('No text to translate');
+      }
+
+      const translatedLabel = labelToTranslate === 'en' ? 'vi' : 'en';
+
+      return translationApi.translateSimple({
+        text,
+        from: labelToTranslate,
+        to: translatedLabel,
+      });
+    },
+    {
+      manual: true,
+      onSuccess: (result, params) => {
+        const labelToTranslate = params[1] === 'en' ? 'label_vi' : 'label_en';
+        setValue(labelToTranslate, result, { shouldValidate: true });
+        toast.success('Translated successfully');
+      },
+      onError: (error) => {
+        toast.error(`Translation failed: ${error.message}`);
+      },
+    },
+  );
+
   const handleOpenCreate = () => {
     setSelectedMood(null);
+    reset();
     cuDialog.open();
-  }
+  };
 
   const handleOpenUpdate = (mood: MemeMoodType) => {
     setSelectedMood(mood);
-    form.reset({
+    reset({
       label_en: mood.label_en,
       label_vi: mood.label_vi,
       slug: mood.slug,
@@ -80,7 +128,7 @@ export function MoodsTabView({ moodCollectionId, moods, onRefresh }: MoodsViewPr
   const handleCloseCUDialog = () => {
     cuDialog.close();
     setSelectedMood(null);
-    form.reset();
+    reset();
   };
 
   const handleOpenDelete = (mood: MemeMoodType) => {
@@ -91,7 +139,7 @@ export function MoodsTabView({ moodCollectionId, moods, onRefresh }: MoodsViewPr
   const handleCloseDelete = () => {
     deleteDialog.close();
     setSelectedMood(null);
-  }
+  };
 
   const createOrUpdateMood = async (data: MemeMoodFormValues) => {
     const defaultPayload: Partial<MemeMoodType> = {
@@ -146,28 +194,40 @@ export function MoodsTabView({ moodCollectionId, moods, onRefresh }: MoodsViewPr
     }
   }; // Handle delete is now directly passed to DialogCustom component through onConfirmDelete
 
-  // Filter moods based on search query
+  // Filter moods based on search query using the enhanced multi-field search
   const filteredMoods = useMemo(
     () =>
-      moods.filter(
-        (mood) =>
-          mood.label_en.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          mood.label_vi.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          mood.slug.toLowerCase().includes(searchQuery.toLowerCase()),
+      moods.filter((mood) =>
+        searchQuery
+          ? multiFieldSearch(mood, searchQuery, ['label_en', 'label_vi', 'slug'], {
+              normalizeAccents: true, // Helps with Vietnamese diacritics
+            })
+          : true
       ),
     [moods, searchQuery],
   );
 
+  useDebounceEffect(
+    () => {
+      const formattedLabel = labelEn.trim().toLowerCase().replace(/\s+/g, '-');
+      setValue('slug', formattedLabel);
+    },
+    [labelEn],
+    {
+      wait: 500,
+    },
+  );
+
   return (
     <div className="space-y-6 p-1">
-      <div className="flex flex-col gap-4 md:flex-row justify-between items-start md:items-center">        <Input
+      <div className="flex flex-col gap-4 md:flex-row justify-between items-start md:items-center">
+        <Input
           className="max-w-sm"
           placeholder="Search moods..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
         />
-
-        <div className="flex gap-2">          
+        <div className="flex gap-2">
           {/* One-time batch creation button - Delete or comment out after use */}
           {/* {moods.length === 0 && (
             <MoodsBatchCreation 
@@ -182,7 +242,7 @@ export function MoodsTabView({ moodCollectionId, moods, onRefresh }: MoodsViewPr
           </Button>
         </div>
       </div>
-      {/* Grid of moods */}{' '}
+      {/* Grid of moods */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-4">
         {filteredMoods.map((mood) => (
           <Card key={mood.id} className="overflow-hidden hover:shadow-md transition-all">
@@ -254,22 +314,31 @@ export function MoodsTabView({ moodCollectionId, moods, onRefresh }: MoodsViewPr
         onSubmit={onSubmit}
         submitText={selectedMood ? 'Save Changes' : 'Add Mood'}
         onClose={handleCloseCUDialog}
-        isSubmitting={form.formState.isSubmitting}
       >
         <div className="grid gap-4 py-4">
-          <InputText
+          <InputWithTranslation
             name="label_en"
             label="English Label"
             placeholder="e.g. Happy"
-            control={form.control}
+            control={control}
+            appear={!!labelVi}
+            translateFn={() => translateLabel(labelVi, 'vi')}
+            isTranslating={isTranslating}
+            tooltipContent="Translate from Vietnamese to English"
           />
-          <InputText
+
+          <InputWithTranslation
             name="label_vi"
             label="Vietnamese Label"
             placeholder="e.g. Vui vẻ"
-            control={form.control}
+            control={control}
+            appear={!!labelEn}
+            translateFn={() => translateLabel(labelEn, 'en')}
+            isTranslating={isTranslating}
+            tooltipContent="Translate from English to Vietnamese"
           />
-          <InputText name="slug" label="Slug" placeholder="e.g. happy" control={form.control} />
+
+          <InputText name="slug" label="Slug" placeholder="e.g. happy" control={control} />
           {/* <div className="space-y-2">
             <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
               Intensity: {intensityValue}/10
@@ -287,7 +356,7 @@ export function MoodsTabView({ moodCollectionId, moods, onRefresh }: MoodsViewPr
             </p>
           </div> */}
         </div>
-      </FormDialog>{' '}
+      </FormDialog>
       {/* Delete Confirmation Dialog */}
       <DialogCustom
         dialog={deleteDialog}

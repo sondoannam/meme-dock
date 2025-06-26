@@ -1,6 +1,10 @@
 import { databases, DATABASE_ID } from '../config/appwrite';
 import { DocumentResponse } from '../models/document';
 import { getDocuments, GetDocumentsParams } from './document.service';
+import { createServiceLogger } from '../utils/logger-utils';
+
+// Create a logger for the meme service
+const logger = createServiceLogger('MemeService');
 
 /**
  * Meme document structure
@@ -76,10 +80,13 @@ export class MemeService {
       const document = await databases.updateDocument(DATABASE_ID, memeCollectionId, memeId, {
         usageCount: currentCount + 1,
       });
-
       return formatDocument(document);
     } catch (error) {
-      console.error(`Error incrementing usage count for meme ${memeId}:`, error);
+      logger.error(`Error incrementing usage count for meme ${memeId}`, {
+        error: error instanceof Error ? error.message : String(error),
+        memeId,
+        collectionId: memeCollectionId,
+      });
       throw error;
     }
   }
