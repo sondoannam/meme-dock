@@ -25,6 +25,7 @@ export default async function ({ req, res, log }) {
   try {
     // Log the incoming request body to help with debugging
     log('log info:', req['body']);
+    log('Appwrite function to trigger by this function:', APPWRITE_FUNCTION_ID);
 
     // Extract the event data from request body
     // Since req["body"] is an object containing JSON data inside
