@@ -209,7 +209,7 @@ export default function ImagesTab({ relationOptions, onRefreshRelations }: Image
                 createUpdateDialog.open();
               }}
             >
-              <Upload className="mr-2 h-4 w-4" /> Upload Image
+              <Upload className="mr-2 h-4 w-4" /> Upload Meme
             </Button>
           </div>
         </CardHeader>

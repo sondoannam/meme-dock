@@ -1,4 +1,16 @@
-import { databases, APPWRITE_DATABASE_ID as DATABASE_ID } from '../config/appwrite';
+import { Client, Databases } from 'node-appwrite';
+
+const {
+  APPWRITE_DATABASE_ID,
+  APPWRITE_ENDPOINT,
+  APPWRITE_PROJECT_ID,
+  OBJECT_COLLECTION_ID,
+  TAG_COLLECTION_ID,
+  MOOD_COLLECTION_ID,
+  OBJECT_USAGES_COLLECTION_ID,
+  TAG_USAGES_COLLECTION_ID,
+  MOOD_USAGES_COLLECTION_ID
+} = process.env;
 
 /**
  * Function to increase usage count for objects, tags, or moods
@@ -11,18 +23,18 @@ import { databases, APPWRITE_DATABASE_ID as DATABASE_ID } from '../config/appwri
  *   eventType?: 'upload' | 'copy' | 'download',
  *   userId?: string
  * }
- * 
- * Environment variables:
- * - DATABASE_ID: Appwrite database ID
- * - OBJECT_COLLECTION_ID: Collection ID for objects
- * - TAG_COLLECTION_ID: Collection ID for tags
- * - MOOD_COLLECTION_ID: Collection ID for moods
- * - OBJECT_USAGES_COLLECTION_ID: Collection ID for object usage records
- * - TAG_USAGES_COLLECTION_ID: Collection ID for tag usage records
- * - MOOD_USAGES_COLLECTION_ID: Collection ID for mood usage records
  */
 export default async function ({ req, res, log }) {
   log('Increase usage count function started');
+
+  const KEY = req.headers['x-appwrite-key'];
+
+  const client = new Client()
+  .setEndpoint(APPWRITE_ENDPOINT)
+  .setProject(APPWRITE_PROJECT_ID)
+  .setKey(KEY);
+
+  const databases = new Databases(client);
 
   try {
     // Validate request body
@@ -38,18 +50,18 @@ export default async function ({ req, res, log }) {
     // Get collection IDs from environment variables
     const collectionMap = {
       object: {
-        collection: process.env.OBJECT_COLLECTION_ID,
-        usagesCollection: process.env.OBJECT_USAGES_COLLECTION_ID,
+        collection: OBJECT_COLLECTION_ID,
+        usagesCollection: OBJECT_USAGES_COLLECTION_ID,
         idField: 'objectId'
       },
       tag: {
-        collection: process.env.TAG_COLLECTION_ID,
-        usagesCollection: process.env.TAG_USAGES_COLLECTION_ID,
+        collection: TAG_COLLECTION_ID,
+        usagesCollection: TAG_USAGES_COLLECTION_ID,
         idField: 'tagId'
       },
       mood: {
-        collection: process.env.MOOD_COLLECTION_ID,
-        usagesCollection: process.env.MOOD_USAGES_COLLECTION_ID,
+        collection: MOOD_COLLECTION_ID,
+        usagesCollection: MOOD_USAGES_COLLECTION_ID,
         idField: 'moodId'
       }
     };
@@ -66,7 +78,7 @@ export default async function ({ req, res, log }) {
     const { collection, usagesCollection, idField } = collectionMap[collectionType];
     
     // Check if collection ID is available
-    if (!DATABASE_ID || !collection || !usagesCollection) {
+    if (!APPWRITE_DATABASE_ID || !collection || !usagesCollection) {
       return res.json({
         success: false,
         message: `Missing environment variables for ${collectionType} collections.`,
@@ -81,11 +93,11 @@ export default async function ({ req, res, log }) {
       ids.map(async (id) => {
         try {
           // 1. Get the current document
-          const document = await databases.getDocument(DATABASE_ID, collection, id);
+          const document = await databases.getDocument(APPWRITE_DATABASE_ID, collection, id);
             // 2. Increment usage count and update lastUsedAt
           const currentCount = document.usageCount || 0;
           await databases.updateDocument(
-            DATABASE_ID,
+            APPWRITE_DATABASE_ID,
             collection,
             id,
             {
@@ -109,7 +121,7 @@ export default async function ({ req, res, log }) {
             }
             
             await databases.createDocument(
-              DATABASE_ID,
+              APPWRITE_DATABASE_ID,
               usagesCollection,
               'unique()',  // Let Appwrite generate a unique ID
               usageRecord
