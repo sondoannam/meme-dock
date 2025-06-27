@@ -144,8 +144,7 @@ export default async function ({ req, res, log }) {
             const usageRecord = {
               [idField]: id,
               memeId,
-              eventType,
-              timestamp: currentDate,
+              eventType
             };
 
             // Add userId if provided
