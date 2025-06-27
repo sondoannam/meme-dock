@@ -37,23 +37,16 @@ export default async function ({ req, res, log }) {
   const databases = new Databases(client);
 
   try {
-    log('log info:', req['body']);
-    const bodyData = req['body'] || {};
+    const bodyData = req['body'];
 
-    if (
-      !bodyData['collectionType'] ||
-      !bodyData['ids'] ||
-      !Array.isArray(bodyData['ids']) ||
-      bodyData['ids'].length === 0
-    ) {
-      return res.json(
-        {
-          success: false,
-          message: 'Invalid request. Required parameters: collectionType (string) and ids (array).',
-        },
-        400,
-      );
-    }
+    log('Body data:', bodyData);
+    log('Extracted parameters:', {
+      collectionType: bodyData['collectionType'],
+      ids: bodyData['ids'],
+      memeId: bodyData['memeId'],
+      eventType: bodyData['eventType'],
+      userId: bodyData['userId'],
+    });
 
     const collectionType = bodyData['collectionType'];
     const ids = bodyData['ids'] || [];
