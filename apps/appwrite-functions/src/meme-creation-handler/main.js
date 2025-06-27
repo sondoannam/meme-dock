@@ -23,10 +23,13 @@ export default async function ({ req, res, log }) {
     .setKey(KEY);
 
   try {
-    log('log info:', req["body"]);
-    // Extract the event data from request body
-    const documentData = JSON.parse(req["body"]);
+    // Log the incoming request body to help with debugging
+    log('log info:', req['body']);
 
+    // Extract the event data from request body
+    // Since req["body"] is an object containing JSON data inside
+    const documentData = req['body'];
+    
     // Check if this is a meme document creation event
     if (!documentData || !documentData.$id) {
       return res.json(
@@ -80,7 +83,7 @@ export default async function ({ req, res, log }) {
     if (tagIds.length > 0) {
       log(`Processing ${tagIds.length} tagIds`);
       const tagResult = await functions.createExecution(
-        increaseUsageCountFunctionId,
+        APPWRITE_FUNCTION_ID,
         JSON.stringify({
           collectionType: 'tag',
           ids: tagIds,
@@ -100,7 +103,7 @@ export default async function ({ req, res, log }) {
     if (moodIds.length > 0) {
       log(`Processing ${moodIds.length} moodIds`);
       const moodResult = await functions.createExecution(
-        increaseUsageCountFunctionId,
+        APPWRITE_FUNCTION_ID,
         JSON.stringify({
           collectionType: 'mood',
           ids: moodIds,

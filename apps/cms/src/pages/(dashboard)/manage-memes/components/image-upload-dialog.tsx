@@ -186,7 +186,14 @@ export function ImageUploadDialog({
   };
 
   const handleClose = () => {
-    form.reset();
+    form.reset({
+      title_en: '',
+      title_vi: '',
+      description: '',
+      tags: [],
+      objects: [],
+      moods: [],
+    });
     setFiles(null);
     dialogInstance.close();
   };
