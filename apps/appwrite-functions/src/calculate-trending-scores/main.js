@@ -103,7 +103,7 @@ export default async function ({ req, res, log }) {
                   usagesCollection,
                   [
                     Query.equal(idField, document.$id),
-                    Query.greaterThanEqual('timestamp', recentCutoffIso),
+                    Query.greaterThanEqual('$createdAt', recentCutoffIso),
                   ],
                 );
 
