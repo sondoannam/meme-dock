@@ -1,6 +1,6 @@
 import { Client, Functions } from 'node-appwrite';
 
-const { APPWRITE_ENDPOINT, APPWRITE_PROJECT_ID, APPWRITE_FUNCTION_ID } = process.env;
+const { APPWRITE_ENDPOINT, APPWRITE_PROJECT_ID, FUNCTION_ID } = process.env;
 
 /**
  * Handle the creation of a new meme document by updating usage counts
@@ -10,7 +10,7 @@ const { APPWRITE_ENDPOINT, APPWRITE_PROJECT_ID, APPWRITE_FUNCTION_ID } = process
  * when a new meme document is created.
  *
  * Environment variables:
- * - APPWRITE_FUNCTION_ID: ID of the increase-usage-count function
+ * - FUNCTION_ID: ID of the increase-usage-count function
  */
 export default async function ({ req, res, log }) {
   log('Meme creation handler started');
@@ -25,7 +25,7 @@ export default async function ({ req, res, log }) {
   try {
     // Log the incoming request body to help with debugging
     log('log info:', req['body']);
-    log('Appwrite function to trigger by this function:', APPWRITE_FUNCTION_ID);
+    log('Appwrite function to trigger by this function:', FUNCTION_ID);
 
     // Extract the event data from request body
     // Since req["body"] is an object containing JSON data inside
@@ -64,7 +64,7 @@ export default async function ({ req, res, log }) {
     if (objectIds.length > 0) {
       log(`Processing ${objectIds.length} objectIds`);
       const objectResult = await functions.createExecution(
-        APPWRITE_FUNCTION_ID,
+        FUNCTION_ID,
         JSON.stringify({
           collectionType: 'object',
           ids: objectIds,
@@ -84,7 +84,7 @@ export default async function ({ req, res, log }) {
     if (tagIds.length > 0) {
       log(`Processing ${tagIds.length} tagIds`);
       const tagResult = await functions.createExecution(
-        APPWRITE_FUNCTION_ID,
+        FUNCTION_ID,
         JSON.stringify({
           collectionType: 'tag',
           ids: tagIds,
@@ -104,7 +104,7 @@ export default async function ({ req, res, log }) {
     if (moodIds.length > 0) {
       log(`Processing ${moodIds.length} moodIds`);
       const moodResult = await functions.createExecution(
-        APPWRITE_FUNCTION_ID,
+        FUNCTION_ID,
         JSON.stringify({
           collectionType: 'mood',
           ids: moodIds,
