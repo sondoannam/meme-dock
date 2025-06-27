@@ -1,10 +1,6 @@
 import { Client, Functions } from 'node-appwrite';
 
-const {
-  APPWRITE_ENDPOINT,
-  APPWRITE_PROJECT_ID,
-  APPWRITE_FUNCTION_ID,
-} = process.env;
+const { APPWRITE_ENDPOINT, APPWRITE_PROJECT_ID, APPWRITE_FUNCTION_ID } = process.env;
 
 /**
  * Handle the creation of a new meme document by updating usage counts
@@ -22,13 +18,17 @@ export default async function ({ req, res, log }) {
   const KEY = req.headers['x-appwrite-key'];
 
   const client = new Client()
-  .setEndpoint(APPWRITE_ENDPOINT)
-  .setProject(APPWRITE_PROJECT_ID)
-  .setKey(KEY);
+    .setEndpoint(APPWRITE_ENDPOINT)
+    .setProject(APPWRITE_PROJECT_ID)
+    .setKey(KEY);
 
   try {
     // Extract the event data from request body
-    const documentData = JSON.parse(req.body);
+    const documentData = JSON.parse(`${req}`, (key, value) => {
+      if (key === 'body') {
+        return value;
+      }
+    });
     log('log info:', documentData);
 
     // Check if this is a meme document creation event
