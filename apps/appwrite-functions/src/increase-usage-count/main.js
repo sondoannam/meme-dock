@@ -37,6 +37,7 @@ export default async function ({ req, res, log }) {
   const databases = new Databases(client);
 
   try {
+    log('log info:', req["body"]);
     // Validate request body
     const { collectionType, ids, memeId, eventType = 'upload', userId } = req.body || {};
 
