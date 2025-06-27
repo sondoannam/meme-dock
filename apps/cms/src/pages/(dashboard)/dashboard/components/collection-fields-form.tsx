@@ -204,15 +204,6 @@ export const CollectionFieldsForm = () => {
                         />
                       )}
 
-                      {fieldType === 'relation' && (
-                        <InputText
-                          control={control}
-                          name={`fields.${index}.relationCollection`}
-                          label="Related Collection"
-                          placeholder="e.g. users, tags, categories"
-                        />
-                      )}
-
                       {fieldType === 'enum' && (
                         <InputTagsCustom
                           control={control}
@@ -223,6 +214,15 @@ export const CollectionFieldsForm = () => {
                         />
                       )}
                     </>
+                  )}
+
+                  {fieldType === 'relation' && (
+                    <InputText
+                      control={control}
+                      name={`fields.${index}.relationCollection`}
+                      label="Related Collection"
+                      placeholder="e.g. users, tags, categories"
+                    />
                   )}
                 </div>
               </CardContent>
