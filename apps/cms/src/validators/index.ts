@@ -28,7 +28,7 @@ export const fieldTypes: SelectOption[] = [
   { id: 'enum', value: 'enum', label: 'Enum' },
 ];
 
-export type FieldType = (typeof fieldTypes)[number]['value'];
+export type FieldType = 'string' | 'number' | 'float' | 'boolean' | 'array' | 'datetime' | 'relation' | 'enum';
 
 // Collection field validation schema
 export const collectionFieldSchema = z

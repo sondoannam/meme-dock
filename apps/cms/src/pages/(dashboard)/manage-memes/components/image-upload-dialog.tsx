@@ -512,7 +512,7 @@ export function ImageUploadDialog({
                     : 'Uploading...'
                   : isUpdateMode
                   ? 'Update Meme'
-                  : 'Upload Image'}
+                  : 'Upload Meme'}
               </Button>
             </div>
           </form>

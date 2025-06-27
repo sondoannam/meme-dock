@@ -4,7 +4,7 @@ import { useFieldArray, useFormContext } from 'react-hook-form';
 import { InputText } from '@/components/custom/form-field/input-text';
 import { InputSimpleSelect } from '@/components/custom/form-field/input-simple-select';
 import { InputTagsCustom } from '@/components/custom/form-field/input-tags-custom';
-import { fieldTypes, type CollectionFieldType } from '@/validators';
+import { FieldType, fieldTypes, type CollectionFieldType } from '@/validators';
 import { Card, CardContent } from '@/components/ui/card';
 import { FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form';
 import { Switch } from '@/components/ui/switch';
@@ -91,7 +91,8 @@ export const CollectionFieldsForm = () => {
 
       <div className="space-y-4">
         {fields.map((field, index) => {
-          const fieldType = watch(`fields.${index}.type`);
+          const fieldType = watch(`fields.${index}.type`) as FieldType;
+          const isRequired = watch(`fields.${index}.required`) as boolean;
           const isEnum = fieldType === 'enum';
 
           return (
@@ -179,13 +180,40 @@ export const CollectionFieldsForm = () => {
                     placeholder="Field description (optional)"
                   />
 
-                  {fieldType !== 'enum' && (
-                    <InputText
-                      control={control}
-                      name={`fields.${index}.defaultValue`}
-                      label="Default Value"
-                      placeholder="Default value (optional)"
-                    />
+                  {!isRequired && (
+                    <>
+                      {(fieldType === 'string' || fieldType === 'number') && (
+                        <InputText
+                          control={control}
+                          name={`fields.${index}.defaultValue`}
+                          label="Default Value"
+                          placeholder="Default value (optional)"
+                        />
+                      )}
+
+                      {fieldType === 'boolean' && (
+                        <InputSimpleSelect
+                          control={control}
+                          name={`fields.${index}.defaultValue`}
+                          label="Default Value"
+                          placeholder="Default value (optional)"
+                          options={[
+                            { id: 'true', value: 'true', label: 'True' },
+                            { id: 'false', value: 'false', label: 'False' },
+                          ]}
+                        />
+                      )}
+
+                      {fieldType === 'enum' && (
+                        <InputTagsCustom
+                          control={control}
+                          name={`fields.${index}.enumValues`}
+                          label="Enum Values"
+                          placeholder="Enter values and press Enter..."
+                          description="Add each possible enum value and press Enter after each one"
+                        />
+                      )}
+                    </>
                   )}
 
                   {fieldType === 'relation' && (
@@ -194,16 +222,6 @@ export const CollectionFieldsForm = () => {
                       name={`fields.${index}.relationCollection`}
                       label="Related Collection"
                       placeholder="e.g. users, tags, categories"
-                    />
-                  )}
-
-                  {fieldType === 'enum' && (
-                    <InputTagsCustom
-                      control={control}
-                      name={`fields.${index}.enumValues`}
-                      label="Enum Values"
-                      placeholder="Enter values and press Enter..."
-                      description="Add each possible enum value and press Enter after each one"
                     />
                   )}
                 </div>

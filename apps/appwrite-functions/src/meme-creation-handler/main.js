@@ -1,5 +1,10 @@
-import { client } from '../config/appwrite';
-import { Functions } from 'node-appwrite';
+import { Client, Functions } from 'node-appwrite';
+
+const {
+  APPWRITE_ENDPOINT,
+  APPWRITE_PROJECT_ID,
+  APPWRITE_FUNCTION_ID,
+} = process.env;
 
 /**
  * Handle the creation of a new meme document by updating usage counts
@@ -8,13 +13,18 @@ import { Functions } from 'node-appwrite';
  * This function is designed to be triggered by a database event
  * when a new meme document is created.
  *
- * Event pattern: databases.*.collections.memes.documents.*.create
- *
  * Environment variables:
  * - APPWRITE_FUNCTION_ID: ID of the increase-usage-count function
  */
 export default async function ({ req, res, log }) {
   log('Meme creation handler started');
+
+  const KEY = req.headers['x-appwrite-key'];
+
+  const client = new Client()
+  .setEndpoint(APPWRITE_ENDPOINT)
+  .setProject(APPWRITE_PROJECT_ID)
+  .setKey(KEY);
 
   try {
     // Extract the event data from request body
@@ -48,18 +58,6 @@ export default async function ({ req, res, log }) {
       });
     }
 
-    // Get the increase-usage-count function ID
-    const increaseUsageCountFunctionId = process.env.APPWRITE_FUNCTION_ID;
-    if (!increaseUsageCountFunctionId) {
-      return res.json(
-        {
-          success: false,
-          message: 'Missing APPWRITE_FUNCTION_ID environment variable',
-        },
-        500,
-      );
-    }
-
     const functions = new Functions(client);
     const results = [];
 
@@ -67,7 +65,7 @@ export default async function ({ req, res, log }) {
     if (objectIds.length > 0) {
       log(`Processing ${objectIds.length} objectIds`);
       const objectResult = await functions.createExecution(
-        increaseUsageCountFunctionId,
+        APPWRITE_FUNCTION_ID,
         JSON.stringify({
           collectionType: 'object',
           ids: objectIds,
