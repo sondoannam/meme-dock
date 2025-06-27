@@ -37,22 +37,32 @@ export default async function ({ req, res, log }) {
   const databases = new Databases(client);
 
   try {
-    const bodyData = req['body'];
+    // Get data from the request body
+    let rawData = req['body'];
+    
+    // Log the raw data for debugging
+    log('Raw body:', rawData);
+    log('Raw data type:', typeof rawData);
 
-    log('Body data:', bodyData);
+    rawData = JSON.stringify(rawData);
+    const bodyData = JSON.parse(rawData);
+    
+    log('Processed body data:', bodyData);
+    
+    // Extract parameters safely with fallbacks
+    const collectionType = bodyData?.collectionType;
+    const ids = bodyData?.ids || [];
+    const memeId = bodyData?.memeId;
+    const eventType = bodyData?.eventType || 'upload';
+    const userId = bodyData?.userId;
+    
     log('Extracted parameters:', {
-      collectionType: bodyData['collectionType'],
-      ids: bodyData['ids'],
-      memeId: bodyData['memeId'],
-      eventType: bodyData['eventType'],
-      userId: bodyData['userId'],
+      collectionType,
+      ids,
+      memeId,
+      eventType,
+      userId,
     });
-
-    const collectionType = bodyData['collectionType'];
-    const ids = bodyData['ids'] || [];
-    const memeId = bodyData['memeId'];
-    const eventType = bodyData['eventType'] || 'upload';
-    const userId = bodyData['userId'];
 
     // Get collection IDs from environment variables
     const collectionMap = {
