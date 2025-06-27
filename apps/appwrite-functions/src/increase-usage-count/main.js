@@ -37,9 +37,9 @@ export default async function ({ req, res, log }) {
   const databases = new Databases(client);
 
   try {
-    log('log info:', req["body"]);
+    log('log info:', req['body']);
     // Validate request body
-    const { collectionType, ids, memeId, eventType = 'upload', userId } = req.body || {};
+    const { collectionType, ids, memeId, eventType = 'upload', userId } = req['body'] || {};
 
     if (!collectionType || !ids || !Array.isArray(ids) || ids.length === 0) {
       return res.json({
@@ -50,22 +50,24 @@ export default async function ({ req, res, log }) {
 
     // Get collection IDs from environment variables
     const collectionMap = {
-      object: {
+      "object": {
         collection: OBJECT_COLLECTION_ID,
         usagesCollection: OBJECT_USAGES_COLLECTION_ID,
         idField: 'objectId'
       },
-      tag: {
+      "tag": {
         collection: TAG_COLLECTION_ID,
         usagesCollection: TAG_USAGES_COLLECTION_ID,
         idField: 'tagId'
       },
-      mood: {
+      "mood": {
         collection: MOOD_COLLECTION_ID,
         usagesCollection: MOOD_USAGES_COLLECTION_ID,
         idField: 'moodId'
       }
     };
+
+    log('Collection', collectionMap[collectionType]);
 
     // Validate collection type
     if (!collectionMap[collectionType]) {
@@ -95,7 +97,7 @@ export default async function ({ req, res, log }) {
         try {
           // 1. Get the current document
           const document = await databases.getDocument(APPWRITE_DATABASE_ID, collection, id);
-            // 2. Increment usage count and update lastUsedAt
+          // 2. Increment usage count and update lastUsedAt
           const currentCount = document.usageCount || 0;
           await databases.updateDocument(
             APPWRITE_DATABASE_ID,
