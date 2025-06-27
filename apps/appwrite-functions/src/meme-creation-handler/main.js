@@ -28,9 +28,9 @@ export default async function ({ req, res, log }) {
 
   try {
     // Extract the event data from request body
-    const payload = JSON.parse(req.payload);
-    const documentData = payload['$data'];
-    log('Event data:', documentData);
+    log('log info:', req);
+    const body = JSON.parse(req.body);
+    const documentData = body['$data'];
 
     // Check if this is a meme document creation event
     if (!documentData || !documentData.$id) {
