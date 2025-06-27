@@ -41,12 +41,7 @@ export default async function ({ req, res, log }) {
     // Validate request body
     const { collectionType, ids, memeId, eventType = 'upload', userId } = req['body'] || {};
 
-    if (!collectionType || !ids || !Array.isArray(ids) || ids.length === 0) {
-      return res.json({
-        success: false,
-        message: 'Invalid request. Required parameters: collectionType (string) and ids (array).',
-      }, 400);
-    }
+    log('body data:', collectionType, ids, memeId, eventType, userId);
 
     // Get collection IDs from environment variables
     const collectionMap = {
