@@ -282,6 +282,7 @@ export function ImageUploadDialog({
         </div>
       }
       className="!max-w-[800px] w-full"
+      isDisableClickOutside
     >
       <ScrollArea className="h-[70vh] pr-2.5 w-full">
         <Form {...form}>
