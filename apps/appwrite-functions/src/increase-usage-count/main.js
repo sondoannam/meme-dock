@@ -38,14 +38,27 @@ export default async function ({ req, res, log }) {
 
   try {
     // Get data from the request body
-    let rawData = req['body'];
+    const rawData = req['body'];
     
     // Log the raw data for debugging
     log('Raw body:', rawData);
     log('Raw data type:', typeof rawData);
-
-    rawData = JSON.stringify(rawData);
-    const bodyData = JSON.parse(rawData);
+    
+    // Parse the data properly based on its type
+    let bodyData;
+    if (typeof rawData === 'string') {
+      try {
+        bodyData = JSON.parse(rawData);
+        log('Successfully parsed body string to object');
+      } catch (err) {
+        log('Error parsing body string:', err);
+        // If parsing fails, try to use the string directly
+        bodyData = rawData;
+      }
+    } else {
+      // Already an object
+      bodyData = rawData;
+    }
     
     log('Processed body data:', bodyData);
     
