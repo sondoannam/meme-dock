@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: meme-dock-api
+    runtime: node
+    plan: free
+    rootDir: .
+    buildCommand: pnpm install && pnpm exec nx run @meme-dock/api:build
+    startCommand: node apps/api/dist/main.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3001
+      - key: CORS_ORIGIN
+        sync: false
+      # - key: DATABASE_URL
+      #   sync: false
+      # Add explicit Prisma schema path
+      # - key: PRISMA_SCHEMA_PATH
+      #   value: apps/server/prisma/schema.prisma
+      # Add this to tell bcrypt what platform we're running on
+      # - key: npm_config_target_platform
+      #   value: linux
