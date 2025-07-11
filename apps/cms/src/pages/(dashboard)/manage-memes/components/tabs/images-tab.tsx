@@ -18,7 +18,7 @@ import SearchBar from '@/components/custom/search-bar';
 import { ImageUploadDialog } from '../image-upload-dialog';
 import PaginationComponent from '@/components/custom/pagination';
 
-import { AppwriteMemeCard } from '../cards/appwrite-meme-card';
+import { MemeCard } from '../cards/appwrite-meme-card';
 import { useMemeCollectionStore } from '@/stores/meme-store';
 import memeApi from '@/services/meme';
 import { getAppwriteImageUrl } from '@/lib/utils';
@@ -296,41 +296,12 @@ export default function ImagesTab({ relationOptions, onRefreshRelations }: Image
               </Button>
             </div>
           )}
-          {!loading && selectedStorage === 'imagekit' && (
-            <div className="min-h-[200px] w-full flex flex-col justify-center items-center gap-4">
-              <div className="p-6 bg-muted/50 rounded-lg text-center max-w-md">
-                <ImageIcon className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                <h3 className="text-lg font-medium mb-2">ImageKit Provider</h3>
-                <p className="text-muted-foreground mb-4">
-                  The ImageKit provider integration is currently under development.
-                </p>
-                <Button variant="outline" onClick={() => setSelectedStorage('appwrite')}>
-                  Switch to Appwrite
-                </Button>
-              </div>
-            </div>
-          )}
-          {!loading && selectedStorage === 'all' && (
-            <div className="min-h-[200px] w-full flex flex-col justify-center items-center gap-4">
-              <div className="p-6 bg-muted/50 rounded-lg text-center max-w-md">
-                <ImageIcon className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                <h3 className="text-lg font-medium mb-2">All Providers View</h3>
-                <p className="text-muted-foreground mb-4">
-                  The unified view for all storage providers is under development. Currently, you
-                  can view memes from individual providers.
-                </p>
-                <Button variant="outline" onClick={() => setSelectedStorage('appwrite')}>
-                  Switch to Appwrite
-                </Button>
-              </div>
-            </div>
-          )}
-          {!loading && selectedStorage === 'appwrite' && data && (
+          {!loading && (
             <>
               <div className={`grid ${getGridSizeClass()} gap-4`}>
-                {data.documents.length > 0 ? (
+                {(data && data.documents.length > 0) ? (
                   data.documents.map((meme) => (
-                    <AppwriteMemeCard
+                    <MemeCard
                       key={meme.id}
                       meme={meme}
                       tagNames={tagMap}
@@ -355,7 +326,7 @@ export default function ImagesTab({ relationOptions, onRefreshRelations }: Image
               </div>
 
               {/* Pagination */}
-              {data.total > 0 && (
+              {data && data.total > 0 && (
                 <div className="mt-8 flex justify-center">
                   <PaginationComponent
                     page={currentPage}

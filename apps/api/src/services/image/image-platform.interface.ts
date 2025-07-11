@@ -18,6 +18,7 @@ export interface ImageMetadata {
   tags?: string[]; // Optional tags
   isUploaded?: boolean; // Whether file upload is complete
   uploadProgress?: number; // Upload progress percentage (0-100)
+  src?: string;
 }
 
 /**

@@ -60,7 +60,7 @@ export class ImageKitImageService implements ImagePlatformService {
       // Prepare upload parameters
       const uploadParams: UploadOptions = {
         file: file.buffer, // Binary buffer data
-        fileName: fileName,
+        fileName,
         useUniqueFileName: useUniqueFileName,
       };
 
@@ -83,8 +83,7 @@ export class ImageKitImageService implements ImagePlatformService {
       const result = await imagekit.upload(uploadParams);
 
       // Map ImageKit result to our standardized ImageMetadata using type assertion
-      // This is necessary because ImageKit types don't include index signature
-      return this.mapImageKitResultToImageMetadata(result as unknown as Record<string, unknown>);
+      return this.mapImageKitResultToImageMetadata(result as any);
     } catch (error) {
       this.logger.error('Error uploading image to ImageKit', {
         error: error instanceof Error ? error.message : String(error),
@@ -481,6 +480,7 @@ export class ImageKitImageService implements ImagePlatformService {
         : this.getImagePreviewURL(id, { width: 200 }),
       createdAt,
       tags,
+      src: String(fileData.filePath),
     };
   }
 }

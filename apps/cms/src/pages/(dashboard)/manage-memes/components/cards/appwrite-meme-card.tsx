@@ -13,7 +13,7 @@ interface MemeWithImage extends MemeDocument {
   imageUrl?: string;
 }
 
-interface AppwriteMemeCardProps {
+interface MemeCardProps {
   meme: MemeWithImage;
   tagNames?: Record<string, string>;
   objectNames?: Record<string, string>;
@@ -21,13 +21,13 @@ interface AppwriteMemeCardProps {
   onEdit: () => void;
 }
 
-export function AppwriteMemeCard({
+export function MemeCard({
   meme,
   tagNames = {},
   objectNames = {},
   moodNames = {},
   onEdit,
-}: AppwriteMemeCardProps) {
+}: MemeCardProps) {
   const [showVietnamese, setShowVietnamese] = useState(false);
 
   const toggleLanguage = () => {
@@ -38,13 +38,13 @@ export function AppwriteMemeCard({
   const imageUrl =
     meme.saved_platform === 'appwrite' && meme.fileId
       ? getAppwriteImageUrl(meme.fileId, 'view')
-      : meme.imageUrl;
+      : meme.filePreview;
 
   // Get preview image for thumbnails
   const previewUrl =
     meme.saved_platform === 'appwrite' && meme.fileId
       ? getAppwriteImageUrl(meme.fileId, 'preview', { width: 400, height: 400, quality: 80 })
-      : meme.imageUrl;
+      : meme.filePreview;
 
   return (
     <Card className="overflow-hidden hover:shadow-lg transition-shadow duration-200 pt-0 py-0 gap-3">

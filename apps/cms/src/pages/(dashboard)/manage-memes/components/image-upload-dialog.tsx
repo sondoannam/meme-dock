@@ -31,7 +31,7 @@ import { useMemeCollectionStore } from '@/stores/meme-store';
 import { Icons } from '@/components/icons';
 import { X } from 'lucide-react';
 import { IMAGE_PLATFORM } from '@/enums';
-import { getAppwriteImageUrl } from '@/lib/utils';
+import { getAppwriteImageUrl, getImageKitImageUrl } from '@/lib/utils';
 import { useUpdateEffect } from 'ahooks';
 
 export interface ImageUploadDialogProps {
@@ -132,6 +132,7 @@ export function ImageUploadDialog({
             // Update file information
             memeParams.fileId = imageResult.data.id;
             memeParams.saved_platform = data.platform;
+            memeParams.filePreview = imageResult.data.src ?? imageResult.data.thumbnailUrl;
           } catch {
             toast.dismiss();
             toast.error('Failed to upload the new image. Please try again.');
@@ -165,7 +166,7 @@ export function ImageUploadDialog({
         const memeParams = memeApi.transformFormToApiParams(
           data,
           imageResult.data.id,
-          imageResult.data.thumbnailUrl || null,
+          (imageResult.data.src || imageResult.data.thumbnailUrl) as string,
           data.platform,
         );
         await memeApi.createMeme(memeCollection.id, memeParams);
@@ -231,7 +232,7 @@ export function ImageUploadDialog({
         imageFile: [], // Can't populate File objects directly
         platform: selectedMeme.saved_platform || 'appwrite',
       });
-      console.log('set selected meme:', selectedMeme.saved_platform === IMAGE_PLATFORM.APPWRITE);
+
       if (selectedMeme.saved_platform === IMAGE_PLATFORM.APPWRITE) {
         setPreviewUrl(
           getAppwriteImageUrl(selectedMeme.fileId, 'preview', {
@@ -239,6 +240,14 @@ export function ImageUploadDialog({
             height: 400,
             quality: 80,
           }),
+        );
+      }
+
+      if (selectedMeme.saved_platform === IMAGE_PLATFORM.IMAGEKIT) {
+        setPreviewUrl(
+          selectedMeme.filePreview?.startsWith('https://')
+            ? selectedMeme.filePreview!
+            : getImageKitImageUrl(selectedMeme.filePreview!, 400),
         );
       }
     } else {

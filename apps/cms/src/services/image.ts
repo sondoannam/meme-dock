@@ -22,6 +22,7 @@ export interface ImageMetadata {
   thumbnailUrl?: string;
   createdAt?: string;
   tags?: string[];
+  src?: string;
 }
 
 function appendUploadOptions(formData: FormData, options: ImageUploadOptions) {

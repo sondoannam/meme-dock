@@ -72,7 +72,8 @@ export async function getDocuments<T>(
 ): Promise<ListDocumentsResponse<T>> {
   try {
     // Extract options
-    const { limit, offset, orderBy, orderType, queries = [] } = options;
+    const { limit, offset, orderBy, orderType } = options;
+    const queries = typeof options.queries === 'string' ? [options.queries] : options.queries || [];
 
     // Convert string queries to Query objects if provided
     const parsedQueries: string[] = [];
@@ -132,6 +133,7 @@ export async function getDocuments<T>(
       if (offset < 0) throw new Error('offset cannot be negative');
       parsedQueries.push(Query.offset(offset));
     }
+
     const response = await databases.listDocuments(DATABASE_ID, collectionId, parsedQueries);
 
     // Map documents and remove system fields

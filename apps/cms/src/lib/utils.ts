@@ -1,5 +1,6 @@
-import { clsx, type ClassValue } from "clsx";
-import { twMerge } from "tailwind-merge";
+import { clsx, type ClassValue } from 'clsx';
+import { twMerge } from 'tailwind-merge';
+import { buildSrc } from '@imagekit/javascript';
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -12,7 +13,7 @@ export function cn(...inputs: ClassValue[]) {
  * @returns The normalized text with diacritics removed
  */
 export function normalizeText(text: string): string {
-  return text.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  return text.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 }
 
 /**
@@ -35,7 +36,7 @@ export function enhancedSearch(
     caseSensitive?: boolean;
     normalizeAccents?: boolean;
     wholeWordOnly?: boolean;
-  } = {}
+  } = {},
 ): boolean {
   if (!query || !text) return !query; // Empty query matches everything, empty text matches nothing
 
@@ -93,7 +94,7 @@ export function multiFieldSearch<T>(
   item: T,
   query: string,
   fields: (keyof T)[],
-  options: Parameters<typeof enhancedSearch>[2] = {}
+  options: Parameters<typeof enhancedSearch>[2] = {},
 ): boolean {
   if (!query) return true; // Empty query matches everything
 
@@ -104,33 +105,63 @@ export function multiFieldSearch<T>(
   });
 }
 
-export const getAppwriteImageUrl = (fileId: string, type: "view" | "preview" | "download" = "view", options?: {
-  width?: number;
-  height?: number;
-  quality?: number;
-  format?: string;
-}): string => {
-  const endpoint = process.env.VITE_APPWRITE_ENDPOINT?.endsWith("/")
+export const getAppwriteImageUrl = (
+  fileId: string,
+  type: 'view' | 'preview' | 'download' = 'view',
+  options?: {
+    width?: number;
+    height?: number;
+    quality?: number;
+    format?: string;
+  },
+): string => {
+  const endpoint = process.env.VITE_APPWRITE_ENDPOINT?.endsWith('/')
     ? process.env.VITE_APPWRITE_ENDPOINT.slice(0, -1)
     : process.env.VITE_APPWRITE_ENDPOINT;
   const projectId = process.env.VITE_APPWRITE_PROJECT_ID;
-  const bucketId = process.env.VITE_APPWRITE_BUCKET_ID || "meme-content";
+  const bucketId = process.env.VITE_APPWRITE_BUCKET_ID || 'meme-content';
 
   if (!endpoint || !projectId || !bucketId) {
-    console.error("Missing Appwrite configuration");
-    throw new Error("Missing required Appwrite configuration for image URL generation");
+    console.error('Missing Appwrite configuration');
+    throw new Error('Missing required Appwrite configuration for image URL generation');
   }
 
   // Construct base URL
   let url = `${endpoint}/storage/buckets/${bucketId}/files/${fileId}/${type}?project=${projectId}`;
 
   // Add optional parameters for preview
-  if (type === "preview" && options) {
+  if (type === 'preview' && options) {
     if (options.width) url += `&width=${options.width}`;
     if (options.height) url += `&height=${options.height}`;
-    if (options.quality && options.quality >= 0 && options.quality <= 100) url += `&quality=${options.quality}`;
+    if (options.quality && options.quality >= 0 && options.quality <= 100)
+      url += `&quality=${options.quality}`;
     if (options.format) url += `&output=${options.format}`;
   }
 
   return url;
+};
+
+export const getImageKitImageUrl = (
+  src: string,
+  width?:  number,
+  height?: number,
+  rotation?: number,
+) => {
+  const urlEndpoint = process.env.IMAGEKIT_URL_ENDPOINT;
+
+  if (!urlEndpoint) {
+    throw new Error('Missing Imagekit url endpoint');
+  }
+
+  return buildSrc({
+    urlEndpoint,
+    src,
+    transformation: [
+      {
+        height,
+        width,
+        rotation
+      },
+    ],
+  });
 };

@@ -82,15 +82,17 @@ export const documentApi = {
     const { limit, offset, orderBy, orderType, queries } = options;
 
     // Create params object for axios
-    // Our custom paramsSerializer will handle the array serialization properly
-    const params: Record<string, unknown> = {};
-    if (limit !== undefined) params.limit = limit;
-    if (offset !== undefined) params.offset = offset;
-    if (orderBy) params.orderBy = orderBy;
-    if (orderType) params.orderType = orderType;
-    if (queries && queries.length > 0) params.queries = queries;
+    // Use URLSearchParams for parameter serialization
+    const params = new URLSearchParams();
+    if (limit !== undefined) params.append('limit', limit.toString());
+    if (offset !== undefined) params.append('offset', offset.toString());
+    if (orderBy) params.append('orderBy', orderBy);
+    if (orderType) params.append('orderType', orderType);
+    if (queries && queries.length > 0) {
+      queries.forEach(query => params.append('queries', query));
+    }
 
-    const response = await apiClient.get<DocumentList<T>>(`/documents/${collectionId}`, { params });
+    const response = await apiClient.get<DocumentList<T>>(`/documents/${collectionId}?${params.toString()}`);
     return response.data;
   },
   /**
